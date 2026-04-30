@@ -3,13 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: C100 System API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: Auth
+    description: Browser and mobile authentication endpoints.
+  - name: Profile
+    description: Current user profile and onboarding
+  - name: Members
+    description: Chapter members
+  - name: Committees
+    description: Chapter committees
+  - name: Events
+    description: Chapter events and QR check-in
+  - name: Attendance
+    description: Member attendance records
+  - name: Nudges
+    description: Behavioral nudge messages
+  - name: Reports
+    description: Eligibility, leaderboards, and dashboards
 paths:
   /healthz:
     get:
@@ -24,7 +40,668 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirect after login.
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '302':
+          description: Redirect to the OIDC provider logout URL.
+  /mobile-auth/token-exchange:
+    post:
+      tags: [Auth]
+      operationId: exchangeMobileAuthorizationCode
+      summary: Exchange a mobile OIDC code for a session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTokenExchangeRequest'
+      responses:
+        '200':
+          description: Session created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenExchangeSuccess'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Token did not contain usable claims.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Token exchange failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /mobile-auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutMobileSession
+      summary: Delete a mobile session token
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+      responses:
+        '200':
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccess'
+
+  /me:
+    get:
+      tags: [Profile]
+      operationId: getMyProfile
+      summary: Get the current member's profile and role
+      responses:
+        '200':
+          description: Profile loaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    patch:
+      tags: [Profile]
+      operationId: updateMyProfile
+      summary: Update the current member's profile fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileInput'
+      responses:
+        '200':
+          description: Profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+
+  /me/dashboard:
+    get:
+      tags: [Profile]
+      operationId: getMyDashboard
+      summary: Get the current member's dashboard payload
+      responses:
+        '200':
+          description: Dashboard data assembled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberDashboard'
+
+  /me/nudges:
+    get:
+      tags: [Nudges]
+      operationId: listMyNudges
+      summary: List nudges for the current member
+      responses:
+        '200':
+          description: Nudge list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NudgeLogEntry'
+
+  /members:
+    get:
+      tags: [Members]
+      operationId: listMembers
+      summary: List all chapter members (leadership only)
+      parameters:
+        - name: committeeId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Member roster.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+
+  /members/{id}:
+    get:
+      tags: [Members]
+      operationId: getMember
+      summary: Get a single member by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Member found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    patch:
+      tags: [Members]
+      operationId: updateMember
+      summary: Update a member's role, committee, or status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberInput'
+      responses:
+        '200':
+          description: Member updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+
+  /committees:
+    get:
+      tags: [Committees]
+      operationId: listCommittees
+      summary: List all committees with aggregate stats
+      responses:
+        '200':
+          description: Committee list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Committee'
+
+  /committees/{id}:
+    get:
+      tags: [Committees]
+      operationId: getCommittee
+      summary: Get a single committee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Committee found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Committee'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /committees/{id}/roster:
+    get:
+      tags: [Committees]
+      operationId: getCommitteeRoster
+      summary: Get the private member roster for a committee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Roster with per-member stats.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+
+  /committees/leaderboard:
+    get:
+      tags: [Committees]
+      operationId: getCommitteeLeaderboard
+      summary: Public committee leaderboard for the active semester
+      responses:
+        '200':
+          description: Ranked committees.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommitteeLeaderboardEntry'
+
+  /events:
+    get:
+      tags: [Events]
+      operationId: listEvents
+      summary: List events
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Upcoming, Active, Completed, Cancelled]
+        - name: committeeId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Event list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+    post:
+      tags: [Events]
+      operationId: createEvent
+      summary: Create a new event (chair or admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventInput'
+      responses:
+        '201':
+          description: Event created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+  /events/{id}:
+    get:
+      tags: [Events]
+      operationId: getEvent
+      summary: Get a single event with attendees
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Event detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    patch:
+      tags: [Events]
+      operationId: updateEvent
+      summary: Update an event (chair or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventInput'
+      responses:
+        '200':
+          description: Event updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+    delete:
+      tags: [Events]
+      operationId: deleteEvent
+      summary: Cancel an event (chair or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Cancelled.
+
+  /events/{id}/qr/activate:
+    post:
+      tags: [Events]
+      operationId: activateEventQr
+      summary: Activate dynamic QR check-in for an event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: QR activated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrToken'
+
+  /events/{id}/qr/deactivate:
+    post:
+      tags: [Events]
+      operationId: deactivateEventQr
+      summary: Deactivate QR check-in and complete the event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: QR deactivated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+  /events/{id}/qr/current:
+    get:
+      tags: [Events]
+      operationId: getCurrentEventQr
+      summary: Get the current rotating QR token for an event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Current rotating token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrToken'
+
+  /events/{id}/check-in:
+    post:
+      tags: [Attendance]
+      operationId: checkInToEvent
+      summary: Check in to an event by scanning the QR token
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInInput'
+      responses:
+        '200':
+          description: Check-in confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInResult'
+        '400':
+          description: Invalid or expired QR token, or already checked in.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /events/{id}/attendance:
+    get:
+      tags: [Attendance]
+      operationId: listEventAttendance
+      summary: List attendance records for an event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Attendance records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AttendanceRecord'
+    post:
+      tags: [Attendance]
+      operationId: manualAttendance
+      summary: Manually add or correct an attendance record (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualAttendanceInput'
+      responses:
+        '201':
+          description: Attendance recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+
+  /nudges:
+    get:
+      tags: [Nudges]
+      operationId: listNudges
+      summary: List nudge log entries (Executive Board / Admin)
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: tier
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Nudge log.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NudgeLogEntry'
+
+  /nudges/run:
+    post:
+      tags: [Nudges]
+      operationId: runNudgeEvaluation
+      summary: Recompute every member's nudge tier and emit messages
+      responses:
+        '200':
+          description: Nudge run complete.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NudgeRunResult'
+
+  /reports/scholarship-eligibility:
+    get:
+      tags: [Reports]
+      operationId: getScholarshipEligibility
+      summary: List members with scholarship eligibility flags
+      responses:
+        '200':
+          description: Eligibility list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EligibilityRecord'
+
+  /reports/conference-eligibility:
+    get:
+      tags: [Reports]
+      operationId: getConferenceEligibility
+      summary: Ranked list of members for conference selection
+      responses:
+        '200':
+          description: Ranked eligibility list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EligibilityRecord'
+
+  /reports/admin-overview:
+    get:
+      tags: [Reports]
+      operationId: getAdminOverview
+      summary: Chapter health overview for Executive Board / Admin
+      responses:
+        '200':
+          description: Overview metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOverview'
+
 components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: Opaque session token — `Bearer <sid>`.
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      description: Browser session cookie.
+      schema:
+        type: string
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +711,628 @@ components:
       required:
         - status
 
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+        firstName:
+          type: [string, 'null']
+        lastName:
+          type: [string, 'null']
+        profileImageUrl:
+          type: [string, 'null']
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+    MobileTokenExchangeRequest:
+      type: object
+      required: [code, code_verifier, redirect_uri, state]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        code_verifier:
+          type: string
+          minLength: 1
+        redirect_uri:
+          type: string
+          minLength: 1
+          format: uri
+        state:
+          type: string
+          minLength: 1
+        nonce:
+          type: string
+          minLength: 1
+    MobileTokenExchangeSuccess:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    LogoutSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          const: true
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    Member:
+      type: object
+      required:
+        - id
+        - authId
+        - fullName
+        - email
+        - role
+        - committeeId
+        - membershipStatus
+        - duesPaid
+        - totalPoints
+        - impactPoints
+        - participationPct
+        - streakCount
+        - nudgeStatus
+        - accountActive
+        - eventsAttended
+        - eventsEligible
+      properties:
+        id:
+          type: integer
+        authId:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: [string, 'null']
+        studentId:
+          type: [string, 'null']
+        gpa:
+          type: [number, 'null']
+        graduationYear:
+          type: [integer, 'null']
+        role:
+          type: string
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+        committeeId:
+          type: [integer, 'null']
+        committeeName:
+          type: [string, 'null']
+        membershipStatus:
+          type: string
+          enum: [Active, Probationary, Suspended, Inactive]
+        duesPaid:
+          type: boolean
+        dateJoined:
+          type: [string, 'null']
+          format: date-time
+        totalPoints:
+          type: integer
+        impactPoints:
+          type: integer
+        participationPct:
+          type: number
+        streakCount:
+          type: integer
+        nudgeStatus:
+          type: string
+          enum: [Active, Warning, AtRisk, Critical]
+        accountActive:
+          type: boolean
+        lastLogin:
+          type: [string, 'null']
+          format: date-time
+        eventsAttended:
+          type: integer
+        eventsEligible:
+          type: integer
+        profileImageUrl:
+          type: [string, 'null']
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phone:
+          type: string
+        studentId:
+          type: string
+        gpa:
+          type: number
+        graduationYear:
+          type: integer
+
+    UpdateMemberInput:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+        committeeId:
+          type: [integer, 'null']
+        membershipStatus:
+          type: string
+          enum: [Active, Probationary, Suspended, Inactive]
+        duesPaid:
+          type: boolean
+        accountActive:
+          type: boolean
+        fullName:
+          type: string
+
+    Committee:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - memberCount
+        - totalEventsHosted
+        - aggregateParticipationPct
+        - totalImpactPoints
+        - committeeRank
+        - semester
+        - fourForFutureAlignment
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        chairUserId:
+          type: [integer, 'null']
+        chairName:
+          type: [string, 'null']
+        memberCount:
+          type: integer
+        totalEventsHosted:
+          type: integer
+        aggregateParticipationPct:
+          type: number
+        totalImpactPoints:
+          type: integer
+        committeeRank:
+          type: integer
+        semester:
+          type: string
+        fourForFutureAlignment:
+          type: string
+
+    CommitteeLeaderboardEntry:
+      type: object
+      required: [committeeId, name, rank, participationPct, totalImpactPoints, totalEventsHosted, memberCount]
+      properties:
+        committeeId:
+          type: integer
+        name:
+          type: string
+        rank:
+          type: integer
+        participationPct:
+          type: number
+        totalImpactPoints:
+          type: integer
+        totalEventsHosted:
+          type: integer
+        memberCount:
+          type: integer
+
+    Event:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - eventType
+        - committeeId
+        - createdBy
+        - date
+        - startTime
+        - endTime
+        - location
+        - pointValue
+        - impactMultiplier
+        - qrActive
+        - checkInWindowMinutes
+        - totalAttendees
+        - status
+        - createdAt
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        eventType:
+          type: string
+          enum:
+            - GeneralBodyMeeting
+            - CommitteeMeeting
+            - CommunityService
+            - MentoringSession
+            - Workshop
+            - Fundraiser
+            - Conference
+            - Social
+        committeeId:
+          type: [integer, 'null']
+        committeeName:
+          type: [string, 'null']
+        createdBy:
+          type: integer
+        createdByName:
+          type: [string, 'null']
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        location:
+          type: string
+        pointValue:
+          type: integer
+        impactMultiplier:
+          type: number
+        qrActive:
+          type: boolean
+        checkInWindowMinutes:
+          type: integer
+        totalAttendees:
+          type: integer
+        status:
+          type: string
+          enum: [Upcoming, Active, Completed, Cancelled]
+        createdAt:
+          type: string
+          format: date-time
+
+    EventDetail:
+      allOf:
+        - $ref: '#/components/schemas/Event'
+        - type: object
+          required: [attendance]
+          properties:
+            attendance:
+              type: array
+              items:
+                $ref: '#/components/schemas/AttendanceRecord'
+
+    CreateEventInput:
+      type: object
+      required: [title, description, eventType, date, startTime, endTime, location]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        eventType:
+          type: string
+          enum:
+            - GeneralBodyMeeting
+            - CommitteeMeeting
+            - CommunityService
+            - MentoringSession
+            - Workshop
+            - Fundraiser
+            - Conference
+            - Social
+        committeeId:
+          type: [integer, 'null']
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        location:
+          type: string
+        pointValue:
+          type: [integer, 'null']
+        impactMultiplier:
+          type: [number, 'null']
+        checkInWindowMinutes:
+          type: [integer, 'null']
+
+    UpdateEventInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        eventType:
+          type: string
+          enum:
+            - GeneralBodyMeeting
+            - CommitteeMeeting
+            - CommunityService
+            - MentoringSession
+            - Workshop
+            - Fundraiser
+            - Conference
+            - Social
+        committeeId:
+          type: [integer, 'null']
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        location:
+          type: string
+        pointValue:
+          type: integer
+        impactMultiplier:
+          type: number
+        checkInWindowMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [Upcoming, Active, Completed, Cancelled]
+
+    QrToken:
+      type: object
+      required: [eventId, token, expiresAt, rotateSeconds]
+      properties:
+        eventId:
+          type: integer
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        rotateSeconds:
+          type: integer
+
+    CheckInInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    CheckInResult:
+      type: object
+      required: [attendance, member]
+      properties:
+        attendance:
+          $ref: '#/components/schemas/AttendanceRecord'
+        member:
+          $ref: '#/components/schemas/Member'
+
+    AttendanceRecord:
+      type: object
+      required: [id, userId, eventId, checkInTime, method, pointsAwarded, semester]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: [string, 'null']
+        eventId:
+          type: integer
+        eventTitle:
+          type: [string, 'null']
+        checkInTime:
+          type: string
+          format: date-time
+        method:
+          type: string
+          enum: [QrScan, Manual, Corrected]
+        pointsAwarded:
+          type: integer
+        correctionReason:
+          type: [string, 'null']
+        correctedBy:
+          type: [integer, 'null']
+        semester:
+          type: string
+
+    ManualAttendanceInput:
+      type: object
+      required: [userId, reason]
+      properties:
+        userId:
+          type: integer
+        reason:
+          type: string
+        method:
+          type: string
+          enum: [Manual, Corrected]
+
+    NudgeLogEntry:
+      type: object
+      required: [id, userId, nudgeType, messageContent, sentAt, deliveryChannel, triggerReason, memberStatusAtSend]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: [string, 'null']
+        nudgeType:
+          type: string
+          enum: [ActiveEncouragement, Milestone, GentleReminder, AtRiskWarning, CriticalAlert, ChairInactivityAlert, ChairParticipationAlert]
+        messageContent:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+        deliveryChannel:
+          type: string
+          enum: [InApp, Email, Both]
+        triggerReason:
+          type: string
+        memberStatusAtSend:
+          type: string
+        responseAction:
+          type: [string, 'null']
+        read:
+          type: boolean
+
+    NudgeRunResult:
+      type: object
+      required: [evaluated, nudgesSent, ranAt]
+      properties:
+        evaluated:
+          type: integer
+        nudgesSent:
+          type: integer
+        ranAt:
+          type: string
+          format: date-time
+
+    EligibilityRecord:
+      type: object
+      required:
+        - userId
+        - fullName
+        - committeeName
+        - participationPct
+        - totalPoints
+        - impactPoints
+        - gpa
+        - duesPaid
+        - membershipStatus
+        - meetsParticipation
+        - meetsGpa
+        - meetsDues
+        - meetsStatus
+        - systemScore
+        - eligible
+      properties:
+        userId:
+          type: integer
+        fullName:
+          type: string
+        committeeName:
+          type: [string, 'null']
+        participationPct:
+          type: number
+        totalPoints:
+          type: integer
+        impactPoints:
+          type: integer
+        gpa:
+          type: [number, 'null']
+        duesPaid:
+          type: boolean
+        membershipStatus:
+          type: string
+        meetsParticipation:
+          type: boolean
+        meetsGpa:
+          type: boolean
+        meetsDues:
+          type: boolean
+        meetsStatus:
+          type: boolean
+        systemScore:
+          type: number
+        eligible:
+          type: boolean
+        rank:
+          type: [integer, 'null']
+
+    AdminOverview:
+      type: object
+      required:
+        - totalMembers
+        - activeMembers
+        - atRiskMembers
+        - criticalMembers
+        - totalEvents
+        - upcomingEvents
+        - completedEvents
+        - chapterParticipationPct
+        - committees
+        - recentActivity
+      properties:
+        totalMembers:
+          type: integer
+        activeMembers:
+          type: integer
+        atRiskMembers:
+          type: integer
+        criticalMembers:
+          type: integer
+        totalEvents:
+          type: integer
+        upcomingEvents:
+          type: integer
+        completedEvents:
+          type: integer
+        chapterParticipationPct:
+          type: number
+        committees:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitteeLeaderboardEntry'
+        recentActivity:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceRecord'
+
+    MemberDashboard:
+      type: object
+      required:
+        - member
+        - upcomingEvents
+        - committee
+        - committeeLeaderboard
+        - activeNudges
+        - recentAttendance
+        - participationGoalPct
+      properties:
+        member:
+          $ref: '#/components/schemas/Member'
+        upcomingEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        committee:
+          oneOf:
+            - $ref: '#/components/schemas/Committee'
+            - type: 'null'
+        committeeLeaderboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitteeLeaderboardEntry'
+        activeNudges:
+          type: array
+          items:
+            $ref: '#/components/schemas/NudgeLogEntry'
+        recentAttendance:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceRecord'
+        participationGoalPct:
+          type: number

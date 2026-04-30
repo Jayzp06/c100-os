@@ -1,0 +1,231 @@
+import { Router, type IRouter } from "express";
+import {
+  UpdateMyProfileBody,
+} from "@workspace/api-zod";
+import {
+  db,
+  membersTable,
+  eventsTable,
+  attendanceTable,
+  nudgeLogsTable,
+} from "@workspace/db";
+import { and, desc, eq, gte } from "drizzle-orm";
+import {
+  CURRENT_SEMESTER,
+  PARTICIPATION_THRESHOLD,
+  attendanceToDto,
+  buildCommitteeAggregate,
+  buildMemberDto,
+  eventToDto,
+  loadMember,
+  requireAuth,
+} from "../lib/c100";
+
+const router: IRouter = Router();
+
+router.get(
+  "/me",
+  requireAuth(async (req, res) => {
+    const dto = await buildMemberDto(req.member);
+    res.json(dto);
+  }),
+);
+
+router.patch(
+  "/me",
+  requireAuth(async (req, res) => {
+    const parsed = UpdateMyProfileBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid profile body" });
+      return;
+    }
+    const data = parsed.data;
+    const update: Record<string, unknown> = {};
+    if (data.fullName !== undefined) update["fullName"] = data.fullName;
+    if (data.phone !== undefined) update["phone"] = data.phone;
+    if (data.studentId !== undefined) update["studentId"] = data.studentId;
+    if (data.gpa !== undefined)
+      update["gpa"] = data.gpa != null ? String(data.gpa) : null;
+    if (data.graduationYear !== undefined)
+      update["graduationYear"] = data.graduationYear;
+    const [updated] = await db
+      .update(membersTable)
+      .set(update)
+      .where(eq(membersTable.id, req.member.id))
+      .returning();
+    if (!updated) {
+      res.status(500).json({ error: "Update failed" });
+      return;
+    }
+    const dto = await buildMemberDto(updated);
+    res.json(dto);
+  }),
+);
+
+router.get(
+  "/me/dashboard",
+  requireAuth(async (req, res) => {
+    const member = await loadMember(req.member.authId);
+    if (!member) {
+      res.status(404).json({ error: "Member not found" });
+      return;
+    }
+    const memberDto = (await buildMemberDto(member)) as {
+      committeeId: number | null;
+    };
+
+    const upcomingRows = await db
+      .select({ e: eventsTable, c: membersTable.fullName })
+      .from(eventsTable)
+      .leftJoin(membersTable, eq(membersTable.id, eventsTable.createdBy))
+      .where(
+        and(
+          gte(eventsTable.date, new Date().toISOString().slice(0, 10)),
+          eq(eventsTable.semester, CURRENT_SEMESTER),
+        ),
+      )
+      .orderBy(eventsTable.date)
+      .limit(5);
+
+    const upcoming = upcomingRows.map((r) =>
+      eventToDto(r.e, null, r.c ?? null, 0),
+    );
+
+    let committeeDto: unknown = null;
+    if (member.committeeId) {
+      const [committee] = await db
+        .select()
+        .from(membersTable)
+        .where(eq(membersTable.id, member.id));
+      void committee;
+      const all = await db.select().from(membersTable);
+      void all;
+      // build committee aggregate
+      const [c] = await db
+        .select()
+        .from(eventsTable)
+        .limit(0);
+      void c;
+      const { db: _db } = await import("@workspace/db");
+      void _db;
+      const { committeesTable } = await import("@workspace/db");
+      const [committeeRow] = await db
+        .select()
+        .from(committeesTable)
+        .where(eq(committeesTable.id, member.committeeId));
+      if (committeeRow) {
+        const agg = await buildCommitteeAggregate(committeeRow);
+        // committee rank
+        const allCommittees = await db.select().from(committeesTable);
+        const aggregates = await Promise.all(
+          allCommittees.map((c) => buildCommitteeAggregate(c)),
+        );
+        const sorted = [...aggregates].sort(
+          (a, b) => b.totalImpactPoints - a.totalImpactPoints,
+        );
+        const rank =
+          sorted.findIndex((s) => s.committee.id === committeeRow.id) + 1;
+        committeeDto = {
+          id: committeeRow.id,
+          name: committeeRow.name,
+          description: committeeRow.description,
+          chairUserId: committeeRow.chairUserId,
+          chairName: agg.chairName,
+          memberCount: agg.memberCount,
+          totalEventsHosted: agg.totalEventsHosted,
+          aggregateParticipationPct: agg.aggregateParticipationPct,
+          totalImpactPoints: agg.totalImpactPoints,
+          committeeRank: rank,
+          semester: CURRENT_SEMESTER,
+          fourForFutureAlignment: committeeRow.fourForFutureAlignment,
+        };
+      }
+    }
+
+    const { committeesTable } = await import("@workspace/db");
+    const allCommittees = await db.select().from(committeesTable);
+    const aggregates = await Promise.all(
+      allCommittees.map((c) => buildCommitteeAggregate(c)),
+    );
+    const ranked = [...aggregates]
+      .sort((a, b) => b.totalImpactPoints - a.totalImpactPoints)
+      .map((agg, idx) => ({
+        committeeId: agg.committee.id,
+        name: agg.committee.name,
+        rank: idx + 1,
+        participationPct: agg.aggregateParticipationPct,
+        totalImpactPoints: agg.totalImpactPoints,
+        totalEventsHosted: agg.totalEventsHosted,
+        memberCount: agg.memberCount,
+      }));
+
+    const activeNudgeRows = await db
+      .select()
+      .from(nudgeLogsTable)
+      .where(eq(nudgeLogsTable.userId, member.id))
+      .orderBy(desc(nudgeLogsTable.sentAt))
+      .limit(5);
+    const activeNudges = activeNudgeRows.map((n) => ({
+      id: n.id,
+      userId: n.userId,
+      userName: member.fullName,
+      nudgeType: n.nudgeType,
+      messageContent: n.messageContent,
+      sentAt: n.sentAt.toISOString(),
+      deliveryChannel: n.deliveryChannel,
+      triggerReason: n.triggerReason,
+      memberStatusAtSend: n.memberStatusAtSend,
+      responseAction: n.responseAction,
+      read: n.read,
+    }));
+
+    const recentRows = await db
+      .select({ a: attendanceTable, eventTitle: eventsTable.title })
+      .from(attendanceTable)
+      .innerJoin(eventsTable, eq(eventsTable.id, attendanceTable.eventId))
+      .where(eq(attendanceTable.userId, member.id))
+      .orderBy(desc(attendanceTable.checkInTime))
+      .limit(5);
+    const recentAttendance = recentRows.map((r) =>
+      attendanceToDto(r.a, member.fullName, r.eventTitle),
+    );
+
+    res.json({
+      member: memberDto,
+      upcomingEvents: upcoming,
+      committee: committeeDto,
+      committeeLeaderboard: ranked,
+      activeNudges,
+      recentAttendance,
+      participationGoalPct: PARTICIPATION_THRESHOLD,
+    });
+  }),
+);
+
+router.get(
+  "/me/nudges",
+  requireAuth(async (req, res) => {
+    const rows = await db
+      .select()
+      .from(nudgeLogsTable)
+      .where(eq(nudgeLogsTable.userId, req.member.id))
+      .orderBy(desc(nudgeLogsTable.sentAt));
+    res.json(
+      rows.map((n) => ({
+        id: n.id,
+        userId: n.userId,
+        userName: req.member.fullName,
+        nudgeType: n.nudgeType,
+        messageContent: n.messageContent,
+        sentAt: n.sentAt.toISOString(),
+        deliveryChannel: n.deliveryChannel,
+        triggerReason: n.triggerReason,
+        memberStatusAtSend: n.memberStatusAtSend,
+        responseAction: n.responseAction,
+        read: n.read,
+      })),
+    );
+  }),
+);
+
+export default router;

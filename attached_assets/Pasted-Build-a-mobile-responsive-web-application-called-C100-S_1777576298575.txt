@@ -1,0 +1,425 @@
+Build a mobile-responsive web application called “C100 System” for the Fort Valley State University Trailblazing Chapter of Collegiate 100.
+
+This is NOT a social media app. It is a performance, accountability, attendance, committee, and development platform for Collegiate 100 chapters.
+
+The platform should help the chapter track participation, committee activity, member growth, event attendance, scholarship eligibility, conference selection eligibility, and end-of-semester recognition.
+
+Use a clean, modern, professional design. The system should feel like a private chapter operating system.
+
+CORE PURPOSE:
+The chapter struggles with member retention and inconsistent engagement. Members often show up during hype moments but fall off over time. This system should make consistency feel rewarding, visible, and accountable.
+
+The app should support:
+- Member login
+- Committee assignment
+- Event creation
+- Dynamic QR attendance
+- Participation tracking
+- Committee rankings
+- Private individual performance tracking for leadership
+- Basic automated nudges
+- End-of-semester award and conference eligibility logic
+
+IMPORTANT ORGANIZATIONAL CONTEXT:
+The system aligns with Collegiate 100’s Four for the Future framework:
+1. Mentoring
+2. Education
+3. Economic Development
+4. Health & Wellness
+
+Also include a Bylaws Chair role.
+
+USER ROLES:
+Create role-based dashboards for:
+1. Member
+2. Committee Chair
+3. Bylaws Chair
+4. Executive Board
+5. Admin
+
+ROLE ACCESS:
+Member:
+- Can view personal dashboard
+- Can see their committee
+- Can view upcoming events
+- Can scan/check into events
+- Can view their own participation percentage
+- Can view their private points total
+- Can view public committee leaderboard
+- Can view personal nudges
+
+Committee Chair:
+- Everything a member can do
+- Can create committee events
+- Can activate QR check-in
+- Can view private roster for their committee
+- Can view member participation inside their committee
+- Can receive chair-specific alerts
+
+Bylaws Chair:
+- Everything a member can do
+- Has a placeholder section for bylaws reference tools
+- Can later help draft amendment proposals
+
+Executive Board:
+- Can view all member scores privately
+- Can view committee health
+- Can view nudge logs
+- Can view scholarship and conference eligibility reports
+
+Admin:
+- Full system access
+- Can manage users
+- Can assign roles
+- Can assign committees
+- Can create, edit, approve, cancel events
+- Can manually correct attendance with a reason
+- Can suspend accounts
+
+MAIN DASHBOARD REQUIREMENTS:
+When a member logs in, the first thing they should see:
+1. Their committee
+2. Their upcoming events
+3. Their participation percentage toward the 75% requirement
+4. Their private point total
+5. Any active nudge
+6. Public committee leaderboard
+
+Do NOT show public individual rankings. Members should not see other members ranked by name. Public competition should only be committee-based.
+
+COMMITTEES:
+Preload the following committees:
+- Mentoring
+- Education
+- Economic Development
+- Health & Wellness
+- Bylaws
+
+Each committee should have:
+- Committee name
+- Description
+- Chair
+- Member count
+- Total events hosted
+- Aggregate participation percentage
+- Total impact points
+- Committee rank
+- Four for the Future alignment
+
+EVENT SYSTEM:
+Users with Chair or Admin roles can create events.
+
+Event fields:
+- Title
+- Description
+- Event type
+- Committee hosting event
+- Created by
+- Date
+- Start time
+- End time
+- Location
+- Point value
+- Impact multiplier
+- Status: Upcoming, Active, Completed, Cancelled
+
+Event types:
+- General Body Meeting
+- Committee Meeting
+- Community Service Event
+- Mentoring Session
+- Workshop / Educational Event
+- Fundraiser / Public Relations Event
+- Conference
+- Social
+
+POINT VALUES:
+Use these default values:
+- General Body Meeting: 10 points
+- Committee Meeting: 10 points
+- Community Service Event: 15 points
+- Mentoring Session: 20 points
+- Workshop / Educational Event: 15 points
+- Fundraiser / Public Relations Event: 15 points
+- National / Regional Conference: 25 points
+
+IMPACT MULTIPLIER:
+If the event directly aligns with Four for the Future, apply a 1.5x multiplier:
+- Mentoring events
+- Education events
+- Economic Development events
+- Health & Wellness events
+
+QR ATTENDANCE:
+Build a dynamic QR attendance system.
+
+Flow:
+1. Chair or Admin opens an event
+2. Chair/Admin activates check-in
+3. System generates a QR code
+4. QR code rotates every 60 seconds
+5. Member scans QR code while logged in
+6. System validates:
+   - user is authenticated
+   - event is active
+   - QR token is valid
+   - check-in is within the allowed time window
+   - user has not already checked into the same event
+7. Attendance is recorded
+8. Member’s points update
+9. Committee score updates
+10. Member receives confirmation
+
+Include:
+- Duplicate scan prevention
+- Manual override by Admin with correction reason
+- Attendance timestamp
+- Attendance method: QR Scan, Manual, Corrected
+
+Do NOT rely on GPS for MVP. Location verification may be added later, but Version 1 should use dynamic QR codes.
+
+MEMBER SCORING:
+Track:
+- Attendance count
+- Participation percentage
+- Total points
+- Streak count
+- Impact points
+- Committee contribution
+- Nudge status
+
+Participation percentage should compare attended eligible events against total eligible events.
+
+NUDGE SYSTEM:
+Create basic automated nudge logic.
+
+Nudge tiers:
+Active:
+- 75% participation or higher
+- No warning nudge
+- If 5+ event streak, send encouragement
+
+Warning:
+- 60–74% participation
+- Send gentle reminder
+
+At-Risk:
+- 40–59% participation OR missed 2+ consecutive events
+- Send stronger warning
+- Notify committee chair
+
+Critical:
+- Below 40% OR missed 4+ consecutive events
+- Send urgent alert
+- Notify Executive Board
+
+Chair alerts:
+- If no committee event scheduled in 21 days, alert chair
+- If committee participation drops below 60%, alert chair
+- If committee drops below 50%, notify Executive Board
+
+Example nudge messages:
+Active streak:
+“You’ve attended 5 events in a row — that’s the kind of consistency that defines a leader. Keep it up.”
+
+Warning:
+“Your participation is currently at [X]%, below the 75% requirement. Attend [X] more events to get back on track.”
+
+At-Risk:
+“You’ve missed multiple events and your active membership status may be affected. Attend the next event to reset your progress.”
+
+Critical:
+“Your participation is significantly below the required standard and has been flagged for Executive Board review.”
+
+Chair no event:
+“Your committee has no upcoming events scheduled. Please create and publish your next event.”
+
+REWARD SYSTEM:
+End-of-semester only. No point store. No frequent rewards.
+
+Awards:
+1. Top Committee
+2. Top Committee Chair
+3. Top Contributor per Committee
+4. Rising Member
+5. Major Scholarship
+
+Scholarship eligibility:
+- Active membership
+- Dues paid
+- Minimum 75% participation
+- GPA at or above 2.7
+- No active code of ethics violations
+- 80% system performance score
+- 20% Executive Board review
+
+Conference eligibility:
+- Top tier system score
+- Minimum 75% participation
+- Strong impact score
+- Dues paid
+- No code of ethics violation
+- GPA at or above 2.7
+- Final decision uses 80% system data and 20% leadership review
+
+DATA MODELS:
+Create the database with these models:
+
+User:
+- user_id
+- full_name
+- email
+- phone
+- student_id
+- gpa
+- graduation_year
+- role
+- committee_id
+- membership_status
+- dues_paid
+- date_joined
+- total_points
+- participation_pct
+- streak_count
+- nudge_status
+- account_active
+- last_login
+
+Committee:
+- committee_id
+- name
+- description
+- chair_user_id
+- member_count
+- total_events_hosted
+- aggregate_participation_pct
+- total_impact_points
+- committee_rank
+- semester
+- four_for_future_alignment
+
+Event:
+- event_id
+- title
+- description
+- event_type
+- committee_id
+- created_by
+- date
+- start_time
+- end_time
+- location
+- point_value
+- impact_multiplier
+- qr_code_token
+- qr_active
+- check_in_window_minutes
+- total_attendees
+- status
+- created_at
+
+Attendance:
+- attendance_id
+- user_id
+- event_id
+- check_in_time
+- method
+- points_awarded
+- correction_reason
+- corrected_by
+- semester
+
+Task / Contribution:
+- task_id
+- user_id
+- committee_id
+- task_type
+- description
+- date_completed
+- hours_logged
+- points_awarded
+- impact_multiplier
+- submitted_by
+- approved_by
+- status
+- rejection_reason
+- semester
+- evidence_link
+
+Nudge Log:
+- nudge_id
+- user_id
+- nudge_type
+- message_content
+- sent_at
+- delivery_channel
+- trigger_reason
+- member_status_at_send
+- response_action
+
+MVP SCOPE:
+Build Version 1 only.
+
+Include:
+- Authentication
+- Role-based dashboards
+- Committees
+- Events
+- Dynamic QR attendance
+- Participation tracking
+- Committee leaderboard
+- Basic nudge system
+- Admin panel
+- Manual attendance correction
+
+Exclude for now:
+- Social media feed
+- Likes/comments
+- Public individual rankings
+- Native mobile app
+- Advanced AI
+- SMS nudges
+- Alumni tracking
+- National multi-chapter dashboard
+- Payment processing
+- Scholarship fund management
+- Conference registration integration
+- File storage
+- GPA automation
+
+DESIGN STYLE:
+- Mobile-first
+- Clean dashboard cards
+- Professional blue, black, white, and gold color direction
+- Easy navigation
+- Simple icons
+- Clear status indicators
+- No clutter
+
+TECHNICAL REQUIREMENTS:
+Use a stack appropriate for Replit.
+Prefer:
+- React frontend
+- Node/Express or similar backend
+- PostgreSQL or Replit database if easier
+- Secure authentication
+- Responsive design
+- QR code generation package
+- Email placeholder or mock email system for nudges if full email setup is too much for MVP
+
+BUILD PRIORITY:
+1. Login/register
+2. Role system
+3. Admin creates users and assigns committees
+4. Member dashboard
+5. Event creation
+6. QR attendance
+7. Points update
+8. Committee leaderboard
+9. Nudge logic
+10. Admin reporting dashboard
+
+IMPORTANT:
+Build the app in a way that is clean, modular, and easy to export later into VS Code or Cursor. Organize files clearly. Add comments where needed. Do not overbuild beyond MVP.
+
+Start by generating the full project structure, then build the MVP.

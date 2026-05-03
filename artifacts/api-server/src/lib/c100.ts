@@ -56,15 +56,80 @@ export async function loadMember(
   return m;
 }
 
+/**
+ * Resolve a member for an authenticated Replit user:
+ * 1. Exact authId match → return it
+ * 2. Email match on a record whose authId is null or seed → claim it
+ * 3. No match → auto-create an inactive (pending) record
+ * Returns the member, or undefined if inactive/pending (needs admin approval).
+ */
+export async function resolveOrCreateMember(user: {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}): Promise<{ member: MemberRow; isPending: boolean }> {
+  // 1. Exact match by authId
+  const [byId] = await db
+    .select()
+    .from(membersTable)
+    .where(eq(membersTable.authId, user.id));
+  if (byId) {
+    return { member: byId, isPending: !byId.accountActive };
+  }
+
+  // 2. Email-based claim (matches unclaimed or seed records)
+  if (user.email) {
+    const [byEmail] = await db
+      .select()
+      .from(membersTable)
+      .where(eq(membersTable.email, user.email));
+    if (byEmail && (!byEmail.authId || byEmail.authId.startsWith("seed-"))) {
+      const [claimed] = await db
+        .update(membersTable)
+        .set({
+          authId: user.id,
+          profileImageUrl: user.profileImageUrl ?? byEmail.profileImageUrl,
+        })
+        .where(eq(membersTable.id, byEmail.id))
+        .returning();
+      if (claimed) {
+        return { member: claimed, isPending: !claimed.accountActive };
+      }
+    }
+  }
+
+  // 3. Auto-create a pending/inactive record so exec board can approve
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "New Member";
+  const email = user.email ?? `${user.id}@replit.user`;
+  const [created] = await db
+    .insert(membersTable)
+    .values({
+      authId: user.id,
+      fullName,
+      email,
+      role: "Member",
+      membershipStatus: "Inactive",
+      accountActive: false,
+      profileImageUrl: user.profileImageUrl ?? null,
+    })
+    .returning();
+  return { member: created, isPending: true };
+}
+
 export function requireAuth(handler: AuthedHandler) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
-    const member = await loadMember(req.user.id);
-    if (!member) {
-      res.status(403).json({ error: "No chapter member record for this user" });
+    const { member, isPending } = await resolveOrCreateMember(req.user);
+    if (isPending) {
+      res.status(403).json({
+        error: "Account pending approval by Executive Board",
+        isPendingApproval: true,
+      });
       return;
     }
     (req as Request & { member: MemberRow }).member = member;

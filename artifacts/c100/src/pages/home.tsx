@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "wouter";
 import { useMe } from "@/lib/me";
 import {
@@ -46,19 +47,71 @@ function formatDate(d?: string) {
 }
 
 function PendingApproval() {
+  const [bootstrapNeeded, setBootstrapNeeded] = React.useState<boolean | null>(null);
+  const [claiming, setClaiming] = React.useState(false);
+  const [claimError, setClaimError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/bootstrap/status")
+      .then((r) => r.json())
+      .then((d: { bootstrapNeeded: boolean }) => setBootstrapNeeded(d.bootstrapNeeded))
+      .catch(() => setBootstrapNeeded(false));
+  }, []);
+
+  async function claimAdmin() {
+    setClaiming(true);
+    setClaimError(null);
+    try {
+      const r = await fetch("/api/bootstrap/claim-admin", { method: "POST" });
+      if (r.ok) {
+        window.location.reload();
+      } else {
+        const body = await r.json() as { error?: string };
+        setClaimError(body.error ?? "Failed to claim admin slot.");
+      }
+    } catch {
+      setClaimError("Network error. Please try again.");
+    } finally {
+      setClaiming(false);
+    }
+  }
+
   return (
     <AppShell>
       <PageHeader
         eyebrow="Pending Approval"
         title="Awaiting chapter activation"
-        description="You're signed in to Replit, but you haven't been added to the chapter roster yet. Your Executive Board needs to add you before you can access the chapter system."
+        description="You're signed in to Replit, but your account hasn't been activated in the chapter roster yet. Your Executive Board controls chapter access."
       />
+      {bootstrapNeeded && (
+        <Card className="mb-4 border-[hsl(var(--secondary)/0.4)] bg-[hsl(var(--secondary)/0.06)]">
+          <CardContent className="flex flex-col gap-3 p-6">
+            <p className="text-sm font-medium">
+              First-time setup: no chapter admin has been claimed yet.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              If you are the chapter Admin, click below to activate your account
+              and take over the admin role. This option disappears once claimed.
+            </p>
+            {claimError && (
+              <p className="text-sm text-destructive">{claimError}</p>
+            )}
+            <Button
+              onClick={claimAdmin}
+              disabled={claiming}
+              data-testid="button-claim-admin"
+            >
+              {claiming ? "Activating..." : "Activate as Chapter Admin"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardContent className="flex flex-col items-start gap-4 p-6">
           <p className="text-sm text-muted-foreground">
             Reach out to a member of the Executive Board with your full name,
-            student ID, and committee preference. Once you&apos;re added,
-            sign back in and you&apos;ll see your dashboard here.
+            student ID, and committee preference. Once you&apos;re added and
+            your account is activated, sign back in to see your dashboard.
           </p>
           <Button asChild variant="outline" data-testid="button-pending-logout">
             <a href="/api/logout">Sign out</a>

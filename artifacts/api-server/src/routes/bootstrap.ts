@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, membersTable } from "@workspace/db";
-import { and, eq, like } from "drizzle-orm";
+import { and, eq, like, ne } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -51,6 +51,18 @@ router.post("/bootstrap/claim-admin", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to claim admin slot" });
     return;
   }
+
+  // Remove any auto-created inactive duplicate that shares this authId
+  // (created by resolveOrCreateMember on first sign-in before bootstrap)
+  await db
+    .delete(membersTable)
+    .where(
+      and(
+        eq(membersTable.authId, req.user.id),
+        ne(membersTable.id, claimed.id),
+        eq(membersTable.accountActive, false),
+      ),
+    );
 
   res.json({ success: true, memberId: claimed.id, role: claimed.role });
 });

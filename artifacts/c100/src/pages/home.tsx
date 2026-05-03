@@ -62,15 +62,25 @@ function PendingApproval() {
     setClaiming(true);
     setClaimError(null);
     try {
-      const r = await fetch("/api/bootstrap/claim-admin", { method: "POST" });
+      const r = await fetch("/api/bootstrap/claim-admin", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
       if (r.ok) {
         window.location.reload();
       } else {
-        const body = await r.json() as { error?: string };
-        setClaimError(body.error ?? "Failed to claim admin slot.");
+        let errMsg = "Failed to claim admin slot.";
+        try {
+          const body = await r.json() as { error?: string };
+          errMsg = body.error ?? errMsg;
+        } catch {
+          // ignore parse failure
+        }
+        setClaimError(errMsg);
       }
-    } catch {
-      setClaimError("Network error. Please try again.");
+    } catch (err) {
+      setClaimError(`Request failed (${err instanceof Error ? err.message : String(err)}). Make sure you are signed in.`);
     } finally {
       setClaiming(false);
     }

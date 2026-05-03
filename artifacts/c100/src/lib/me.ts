@@ -45,10 +45,12 @@ function useMeValue(): MeValue {
       enabled: auth.isAuthenticated,
       staleTime: 60_000,
       retry: (count, err) => {
-        const status = (err as { status?: number } | null)?.status;
+        const errAny = err as { status?: number; response?: { status?: number } } | null;
+        const status = errAny?.status ?? errAny?.response?.status;
         if (status === 403 || status === 401) return false;
         return count < 2;
       },
+      retryOnMount: false,
     },
   });
 

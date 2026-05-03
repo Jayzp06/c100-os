@@ -100,7 +100,9 @@ export async function resolveOrCreateMember(user: {
     }
   }
 
-  // 3. Auto-create a pending/inactive record so exec board can approve
+  // 3. Auto-create a pending/inactive record so exec board can approve.
+  //    Use ON CONFLICT DO NOTHING to handle the race condition where two
+  //    concurrent requests try to create the same member simultaneously.
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "New Member";
   const email = user.email ?? `${user.id}@replit.user`;
   const [created] = await db
@@ -114,8 +116,24 @@ export async function resolveOrCreateMember(user: {
       accountActive: false,
       profileImageUrl: user.profileImageUrl ?? null,
     })
+    .onConflictDoNothing()
     .returning();
-  return { member: created, isPending: true };
+
+  if (created) {
+    return { member: created, isPending: true };
+  }
+
+  // Race condition: another request inserted first — re-fetch
+  const [existing] = await db
+    .select()
+    .from(membersTable)
+    .where(eq(membersTable.authId, user.id));
+  if (existing) {
+    return { member: existing, isPending: !existing.accountActive };
+  }
+
+  // Should never reach here, but fail loudly if it does
+  throw new Error(`Failed to resolve or create member for authId: ${user.id}`);
 }
 
 export function requireAuth(handler: AuthedHandler) {

@@ -399,6 +399,46 @@ export const ListMembersResponseItem = zod.object({
 export const ListMembersResponse = zod.array(ListMembersResponseItem);
 
 /**
+ * @summary Import multiple members at once (admin only)
+ */
+export const bulkImportMembersBodyMembersItemFullNameMin = 2;
+
+export const BulkImportMembersBody = zod.object({
+  members: zod
+    .array(
+      zod.object({
+        fullName: zod.string().min(bulkImportMembersBodyMembersItemFullNameMin),
+        email: zod.string().email(),
+        role: zod
+          .enum([
+            "Member",
+            "CommitteeChair",
+            "BylawsChair",
+            "ExecutiveBoard",
+            "Admin",
+          ])
+          .optional(),
+        committeeId: zod.number().nullish(),
+        studentId: zod.string().nullish(),
+        membershipStatus: zod
+          .enum(["Active", "Probationary", "Suspended", "Inactive"])
+          .optional(),
+      }),
+    )
+    .min(1),
+});
+
+export const BulkImportMembersResponse = zod.object({
+  created: zod.number().describe("Number of new member records created"),
+  skipped: zod
+    .number()
+    .describe("Number of rows skipped because email already exists"),
+  errors: zod
+    .array(zod.string())
+    .describe("Row-level validation or insert errors"),
+});
+
+/**
  * @summary Get a single member by id
  */
 export const GetMemberParams = zod.object({

@@ -125,6 +125,53 @@ export interface UpdateProfileInput {
   graduationYear?: number;
 }
 
+export type CreateMemberInputRole =
+  (typeof CreateMemberInputRole)[keyof typeof CreateMemberInputRole];
+
+export const CreateMemberInputRole = {
+  Member: "Member",
+  CommitteeChair: "CommitteeChair",
+  BylawsChair: "BylawsChair",
+  ExecutiveBoard: "ExecutiveBoard",
+  Admin: "Admin",
+} as const;
+
+export type CreateMemberInputMembershipStatus =
+  (typeof CreateMemberInputMembershipStatus)[keyof typeof CreateMemberInputMembershipStatus];
+
+export const CreateMemberInputMembershipStatus = {
+  Active: "Active",
+  Probationary: "Probationary",
+  Suspended: "Suspended",
+  Inactive: "Inactive",
+} as const;
+
+export interface CreateMemberInput {
+  /** @minLength 2 */
+  fullName: string;
+  email: string;
+  role?: CreateMemberInputRole;
+  /** @nullable */
+  committeeId?: number | null;
+  /** @nullable */
+  studentId?: string | null;
+  membershipStatus?: CreateMemberInputMembershipStatus;
+}
+
+export interface BulkImportMembersInput {
+  /** @minItems 1 */
+  members: CreateMemberInput[];
+}
+
+export interface BulkImportResult {
+  /** Number of new member records created */
+  created: number;
+  /** Number of rows skipped because email already exists */
+  skipped: number;
+  /** Row-level validation or insert errors */
+  errors: string[];
+}
+
 export type UpdateMemberInputRole =
   (typeof UpdateMemberInputRole)[keyof typeof UpdateMemberInputRole];
 

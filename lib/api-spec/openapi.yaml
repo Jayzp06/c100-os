@@ -242,6 +242,31 @@ paths:
                 items:
                   $ref: '#/components/schemas/Member'
 
+  /members/bulk-import:
+    post:
+      tags: [Members]
+      operationId: bulkImportMembers
+      summary: Import multiple members at once (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImportMembersInput'
+      responses:
+        '200':
+          description: Import complete.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkImportResult'
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
   /members/{id}:
     get:
       tags: [Members]
@@ -861,6 +886,59 @@ components:
           type: number
         graduationYear:
           type: integer
+
+    CreateMemberInput:
+      type: object
+      required:
+        - fullName
+        - email
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+        committeeId:
+          type: [integer, 'null']
+        studentId:
+          type: [string, 'null']
+        membershipStatus:
+          type: string
+          enum: [Active, Probationary, Suspended, Inactive]
+
+    BulkImportMembersInput:
+      type: object
+      required:
+        - members
+      properties:
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateMemberInput'
+          minItems: 1
+
+    BulkImportResult:
+      type: object
+      required:
+        - created
+        - skipped
+        - errors
+      properties:
+        created:
+          type: integer
+          description: Number of new member records created
+        skipped:
+          type: integer
+          description: Number of rows skipped because email already exists
+        errors:
+          type: array
+          items:
+            type: string
+          description: Row-level validation or insert errors
 
     UpdateMemberInput:
       type: object

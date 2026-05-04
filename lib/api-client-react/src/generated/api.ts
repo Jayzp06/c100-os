@@ -21,6 +21,8 @@ import type {
   AttendanceRecord,
   AuthUserEnvelope,
   BeginBrowserLoginParams,
+  BulkImportMembersInput,
+  BulkImportResult,
   CheckInInput,
   CheckInResult,
   Committee,
@@ -1060,6 +1062,92 @@ export function useListMembers<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Import multiple members at once (admin only)
+ */
+export const getBulkImportMembersUrl = () => {
+  return `/api/members/bulk-import`;
+};
+
+export const bulkImportMembers = async (
+  bulkImportMembersInput: BulkImportMembersInput,
+  options?: RequestInit,
+): Promise<BulkImportResult> => {
+  return customFetch<BulkImportResult>(getBulkImportMembersUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(bulkImportMembersInput),
+  });
+};
+
+export const getBulkImportMembersMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof bulkImportMembers>>,
+    TError,
+    { data: BodyType<BulkImportMembersInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof bulkImportMembers>>,
+  TError,
+  { data: BodyType<BulkImportMembersInput> },
+  TContext
+> => {
+  const mutationKey = ["bulkImportMembers"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof bulkImportMembers>>,
+    { data: BodyType<BulkImportMembersInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return bulkImportMembers(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BulkImportMembersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof bulkImportMembers>>
+>;
+export type BulkImportMembersMutationBody = BodyType<BulkImportMembersInput>;
+export type BulkImportMembersMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Import multiple members at once (admin only)
+ */
+export const useBulkImportMembers = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof bulkImportMembers>>,
+    TError,
+    { data: BodyType<BulkImportMembersInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof bulkImportMembers>>,
+  TError,
+  { data: BodyType<BulkImportMembersInput> },
+  TContext
+> => {
+  return useMutation(getBulkImportMembersMutationOptions(options));
+};
 
 /**
  * @summary Get a single member by id

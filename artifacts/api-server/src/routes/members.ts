@@ -4,6 +4,7 @@ import {
   GetMemberParams,
   UpdateMemberBody,
   UpdateMemberParams,
+  BulkImportMembersBody,
 } from "@workspace/api-zod";
 import { db, membersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -12,6 +13,7 @@ import {
   buildMemberDto,
   requireRole,
 } from "../lib/c100";
+import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 
@@ -32,6 +34,54 @@ router.get(
 
     const dtos = await Promise.all(rows.map((m) => buildMemberDto(m)));
     res.json(dtos);
+  }),
+);
+
+router.post(
+  "/members/bulk-import",
+  requireRole("Admin")(async (req, res) => {
+    const parsed = BulkImportMembersBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() });
+      return;
+    }
+
+    const { members } = parsed.data;
+
+    const existingRows = await db.select({ email: membersTable.email }).from(membersTable);
+    const existingEmails = new Set(existingRows.map((r) => r.email.toLowerCase()));
+
+    let created = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const row of members) {
+      const emailNorm = row.email.toLowerCase().trim();
+      if (existingEmails.has(emailNorm)) {
+        skipped++;
+        continue;
+      }
+      try {
+        const authId = `import-${randomUUID()}`;
+        await db.insert(membersTable).values({
+          authId,
+          fullName: row.fullName.trim(),
+          email: emailNorm,
+          role: row.role ?? "Member",
+          committeeId: row.committeeId ?? null,
+          studentId: row.studentId ?? null,
+          membershipStatus: row.membershipStatus ?? "Inactive",
+          accountActive: false,
+          duesPaid: false,
+        });
+        existingEmails.add(emailNorm);
+        created++;
+      } catch (err) {
+        errors.push(`${row.email}: ${err instanceof Error ? err.message : "insert failed"}`);
+      }
+    }
+
+    res.json({ created, skipped, errors });
   }),
 );
 

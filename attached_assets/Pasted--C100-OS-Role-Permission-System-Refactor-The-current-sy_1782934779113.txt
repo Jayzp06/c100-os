@@ -1,0 +1,496 @@
+# C100 OS — Role & Permission System Refactor
+
+The current system models each user as having a single role.
+
+This architecture is no longer sufficient.
+
+Refactor the authorization model into a true Role-Based Access Control (RBAC) system that supports multiple simultaneous organizational roles and independent system administration roles.
+
+The goal is to accurately represent how the Collegiate 100 Trailblazing Chapter actually operates while remaining configurable enough for future chapters.
+
+---
+
+# Core Design Principle
+
+Separate Organizational Roles from System Roles.
+
+Organizational Roles define a member's responsibilities within the chapter.
+
+System Roles define what a user may do within C100 OS.
+
+These two permission systems must remain completely independent.
+
+Being President should not automatically make someone a Platform Administrator.
+
+Likewise, being a Platform Administrator should not automatically make someone President.
+
+---
+
+# Organizational Role Hierarchy
+
+Implement the following organizational hierarchy.
+
+Executive Board
+
+• President
+• Vice President
+• Secretary
+• Treasurer
+• Chief of Staff
+• Sergeant-at-Arms
+
+Appointed Officers
+
+• Membership Director
+• Communications & Marketing Director
+• Parliamentarian
+• Historian
+• Bylaws Officer
+
+Committee Leadership
+
+• Mentoring Chair
+• Education Chair
+• Economic Empowerment Chair
+• Leadership Development Chair
+• Health & Wellness Chair
+• Community Service Chair
+• Special Events Chair
+
+Committee Members
+
+General Members
+
+Advisor
+
+Parent Chapter Representative
+
+---
+
+# Executive Board Permission Model
+
+Executive Board should function as a permission group.
+
+Every Executive Board member inherits a shared Executive Board permission set.
+
+Each office then inherits additional permissions specific to that office.
+
+Example
+
+Executive Board
+
+↓
+
+Shared Executive Permissions
+
+↓
+
+President-specific permissions
+
+Vice President-specific permissions
+
+Secretary-specific permissions
+
+Treasurer-specific permissions
+
+Chief of Staff-specific permissions
+
+Sergeant-at-Arms-specific permissions
+
+This prevents duplicate permission definitions while preserving office-specific responsibilities.
+
+---
+
+# Office-Specific Responsibilities
+
+President
+
+• Executive appointments
+
+• Officer management
+
+• Strategic planning
+
+• Final executive approvals
+
+• Advisor communication
+
+• Chapter oversight
+
+Vice President
+
+• Committee oversight
+
+• Committee assignments
+
+• Committee analytics
+
+• Committee reporting
+
+Secretary
+
+• Meeting minutes
+
+• Executive documentation
+
+• Agenda management
+
+• Handbook management
+
+• Executive records
+
+Treasurer
+
+• Financial dashboard
+
+• Budget management
+
+• Reimbursements
+
+• Donations
+
+• Fundraising
+
+• Financial reporting
+
+• Financial audit records
+
+Chief of Staff
+
+• Executive task management
+
+• Officer accountability tracking
+
+• Executive calendar coordination
+
+• Cross-committee coordination
+
+• Executive follow-up
+
+• Operational oversight
+
+Sergeant-at-Arms
+
+• Meeting operations
+
+• Event operations
+
+• Conference operations
+
+• Incident documentation
+
+• Conduct tracking
+
+• Meeting order
+
+---
+
+# Appointed Officer Responsibilities
+
+Membership Director
+
+• Membership lifecycle
+
+• Recruitment
+
+• New member onboarding
+
+• Committee assignment support
+
+Communications & Marketing Director
+
+• Chapter branding
+
+• Communications
+
+• Social media
+
+• Marketing
+
+Parliamentarian
+
+• Parliamentary procedure
+
+• Robert's Rules reference
+
+• Constitutional guidance
+
+• Motion tracking
+
+Historian
+
+• Historical archives
+
+• Event photography
+
+• Publications
+
+• Chapter timeline
+
+• Officer legacy records
+
+Bylaws Officer
+
+• Constitution management
+
+• Bylaw amendments
+
+• Governance documentation
+
+---
+
+# Multiple Role Assignment
+
+A user may hold multiple compatible roles simultaneously.
+
+Examples
+
+Jaylin Phillips
+
+✓ President
+
+✓ Platform Administrator
+
+✓ Technology Chair
+
+✓ General Member
+
+Another user
+
+✓ Treasurer
+
+✓ Executive Board
+
+✓ General Member
+
+Another user
+
+✓ Historian
+
+✓ Committee Chair
+
+✓ General Member
+
+General Member should automatically exist for every authenticated member.
+
+---
+
+# Role Compatibility Rules
+
+Prevent incompatible organizational offices.
+
+Examples
+
+President + Vice President
+
+President + Secretary
+
+President + Treasurer
+
+Vice President + Treasurer
+
+Secretary + Treasurer
+
+These combinations should not be assignable unless explicitly overridden by Platform Administrator.
+
+Committee roles, appointed officer roles, and system roles may coexist.
+
+---
+
+# System Roles
+
+Rename the existing "Admin" role.
+
+Admin is too generic.
+
+Replace it with:
+
+Platform Administrator
+
+Implement additional system roles.
+
+• Platform Administrator
+
+• Technology Chair
+
+• Developer
+
+• System Auditor
+
+• Read-Only Auditor
+
+These roles represent technical administration rather than organizational leadership.
+
+---
+
+# Technology Chair
+
+Technology Chair serves as the chapter's technical administrator.
+
+Responsibilities include
+
+• User management
+
+• Role assignment
+
+• Permission assignment
+
+• Organization configuration
+
+• Desktop deployment management
+
+• System settings
+
+• Audit log review
+
+• Backup management
+
+• Integration management
+
+• Feature flag management
+
+• Developer utilities
+
+Technology Chair should receive every permission required to maintain C100 OS without automatically inheriting President authority.
+
+---
+
+# Permission Engine
+
+Permissions should no longer be hardcoded to roles.
+
+Instead
+
+Role
+
+↓
+
+Permission Groups
+
+↓
+
+Permissions
+
+Examples
+
+Manage Members
+
+Manage Attendance
+
+Manage Committees
+
+Manage Projects
+
+Manage Documents
+
+Manage Events
+
+Manage Finances
+
+Manage Reports
+
+Manage Executive Dashboard
+
+Manage Organization Settings
+
+Manage System Settings
+
+Manage Roles
+
+Manage Permissions
+
+Impersonate Users
+
+View Audit Logs
+
+Deploy Desktop Builds
+
+A user's effective permissions should always be the union of every assigned role.
+
+---
+
+# Role & Permission Management
+
+Replace the existing "Admin Controls" section.
+
+Rename it:
+
+Role & Permission Management
+
+Replace the single Role dropdown with a dedicated role management interface.
+
+Support
+
+• Assigned Organizational Roles
+
+• Assigned System Roles
+
+• Add Role
+
+• Remove Role
+
+• Role descriptions
+
+• Permission summaries
+
+• Compatibility validation
+
+• Warning before removing critical roles
+
+---
+
+# Role View Switching
+
+Platform Administrators and Technology Chairs should be able to safely assume any organizational role.
+
+Examples
+
+View as Member
+
+View as Committee Chair
+
+View as Membership Director
+
+View as Historian
+
+View as Treasurer
+
+View as Secretary
+
+View as Vice President
+
+View as President
+
+View as Advisor
+
+View as Parent Chapter
+
+Switching roles should
+
+• Never permanently change permissions
+
+• Clearly display the active simulated role
+
+• Allow one-click return
+
+• Record every impersonation event in the audit log
+
+This capability exists exclusively for development, testing, demonstrations, and platform administration.
+
+---
+
+# Future-Proofing
+
+The authorization system should be entirely database-driven.
+
+New organizational roles should be creatable without changing application code.
+
+New system roles should be creatable without changing application code.
+
+Permissions should also be database-driven.
+
+Avoid hardcoded enums wherever practical.
+
+The objective is to make C100 OS deployable to future Collegiate 100 chapters with different organizational structures while preserving the same authorization framework.
+
+Document every architectural decision before implementation and maintain backwards compatibility with the existing platform wherever practical.

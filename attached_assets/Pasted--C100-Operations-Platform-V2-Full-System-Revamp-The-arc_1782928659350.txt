@@ -1,0 +1,249 @@
+# C100 Operations Platform V2 — Full System Revamp
+
+The architectural planning phase is complete.
+
+You have received:
+
+- Chapter Constitution
+- Organizational Architecture Document
+- Operations Handbook Chapters 1–7
+- Current System Architecture Review
+- Client Architecture Review
+
+These documents are now the authoritative source of truth.
+
+Do not redesign organizational policy.
+
+Implement it.
+
+---
+
+# Primary Goal
+
+Transform the existing attendance application into the official Collegiate 100 Operations Platform.
+
+This is an enterprise operations platform.
+
+Not an attendance app.
+
+Not a member directory.
+
+Not a CRUD dashboard.
+
+Every feature should support leadership, accountability, communication, committee execution, institutional knowledge, and long-term sustainability.
+
+---
+
+# Development Philosophy
+
+The Handbook defines organizational behavior.
+
+The software implements organizational behavior.
+
+Automation enhances organizational behavior.
+
+Technology never replaces leadership.
+
+---
+
+# Development Strategy
+
+Do NOT rewrite the application from scratch.
+
+Preserve stable functionality wherever practical.
+
+Incrementally migrate the application according to the approved implementation roadmap.
+
+Each completed phase should leave the platform deployable.
+
+---
+
+# UI Philosophy
+
+Design language:
+
+Professional.
+
+Executive.
+
+Minimal.
+
+Timeless.
+
+Inspired by:
+
+• Notion
+• Linear
+• GitHub
+• Stripe Dashboard
+• Apple Human Interface Guidelines
+
+Avoid student-portal aesthetics.
+
+Avoid excessive animations.
+
+Avoid visual clutter.
+
+Clarity is more important than decoration.
+
+---
+
+# Branding
+
+Primary Colors
+
+Black
+White
+
+Supporting Colors
+
+Dark Gray
+Medium Gray
+Light Gray
+
+Accent
+
+Gold (#C9A227)
+
+Use Gold sparingly.
+
+It represents excellence and achievement.
+
+---
+
+# Typography
+
+Headings
+
+Inter Tight
+
+Body
+
+Inter
+
+Monospace
+
+JetBrains Mono
+
+---
+
+# Component Standards
+
+Continue using:
+
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Radix UI
+- Drizzle ORM
+- PostgreSQL
+- Replit Auth
+- React Query
+- Lucide Icons
+
+Do not introduce unnecessary dependencies.
+
+---
+
+# Platform Structure
+
+One backend.
+
+One database.
+
+One permission engine.
+
+One API.
+
+One frontend application.
+
+The application should render different experiences based on resolved permissions.
+
+Do NOT build separate applications.
+
+Use role-aware layouts and navigation.
+
+---
+
+# Development Order
+
+Follow the approved implementation roadmap exactly.
+
+Phase 0
+
+Foundation Corrections
+
+Phase 1
+
+Membership Operations
+
+Phase 2
+
+Executive Operations
+
+Phase 3
+
+Committee Operations
+
+Phase 4
+
+Projects & Events
+
+Phase 5
+
+Financial Operations
+
+Phase 6
+
+Knowledge Management
+
+Do not skip phases.
+
+---
+
+# Engineering Standards
+
+Every feature must:
+
+- map back to the handbook
+- preserve auditability
+- minimize technical debt
+- minimize administrative burden
+- survive officer transitions
+
+Challenge implementation decisions if they violate the handbook.
+
+Document architectural tradeoffs.
+
+Maintain backward compatibility whenever practical.
+
+---
+
+# Deliverables
+
+For each completed phase provide:
+
+• Architecture summary
+
+• Database changes
+
+• API changes
+
+• Frontend changes
+
+• Testing performed
+
+• Remaining work
+
+• Risks
+
+Do not proceed to the next phase until the current phase is stable.
+
+---
+
+# Final Objective
+
+Deliver a production-quality organizational operating system that enables the Collegiate 100 Trailblazing Chapter to operate consistently across leadership transitions while remaining scalable for future chapter growth.
+
+Every implementation decision should support long-term sustainability, maintainability, and organizational excellence.

@@ -6,9 +6,9 @@ import {
 import { db, committeesTable, membersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import {
-  CURRENT_SEMESTER,
   buildCommitteeAggregate,
   buildMemberDto,
+  getActiveSemester,
   LEADERSHIP_ROLES,
   requireAuth,
   requireRole,
@@ -38,7 +38,10 @@ router.get("/committees/leaderboard", async (_req, res) => {
 });
 
 router.get("/committees", async (_req, res) => {
-  const all = await db.select().from(committeesTable);
+  const [all, sem] = await Promise.all([
+    db.select().from(committeesTable),
+    getActiveSemester(),
+  ]);
   const aggregates = await Promise.all(all.map((c) => buildCommitteeAggregate(c)));
   const ranked = [...aggregates].sort(
     (a, b) => b.totalImpactPoints - a.totalImpactPoints,
@@ -55,7 +58,7 @@ router.get("/committees", async (_req, res) => {
     totalImpactPoints: agg.totalImpactPoints,
     committeeRank:
       ranked.findIndex((r) => r.committee.id === agg.committee.id) + 1,
-    semester: CURRENT_SEMESTER,
+    semester: sem,
     fourForFutureAlignment: agg.committee.fourForFutureAlignment,
   }));
   res.json(dtos);
@@ -75,8 +78,11 @@ router.get("/committees/:id", async (req, res) => {
     res.status(404).json({ error: "Committee not found" });
     return;
   }
-  const agg = await buildCommitteeAggregate(committee);
-  const all = await db.select().from(committeesTable);
+  const [agg, all, sem] = await Promise.all([
+    buildCommitteeAggregate(committee),
+    db.select().from(committeesTable),
+    getActiveSemester(),
+  ]);
   const aggregates = await Promise.all(all.map((c) => buildCommitteeAggregate(c)));
   const ranked = [...aggregates].sort(
     (a, b) => b.totalImpactPoints - a.totalImpactPoints,
@@ -93,7 +99,7 @@ router.get("/committees/:id", async (req, res) => {
     aggregateParticipationPct: agg.aggregateParticipationPct,
     totalImpactPoints: agg.totalImpactPoints,
     committeeRank: rank,
-    semester: CURRENT_SEMESTER,
+    semester: sem,
     fourForFutureAlignment: committee.fourForFutureAlignment,
   });
   void requireAuth;

@@ -2,11 +2,11 @@ import { Router, type IRouter } from "express";
 import { db, membersTable, eventsTable, committeesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import {
-  CURRENT_SEMESTER,
   EXEC_OR_ADMIN,
   PARTICIPATION_THRESHOLD,
   buildCommitteeAggregate,
   eventsEligibleForMember,
+  getActiveSemester,
   memberPointsAndImpact,
   recentChapterAttendance,
   requireRole,
@@ -136,6 +136,7 @@ router.get(
         ? Math.round((totalParticipation / members.length) * 10) / 10
         : 0;
 
+    const activeSem = await getActiveSemester();
     res.json({
       totalMembers: members.length,
       activeMembers: members.filter((m) => m.nudgeStatus === "Active").length,
@@ -144,7 +145,7 @@ router.get(
         .length,
       totalEvents: events.length,
       upcomingEvents: events.filter(
-        (e) => e.status === "Upcoming" && e.semester === CURRENT_SEMESTER,
+        (e) => e.status === "Upcoming" && e.semester === activeSem,
       ).length,
       completedEvents: events.filter((e) => e.status === "Completed").length,
       chapterParticipationPct,

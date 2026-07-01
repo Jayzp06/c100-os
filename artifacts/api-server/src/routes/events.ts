@@ -24,7 +24,6 @@ import {
 } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import {
-  CURRENT_SEMESTER,
   IMPACT_MULTIPLIER,
   LEADERSHIP_ROLES,
   POINT_VALUES,
@@ -32,6 +31,7 @@ import {
   attendanceToDto,
   buildMemberDto,
   eventToDto,
+  getActiveSemester,
   isValidQrToken,
   requireAuth,
   requireRole,
@@ -54,7 +54,7 @@ router.get("/events", async (req, res) => {
     res.status(400).json({ error: "Invalid query" });
     return;
   }
-  const filters = [eq(eventsTable.semester, CURRENT_SEMESTER)];
+  const filters = [eq(eventsTable.semester, await getActiveSemester())];
   if (parsed.data.status) filters.push(eq(eventsTable.status, parsed.data.status));
   if (parsed.data.committeeId)
     filters.push(eq(eventsTable.committeeId, parsed.data.committeeId));
@@ -113,7 +113,7 @@ router.post(
         ),
         checkInWindowMinutes: d.checkInWindowMinutes ?? 30,
         status: "Upcoming",
-        semester: CURRENT_SEMESTER,
+        semester: await getActiveSemester(),
       })
       .returning();
     res.status(201).json(eventToDto(event!, null, req.member.fullName, 0));

@@ -41,6 +41,7 @@ export * from "./manualAttendanceInput";
 export * from "./manualAttendanceInputMethod";
 export * from "./member";
 export * from "./memberDashboard";
+export * from "./memberExperience";
 export * from "./memberMembershipStatus";
 export * from "./memberNudgeStatus";
 export * from "./memberRole";

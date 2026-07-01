@@ -79,6 +79,13 @@ export type NudgeType = (typeof NUDGE_TYPE_VALUES)[number];
 export const NUDGE_CHANNEL_VALUES = ["InApp", "Email", "Both"] as const;
 export type NudgeChannel = (typeof NUDGE_CHANNEL_VALUES)[number];
 
+export const EXPERIENCE_TYPE_VALUES = [
+  "operations_console",
+  "committee_portal",
+  "member_portal",
+] as const;
+export type ExperienceType = (typeof EXPERIENCE_TYPE_VALUES)[number];
+
 export const committeesTable = pgTable("committees", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 120 }).notNull().unique(),
@@ -247,8 +254,89 @@ export const semesterConfigTable = pgTable("semester_config", {
     .default("75.00"),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
-  active: boolean("active").notNull().default(true),
+  active: boolean("active").notNull().default(false),
 });
+
+// ─── Phase 0 new tables ──────────────────────────────────────────────────────
+
+export const officerTermsTable = pgTable(
+  "officer_terms",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => membersTable.id, { onDelete: "cascade" }),
+    position: varchar("position", { length: 80 }).notNull(),
+    positionType: varchar("position_type", { length: 20 })
+      .notNull()
+      .default("elected"),
+    startedAt: date("started_at").notNull(),
+    endedAt: date("ended_at"),
+    semesterLabel: varchar("semester_label", { length: 24 }),
+    appointedBy: integer("appointed_by").references(() => membersTable.id, {
+      onDelete: "set null",
+    }),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("officer_terms_member_idx").on(table.memberId),
+    index("officer_terms_ended_idx").on(table.endedAt),
+  ],
+);
+
+export const committeeAssignmentsTable = pgTable(
+  "committee_assignments",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => membersTable.id, { onDelete: "cascade" }),
+    committeeId: integer("committee_id")
+      .notNull()
+      .references(() => committeesTable.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 20 }).notNull().default("member"),
+    assignedAt: date("assigned_at").notNull(),
+    unassignedAt: date("unassigned_at"),
+    assignedBy: integer("assigned_by").references(() => membersTable.id, {
+      onDelete: "set null",
+    }),
+    semesterLabel: varchar("semester_label", { length: 24 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("comm_assign_member_idx").on(table.memberId),
+    index("comm_assign_committee_idx").on(table.committeeId),
+  ],
+);
+
+export const auditLogTable = pgTable(
+  "audit_log",
+  {
+    id: serial("id").primaryKey(),
+    actorId: integer("actor_id").references(() => membersTable.id, {
+      onDelete: "set null",
+    }),
+    targetType: varchar("target_type", { length: 40 }).notNull(),
+    targetId: integer("target_id").notNull(),
+    action: varchar("action", { length: 80 }).notNull(),
+    before: text("before"),
+    after: text("after"),
+    ipAddress: varchar("ip_address", { length: 64 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("audit_log_actor_idx").on(table.actorId),
+    index("audit_log_target_idx").on(table.targetType, table.targetId),
+    index("audit_log_created_idx").on(table.createdAt),
+  ],
+);
 
 export type Committee = typeof committeesTable.$inferSelect;
 export type Member = typeof membersTable.$inferSelect;
@@ -256,3 +344,6 @@ export type EventRow = typeof eventsTable.$inferSelect;
 export type AttendanceRow = typeof attendanceTable.$inferSelect;
 export type NudgeLogRow = typeof nudgeLogsTable.$inferSelect;
 export type SemesterConfig = typeof semesterConfigTable.$inferSelect;
+export type OfficerTerm = typeof officerTermsTable.$inferSelect;
+export type CommitteeAssignment = typeof committeeAssignmentsTable.$inferSelect;
+export type AuditLogEntry = typeof auditLogTable.$inferSelect;

@@ -12,6 +12,7 @@ import {
   LEADERSHIP_ROLES,
   buildMemberDto,
   requireRole,
+  writeAuditLog,
 } from "../lib/c100";
 import { randomUUID } from "crypto";
 
@@ -42,14 +43,23 @@ router.post(
   requireRole("Admin")(async (req, res) => {
     const parsed = BulkImportMembersBody.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() });
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
       return;
     }
 
     const { members } = parsed.data;
 
-    const existingRows = await db.select({ email: membersTable.email }).from(membersTable);
-    const existingEmails = new Set(existingRows.map((r) => r.email.toLowerCase()));
+    const existingRows = await db
+      .select({ email: membersTable.email })
+      .from(membersTable);
+    const existingEmails = new Set(
+      existingRows.map((r) => r.email.toLowerCase()),
+    );
 
     let created = 0;
     let skipped = 0;
@@ -77,7 +87,9 @@ router.post(
         existingEmails.add(emailNorm);
         created++;
       } catch (err) {
-        errors.push(`${row.email}: ${err instanceof Error ? err.message : "insert failed"}`);
+        errors.push(
+          `${row.email}: ${err instanceof Error ? err.message : "insert failed"}`,
+        );
       }
     }
 
@@ -115,16 +127,28 @@ router.patch(
       res.status(400).json({ error: "Invalid request" });
       return;
     }
+
+    const [before] = await db
+      .select()
+      .from(membersTable)
+      .where(eq(membersTable.id, params.data.id));
+    if (!before) {
+      res.status(404).json({ error: "Member not found" });
+      return;
+    }
+
     const update: Record<string, unknown> = {};
     if (body.data.role !== undefined) update["role"] = body.data.role;
     if (body.data.committeeId !== undefined)
       update["committeeId"] = body.data.committeeId;
     if (body.data.membershipStatus !== undefined)
       update["membershipStatus"] = body.data.membershipStatus;
-    if (body.data.duesPaid !== undefined) update["duesPaid"] = body.data.duesPaid;
+    if (body.data.duesPaid !== undefined)
+      update["duesPaid"] = body.data.duesPaid;
     if (body.data.accountActive !== undefined)
       update["accountActive"] = body.data.accountActive;
-    if (body.data.fullName !== undefined) update["fullName"] = body.data.fullName;
+    if (body.data.fullName !== undefined)
+      update["fullName"] = body.data.fullName;
 
     const [updated] = await db
       .update(membersTable)
@@ -135,6 +159,29 @@ router.patch(
       res.status(404).json({ error: "Member not found" });
       return;
     }
+
+    await writeAuditLog({
+      actorId: req.member.id,
+      targetType: "member",
+      targetId: params.data.id,
+      action: "member_updated",
+      before: {
+        role: before.role,
+        committeeId: before.committeeId,
+        membershipStatus: before.membershipStatus,
+        duesPaid: before.duesPaid,
+        accountActive: before.accountActive,
+      },
+      after: {
+        role: updated.role,
+        committeeId: updated.committeeId,
+        membershipStatus: updated.membershipStatus,
+        duesPaid: updated.duesPaid,
+        accountActive: updated.accountActive,
+      },
+      ipAddress: req.ip,
+    });
+
     const dto = await buildMemberDto(updated);
     res.json(dto);
   }),

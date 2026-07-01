@@ -1,24 +1,25 @@
 import { Router, type IRouter } from "express";
-import {
-  UpdateMyProfileBody,
-} from "@workspace/api-zod";
+import { UpdateMyProfileBody } from "@workspace/api-zod";
 import {
   db,
   membersTable,
   eventsTable,
   attendanceTable,
   nudgeLogsTable,
+  committeesTable,
 } from "@workspace/db";
 import { and, desc, eq, gte } from "drizzle-orm";
 import {
-  CURRENT_SEMESTER,
   PARTICIPATION_THRESHOLD,
   attendanceToDto,
   buildCommitteeAggregate,
   buildMemberDto,
   eventToDto,
+  getActiveSemester,
   loadMember,
   requireAuth,
+  resolvePermissions,
+  writeAuditLog,
 } from "../lib/c100";
 
 const router: IRouter = Router();
@@ -26,8 +27,16 @@ const router: IRouter = Router();
 router.get(
   "/me",
   requireAuth(async (req, res) => {
-    const dto = await buildMemberDto(req.member);
-    res.json(dto);
+    const [dto, permissions] = await Promise.all([
+      buildMemberDto(req.member),
+      resolvePermissions(req.member),
+    ]);
+    res.json({
+      ...(dto as object),
+      experience: permissions.experience,
+      officerPositions: permissions.officerPositions,
+      committeeChairId: permissions.committeeChairId,
+    });
   }),
 );
 
@@ -48,6 +57,8 @@ router.patch(
       update["gpa"] = data.gpa != null ? String(data.gpa) : null;
     if (data.graduationYear !== undefined)
       update["graduationYear"] = data.graduationYear;
+
+    const before = { ...req.member };
     const [updated] = await db
       .update(membersTable)
       .set(update)
@@ -57,8 +68,26 @@ router.patch(
       res.status(500).json({ error: "Update failed" });
       return;
     }
-    const dto = await buildMemberDto(updated);
-    res.json(dto);
+
+    await writeAuditLog({
+      actorId: req.member.id,
+      targetType: "member",
+      targetId: req.member.id,
+      action: "profile_updated",
+      before: { gpa: before.gpa, phone: before.phone, studentId: before.studentId },
+      after: { gpa: updated.gpa, phone: updated.phone, studentId: updated.studentId },
+    });
+
+    const [dto, permissions] = await Promise.all([
+      buildMemberDto(updated),
+      resolvePermissions(updated),
+    ]);
+    res.json({
+      ...(dto as object),
+      experience: permissions.experience,
+      officerPositions: permissions.officerPositions,
+      committeeChairId: permissions.committeeChairId,
+    });
   }),
 );
 
@@ -70,6 +99,8 @@ router.get(
       res.status(404).json({ error: "Member not found" });
       return;
     }
+
+    const sem = await getActiveSemester();
     const memberDto = (await buildMemberDto(member)) as {
       committeeId: number | null;
     };
@@ -81,7 +112,7 @@ router.get(
       .where(
         and(
           gte(eventsTable.date, new Date().toISOString().slice(0, 10)),
-          eq(eventsTable.semester, CURRENT_SEMESTER),
+          eq(eventsTable.semester, sem),
         ),
       )
       .orderBy(eventsTable.date)
@@ -93,29 +124,12 @@ router.get(
 
     let committeeDto: unknown = null;
     if (member.committeeId) {
-      const [committee] = await db
-        .select()
-        .from(membersTable)
-        .where(eq(membersTable.id, member.id));
-      void committee;
-      const all = await db.select().from(membersTable);
-      void all;
-      // build committee aggregate
-      const [c] = await db
-        .select()
-        .from(eventsTable)
-        .limit(0);
-      void c;
-      const { db: _db } = await import("@workspace/db");
-      void _db;
-      const { committeesTable } = await import("@workspace/db");
       const [committeeRow] = await db
         .select()
         .from(committeesTable)
         .where(eq(committeesTable.id, member.committeeId));
       if (committeeRow) {
         const agg = await buildCommitteeAggregate(committeeRow);
-        // committee rank
         const allCommittees = await db.select().from(committeesTable);
         const aggregates = await Promise.all(
           allCommittees.map((c) => buildCommitteeAggregate(c)),
@@ -136,13 +150,12 @@ router.get(
           aggregateParticipationPct: agg.aggregateParticipationPct,
           totalImpactPoints: agg.totalImpactPoints,
           committeeRank: rank,
-          semester: CURRENT_SEMESTER,
+          semester: sem,
           fourForFutureAlignment: committeeRow.fourForFutureAlignment,
         };
       }
     }
 
-    const { committeesTable } = await import("@workspace/db");
     const allCommittees = await db.select().from(committeesTable);
     const aggregates = await Promise.all(
       allCommittees.map((c) => buildCommitteeAggregate(c)),

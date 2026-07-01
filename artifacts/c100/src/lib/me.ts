@@ -7,6 +7,7 @@ import {
 import { useAuth } from "@workspace/replit-auth-web";
 
 export type Role = Member["role"];
+export type ExperienceType = Member["experience"];
 
 export const LEADERSHIP_ROLES: Role[] = [
   "CommitteeChair",
@@ -25,6 +26,9 @@ type MeValue = {
   auth: ReturnType<typeof useAuth>;
   member: Member | null;
   role: Role | null;
+  experience: ExperienceType | null;
+  officerPositions: string[];
+  committeeChairId: number | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isPendingApproval: boolean;
@@ -32,6 +36,9 @@ type MeValue = {
   isExecOrAdmin: boolean;
   isAdmin: boolean;
   isChair: boolean;
+  isOpsConsole: boolean;
+  isCommitteePortal: boolean;
+  isMemberPortal: boolean;
   profileError: { status?: number } | null;
 };
 
@@ -45,7 +52,10 @@ function useMeValue(): MeValue {
       enabled: auth.isAuthenticated,
       staleTime: 60_000,
       retry: (count, err) => {
-        const errAny = err as { status?: number; response?: { status?: number } } | null;
+        const errAny = err as {
+          status?: number;
+          response?: { status?: number };
+        } | null;
         const status = errAny?.status ?? errAny?.response?.status;
         if (status === 403 || status === 401) return false;
         return count < 2;
@@ -56,6 +66,9 @@ function useMeValue(): MeValue {
 
   const member = profile.data ?? null;
   const role = member?.role ?? null;
+  const experience = member?.experience ?? null;
+  const officerPositions = member?.officerPositions ?? [];
+  const committeeChairId = member?.committeeChairId ?? null;
   const profileError = profile.error as { status?: number } | null;
   const isPendingApproval =
     auth.isAuthenticated && profileError?.status === 403;
@@ -64,13 +77,19 @@ function useMeValue(): MeValue {
     auth,
     member,
     role,
+    experience,
+    officerPositions,
+    committeeChairId,
     isLoading: auth.isLoading || (auth.isAuthenticated && profile.isLoading),
     isAuthenticated: auth.isAuthenticated,
     isPendingApproval,
     isLeader: role !== null && LEADERSHIP_ROLES.includes(role),
     isExecOrAdmin: role !== null && EXEC_OR_ADMIN.includes(role),
     isAdmin: role === "Admin",
-    isChair: role === "CommitteeChair",
+    isChair: role === "CommitteeChair" || role === "BylawsChair",
+    isOpsConsole: experience === "operations_console",
+    isCommitteePortal: experience === "committee_portal",
+    isMemberPortal: experience === "member_portal",
     profileError,
   };
 }

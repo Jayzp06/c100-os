@@ -5,6 +5,7 @@
  * C100 System API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { MemberExperience } from "./memberExperience";
 import type { MemberMembershipStatus } from "./memberMembershipStatus";
 import type { MemberNudgeStatus } from "./memberNudgeStatus";
 import type { MemberRole } from "./memberRole";
@@ -27,6 +28,8 @@ export interface Member {
   committeeId: number | null;
   /** @nullable */
   committeeName?: string | null;
+  /** @nullable */
+  committeeChairId?: number | null;
   membershipStatus: MemberMembershipStatus;
   duesPaid: boolean;
   /** @nullable */
@@ -43,4 +46,6 @@ export interface Member {
   eventsEligible: number;
   /** @nullable */
   profileImageUrl?: string | null;
+  experience: MemberExperience;
+  officerPositions: string[];
 }

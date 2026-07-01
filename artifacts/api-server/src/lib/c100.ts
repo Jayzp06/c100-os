@@ -6,17 +6,43 @@ import {
   committeesTable,
   attendanceTable,
   eventsTable,
+  semesterConfigTable,
+  officerTermsTable,
+  committeeAssignmentsTable,
+  auditLogTable,
   type Member as MemberRow,
   type EventRow,
   type AttendanceRow,
   type Committee as CommitteeRow,
   type Role,
+  type ExperienceType,
 } from "@workspace/db";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
-export const CURRENT_SEMESTER = "Spring 2026";
+export const FALLBACK_SEMESTER = "Spring 2026";
 export const PARTICIPATION_THRESHOLD = 75;
 export const QR_ROTATE_SECONDS = 60;
+
+let _semesterCache: { value: string; expires: number } | null = null;
+
+export async function getActiveSemester(): Promise<string> {
+  const now = Date.now();
+  if (_semesterCache && now < _semesterCache.expires) {
+    return _semesterCache.value;
+  }
+  const [row] = await db
+    .select({ semester: semesterConfigTable.semester })
+    .from(semesterConfigTable)
+    .where(eq(semesterConfigTable.active, true))
+    .limit(1);
+  const value = row?.semester ?? FALLBACK_SEMESTER;
+  _semesterCache = { value, expires: now + 60_000 };
+  return value;
+}
+
+export function invalidateSemesterCache() {
+  _semesterCache = null;
+}
 
 export const POINT_VALUES: Record<string, number> = {
   GeneralBodyMeeting: 10,
@@ -56,13 +82,6 @@ export async function loadMember(
   return m;
 }
 
-/**
- * Resolve a member for an authenticated Replit user:
- * 1. Exact authId match → return it
- * 2. Email match on a record whose authId is null or seed → claim it
- * 3. No match → auto-create an inactive (pending) record
- * Returns the member, or undefined if inactive/pending (needs admin approval).
- */
 export async function resolveOrCreateMember(user: {
   id: string;
   email: string | null;
@@ -70,7 +89,6 @@ export async function resolveOrCreateMember(user: {
   lastName: string | null;
   profileImageUrl: string | null;
 }): Promise<{ member: MemberRow; isPending: boolean }> {
-  // 1. Exact match by authId
   const [byId] = await db
     .select()
     .from(membersTable)
@@ -79,7 +97,6 @@ export async function resolveOrCreateMember(user: {
     return { member: byId, isPending: !byId.accountActive };
   }
 
-  // 2. Email-based claim (matches unclaimed or seed records)
   if (user.email) {
     const [byEmail] = await db
       .select()
@@ -100,10 +117,8 @@ export async function resolveOrCreateMember(user: {
     }
   }
 
-  // 3. Auto-create a pending/inactive record so exec board can approve.
-  //    Use ON CONFLICT DO NOTHING to handle the race condition where two
-  //    concurrent requests try to create the same member simultaneously.
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "New Member";
+  const fullName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || "New Member";
   const email = user.email ?? `${user.id}@replit.user`;
   const [created] = await db
     .insert(membersTable)
@@ -123,7 +138,6 @@ export async function resolveOrCreateMember(user: {
     return { member: created, isPending: true };
   }
 
-  // Race condition: another request inserted first — re-fetch
   const [existing] = await db
     .select()
     .from(membersTable)
@@ -132,7 +146,6 @@ export async function resolveOrCreateMember(user: {
     return { member: existing, isPending: !existing.accountActive };
   }
 
-  // Should never reach here, but fail loudly if it does
   throw new Error(`Failed to resolve or create member for authId: ${user.id}`);
 }
 
@@ -152,7 +165,10 @@ export function requireAuth(handler: AuthedHandler) {
     }
     (req as Request & { member: MemberRow }).member = member;
     return handler(
-      req as Request & { user: NonNullable<Request["user"]>; member: MemberRow },
+      req as Request & {
+        user: NonNullable<Request["user"]>;
+        member: MemberRow;
+      },
       res,
       next,
     );
@@ -179,29 +195,120 @@ export const LEADERSHIP_ROLES: Role[] = [
 
 export const EXEC_OR_ADMIN: Role[] = ["ExecutiveBoard", "Admin"];
 
+const EXECUTIVE_POSITIONS = [
+  "president",
+  "vice_president",
+  "treasurer",
+  "membership_director",
+  "communications_director",
+  "chief_of_staff",
+  "sergeant_at_arms",
+  "parliamentarian",
+  "historian",
+  "bylaws_officer",
+];
+
+export type ResolvedPermissions = {
+  experience: ExperienceType;
+  officerPositions: string[];
+  committeeChairId: number | null;
+};
+
+export async function resolvePermissions(
+  member: MemberRow,
+): Promise<ResolvedPermissions> {
+  const [activeTerms, chairAssignment] = await Promise.all([
+    db
+      .select({ position: officerTermsTable.position })
+      .from(officerTermsTable)
+      .where(
+        and(
+          eq(officerTermsTable.memberId, member.id),
+          isNull(officerTermsTable.endedAt),
+        ),
+      ),
+    db
+      .select({ committeeId: committeeAssignmentsTable.committeeId })
+      .from(committeeAssignmentsTable)
+      .where(
+        and(
+          eq(committeeAssignmentsTable.memberId, member.id),
+          eq(committeeAssignmentsTable.role, "chair"),
+          isNull(committeeAssignmentsTable.unassignedAt),
+        ),
+      )
+      .limit(1),
+  ]);
+
+  const officerPositions = activeTerms.map((t) => t.position);
+  let committeeChairId: number | null =
+    chairAssignment[0]?.committeeId ?? null;
+
+  if (!committeeChairId) {
+    const [legacyChair] = await db
+      .select({ id: committeesTable.id })
+      .from(committeesTable)
+      .where(eq(committeesTable.chairUserId, member.id));
+    committeeChairId = legacyChair?.id ?? null;
+  }
+
+  const hasOfficerTerm = officerPositions.some((p) =>
+    EXECUTIVE_POSITIONS.includes(p),
+  );
+  const isLegacyExec =
+    member.role === "ExecutiveBoard" || member.role === "Admin";
+  const isLegacyChair =
+    member.role === "CommitteeChair" || member.role === "BylawsChair";
+
+  let experience: ExperienceType;
+  if (hasOfficerTerm || isLegacyExec) {
+    experience = "operations_console";
+  } else if (!!committeeChairId || isLegacyChair) {
+    experience = "committee_portal";
+  } else {
+    experience = "member_portal";
+  }
+
+  return { experience, officerPositions, committeeChairId };
+}
+
+export async function writeAuditLog(entry: {
+  actorId: number | null;
+  targetType: string;
+  targetId: number;
+  action: string;
+  before?: unknown;
+  after?: unknown;
+  ipAddress?: string;
+}) {
+  await db.insert(auditLogTable).values({
+    actorId: entry.actorId,
+    targetType: entry.targetType,
+    targetId: entry.targetId,
+    action: entry.action,
+    before: entry.before != null ? JSON.stringify(entry.before) : null,
+    after: entry.after != null ? JSON.stringify(entry.after) : null,
+    ipAddress: entry.ipAddress ?? null,
+  });
+}
+
 export async function eventsEligibleForMember(
   memberId: number,
-  semester = CURRENT_SEMESTER,
+  semester?: string,
 ): Promise<{ eligible: number; attended: number }> {
+  const sem = semester ?? (await getActiveSemester());
+
   const [{ memberCommittee }] = await db
     .select({ memberCommittee: membersTable.committeeId })
     .from(membersTable)
     .where(eq(membersTable.id, memberId));
 
-  // Count completed events the member could have attended:
-  // - Required-for-all events (committeeId IS NULL) regardless of committee
-  // - Committee events for this member's committee
   const eligibleRows = await db
     .select({ id: eventsTable.id })
     .from(eventsTable)
     .where(
-      and(
-        eq(eventsTable.semester, semester),
-        eq(eventsTable.status, "Completed"),
-      ),
+      and(eq(eventsTable.semester, sem), eq(eventsTable.status, "Completed")),
     );
-
-  const eligibleEvents = eligibleRows.length; // simplification: all completed events count
 
   const attendedRows = await db
     .select({ id: attendanceTable.id })
@@ -209,18 +316,19 @@ export async function eventsEligibleForMember(
     .where(
       and(
         eq(attendanceTable.userId, memberId),
-        eq(attendanceTable.semester, semester),
+        eq(attendanceTable.semester, sem),
       ),
     );
 
-  return { eligible: eligibleEvents, attended: attendedRows.length };
+  return { eligible: eligibleRows.length, attended: attendedRows.length };
   void memberCommittee;
 }
 
 export async function memberPointsAndImpact(
   memberId: number,
-  semester = CURRENT_SEMESTER,
+  semester?: string,
 ): Promise<{ totalPoints: number; impactPoints: number }> {
+  const sem = semester ?? (await getActiveSemester());
   const rows = await db
     .select({
       totalPoints: sql<number>`coalesce(sum(${attendanceTable.pointsAwarded}), 0)`,
@@ -231,7 +339,7 @@ export async function memberPointsAndImpact(
     .where(
       and(
         eq(attendanceTable.userId, memberId),
-        eq(attendanceTable.semester, semester),
+        eq(attendanceTable.semester, sem),
       ),
     );
 
@@ -240,6 +348,36 @@ export async function memberPointsAndImpact(
     totalPoints: Number(r?.totalPoints ?? 0),
     impactPoints: Number(r?.impactPoints ?? 0),
   };
+}
+
+export async function computeStreakCount(memberId: number): Promise<number> {
+  const attendedEvents = await db
+    .select({ eventId: attendanceTable.eventId })
+    .from(attendanceTable)
+    .innerJoin(eventsTable, eq(eventsTable.id, attendanceTable.eventId))
+    .where(eq(attendanceTable.userId, memberId))
+    .orderBy(desc(eventsTable.date));
+
+  if (attendedEvents.length === 0) return 0;
+
+  const allEvents = await db
+    .select({ id: eventsTable.id })
+    .from(eventsTable)
+    .where(eq(eventsTable.status, "Completed"))
+    .orderBy(desc(eventsTable.date));
+
+  if (allEvents.length === 0) return 0;
+
+  const attendedSet = new Set(attendedEvents.map((r) => r.eventId));
+  let streak = 0;
+  for (const ev of allEvents) {
+    if (attendedSet.has(ev.id)) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
 }
 
 export async function buildMemberDto(member: MemberRow): Promise<unknown> {
@@ -287,7 +425,12 @@ export async function buildMemberDto(member: MemberRow): Promise<unknown> {
   };
 }
 
-export function eventToDto(event: EventRow, committeeName: string | null = null, createdByName: string | null = null, totalAttendees = 0): unknown {
+export function eventToDto(
+  event: EventRow,
+  committeeName: string | null = null,
+  createdByName: string | null = null,
+  totalAttendees = 0,
+): unknown {
   return {
     id: event.id,
     title: event.title,
@@ -349,7 +492,6 @@ export function rotateQrToken(eventId: number): {
 }
 
 export function isValidQrToken(eventId: number, token: string): boolean {
-  // Accept current and previous window to give scanners a small grace period.
   const window = Math.floor(Date.now() / (QR_ROTATE_SECONDS * 1000));
   for (const w of [window, window - 1]) {
     const expected = crypto
@@ -416,9 +558,7 @@ export async function recentChapterAttendance(limit = 10) {
     .innerJoin(eventsTable, eq(eventsTable.id, attendanceTable.eventId))
     .orderBy(desc(attendanceTable.checkInTime))
     .limit(limit);
-  return rows.map((r) =>
-    attendanceToDto(r.a, r.memberName, r.eventTitle),
-  );
+  return rows.map((r) => attendanceToDto(r.a, r.memberName, r.eventTitle));
 }
 
 export type CommitteeAggregate = {
@@ -433,6 +573,8 @@ export type CommitteeAggregate = {
 export async function buildCommitteeAggregate(
   committee: CommitteeRow,
 ): Promise<CommitteeAggregate> {
+  const sem = await getActiveSemester();
+
   const memberRows = await db
     .select()
     .from(membersTable)
@@ -444,7 +586,7 @@ export async function buildCommitteeAggregate(
     .where(
       and(
         eq(eventsTable.committeeId, committee.id),
-        eq(eventsTable.semester, CURRENT_SEMESTER),
+        eq(eventsTable.semester, sem),
       ),
     );
 
@@ -452,8 +594,8 @@ export async function buildCommitteeAggregate(
   let totalParticipationPct = 0;
   for (const m of memberRows) {
     const [{ impactPoints }, { eligible, attended }] = await Promise.all([
-      memberPointsAndImpact(m.id),
-      eventsEligibleForMember(m.id),
+      memberPointsAndImpact(m.id, sem),
+      eventsEligibleForMember(m.id, sem),
     ]);
     totalImpact += impactPoints;
     totalParticipationPct += eligible > 0 ? (attended / eligible) * 100 : 0;

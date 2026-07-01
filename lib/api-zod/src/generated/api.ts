@@ -115,6 +115,7 @@ export const GetMyProfileResponse = zod.object({
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
   membershipStatus: zod.enum([
     "Active",
     "Probationary",
@@ -133,6 +134,12 @@ export const GetMyProfileResponse = zod.object({
   eventsAttended: zod.number(),
   eventsEligible: zod.number(),
   profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
 });
 
 /**
@@ -164,6 +171,7 @@ export const UpdateMyProfileResponse = zod.object({
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
   membershipStatus: zod.enum([
     "Active",
     "Probationary",
@@ -182,6 +190,12 @@ export const UpdateMyProfileResponse = zod.object({
   eventsAttended: zod.number(),
   eventsEligible: zod.number(),
   profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
 });
 
 /**
@@ -206,6 +220,7 @@ export const GetMyDashboardResponse = zod.object({
     ]),
     committeeId: zod.number().nullable(),
     committeeName: zod.string().nullish(),
+    committeeChairId: zod.number().nullish(),
     membershipStatus: zod.enum([
       "Active",
       "Probationary",
@@ -224,6 +239,12 @@ export const GetMyDashboardResponse = zod.object({
     eventsAttended: zod.number(),
     eventsEligible: zod.number(),
     profileImageUrl: zod.string().nullish(),
+    experience: zod.enum([
+      "operations_console",
+      "committee_portal",
+      "member_portal",
+    ]),
+    officerPositions: zod.array(zod.string()),
   }),
   upcomingEvents: zod.array(
     zod.object({
@@ -377,6 +398,7 @@ export const ListMembersResponseItem = zod.object({
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
   membershipStatus: zod.enum([
     "Active",
     "Probationary",
@@ -395,6 +417,12 @@ export const ListMembersResponseItem = zod.object({
   eventsAttended: zod.number(),
   eventsEligible: zod.number(),
   profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
 });
 export const ListMembersResponse = zod.array(ListMembersResponseItem);
 
@@ -463,6 +491,7 @@ export const GetMemberResponse = zod.object({
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
   membershipStatus: zod.enum([
     "Active",
     "Probationary",
@@ -481,6 +510,12 @@ export const GetMemberResponse = zod.object({
   eventsAttended: zod.number(),
   eventsEligible: zod.number(),
   profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
 });
 
 /**
@@ -527,6 +562,7 @@ export const UpdateMemberResponse = zod.object({
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
   membershipStatus: zod.enum([
     "Active",
     "Probationary",
@@ -545,6 +581,12 @@ export const UpdateMemberResponse = zod.object({
   eventsAttended: zod.number(),
   eventsEligible: zod.number(),
   profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
 });
 
 /**
@@ -613,6 +655,7 @@ export const GetCommitteeRosterResponseItem = zod.object({
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
   membershipStatus: zod.enum([
     "Active",
     "Probationary",
@@ -631,6 +674,12 @@ export const GetCommitteeRosterResponseItem = zod.object({
   eventsAttended: zod.number(),
   eventsEligible: zod.number(),
   profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
 });
 export const GetCommitteeRosterResponse = zod.array(
   GetCommitteeRosterResponseItem,
@@ -956,6 +1005,7 @@ export const CheckInToEventResponse = zod.object({
     ]),
     committeeId: zod.number().nullable(),
     committeeName: zod.string().nullish(),
+    committeeChairId: zod.number().nullish(),
     membershipStatus: zod.enum([
       "Active",
       "Probationary",
@@ -974,6 +1024,12 @@ export const CheckInToEventResponse = zod.object({
     eventsAttended: zod.number(),
     eventsEligible: zod.number(),
     profileImageUrl: zod.string().nullish(),
+    experience: zod.enum([
+      "operations_console",
+      "committee_portal",
+      "member_portal",
+    ]),
+    officerPositions: zod.array(zod.string()),
   }),
 });
 

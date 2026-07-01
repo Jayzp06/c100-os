@@ -818,6 +818,8 @@ components:
         - accountActive
         - eventsAttended
         - eventsEligible
+        - experience
+        - officerPositions
       properties:
         id:
           type: integer
@@ -842,6 +844,8 @@ components:
           type: [integer, 'null']
         committeeName:
           type: [string, 'null']
+        committeeChairId:
+          type: [integer, 'null']
         membershipStatus:
           type: string
           enum: [Active, Probationary, Suspended, Inactive]
@@ -872,6 +876,13 @@ components:
           type: integer
         profileImageUrl:
           type: [string, 'null']
+        experience:
+          type: string
+          enum: [operations_console, committee_portal, member_portal]
+        officerPositions:
+          type: array
+          items:
+            type: string
 
     UpdateProfileInput:
       type: object

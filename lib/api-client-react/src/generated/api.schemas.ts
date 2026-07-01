@@ -81,6 +81,15 @@ export const MemberNudgeStatus = {
   Critical: "Critical",
 } as const;
 
+export type MemberExperience =
+  (typeof MemberExperience)[keyof typeof MemberExperience];
+
+export const MemberExperience = {
+  operations_console: "operations_console",
+  committee_portal: "committee_portal",
+  member_portal: "member_portal",
+} as const;
+
 export interface Member {
   id: number;
   authId: string;
@@ -99,6 +108,8 @@ export interface Member {
   committeeId: number | null;
   /** @nullable */
   committeeName?: string | null;
+  /** @nullable */
+  committeeChairId?: number | null;
   membershipStatus: MemberMembershipStatus;
   duesPaid: boolean;
   /** @nullable */
@@ -115,6 +126,8 @@ export interface Member {
   eventsEligible: number;
   /** @nullable */
   profileImageUrl?: string | null;
+  experience: MemberExperience;
+  officerPositions: string[];
 }
 
 export interface UpdateProfileInput {

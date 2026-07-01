@@ -5,11 +5,14 @@ import {
   eventsTable,
   attendanceTable,
   semesterConfigTable,
+  officerTermsTable,
+  committeeAssignmentsTable,
   usersTable,
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const CURRENT_SEMESTER = "Spring 2026";
+const SEMESTER_START = "2026-01-08";
 
 const COMMITTEES = [
   {
@@ -21,29 +24,36 @@ const COMMITTEES = [
   {
     name: "Education",
     description:
-      "Runs academic workshops, study halls, and faculty-led talks. Holds members to the chapter's GPA standards.",
+      "Runs academic workshops, study halls, and faculty-led talks. Holds members to the chapter's GPA standards and supports scholarship eligibility.",
     fourForFutureAlignment: "Educate",
   },
   {
-    name: "Economic Development",
+    name: "Economic Empowerment",
     description:
-      "Hosts financial-literacy series, professional development clinics, and chapter fundraising for community partners.",
+      "Hosts financial-literacy series, professional development clinics, and chapter fundraising for community partners and scholarship funding.",
     fourForFutureAlignment: "Empower",
+  },
+  {
+    name: "Leadership Development",
+    description:
+      "Oversees officer development, constitutional governance, and the chapter's pipeline of emerging leaders from general membership to executive office.",
+    fourForFutureAlignment: "Educate",
   },
   {
     name: "Health & Wellness",
     description:
-      "Coordinates blood drives, mental-health programming, and community fitness events across Fort Valley.",
+      "Coordinates blood drives, mental-health programming, and community fitness events across Fort Valley and the surrounding region.",
     fourForFutureAlignment: "Engage",
   },
   {
-    name: "Bylaws",
+    name: "Community Service",
     description:
-      "Stewards the chapter constitution, conducts bylaw review, and supports the Bylaws Chair on governance matters.",
-    fourForFutureAlignment: "Educate",
+      "Plans and executes direct community service projects aligned with the Four for the Future program. Coordinates volunteer hours and community partnerships.",
+    fourForFutureAlignment: "Engage",
   },
 ];
 
+// AuthIds must match what's already in the DB (for idempotency on reseed)
 const SEED_MEMBERS = [
   {
     authId: "seed-admin-001",
@@ -51,13 +61,15 @@ const SEED_MEMBERS = [
     email: "marcus.bell@fvsu.edu",
     studentId: "FV2023-1001",
     role: "Admin" as const,
-    committeeName: "Bylaws",
+    committeeName: "Leadership Development",
     gpa: "3.78",
     graduationYear: 2026,
     duesPaid: true,
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 8,
+    officerPosition: "president" as const,
+    positionType: "elected" as const,
   },
   {
     authId: "seed-exec-002",
@@ -72,20 +84,25 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 6,
+    officerPosition: "vice_president" as const,
+    positionType: "elected" as const,
   },
   {
+    // Previously BylawsChair, now ExecutiveBoard/Treasurer in V2
     authId: "seed-bylaws-003",
     fullName: "Andre Coleman",
     email: "andre.coleman@fvsu.edu",
     studentId: "FV2024-1003",
-    role: "BylawsChair" as const,
-    committeeName: "Bylaws",
+    role: "ExecutiveBoard" as const,
+    committeeName: "Leadership Development",
     gpa: "3.52",
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 5,
+    officerPosition: "treasurer" as const,
+    positionType: "elected" as const,
   },
   {
     authId: "seed-chair-mentoring-004",
@@ -100,6 +117,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 4,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-chair-education-005",
@@ -114,6 +133,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 7,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-chair-econ-006",
@@ -121,13 +142,15 @@ const SEED_MEMBERS = [
     email: "roland.carter@fvsu.edu",
     studentId: "FV2024-1006",
     role: "CommitteeChair" as const,
-    committeeName: "Economic Development",
+    committeeName: "Economic Empowerment",
     gpa: "3.27",
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 3,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-chair-health-007",
@@ -142,6 +165,25 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 5,
+    officerPosition: null,
+    positionType: null,
+  },
+  {
+    // New in V2: Community Service chair
+    authId: "seed-chair-service-016",
+    fullName: "Darius Freeman",
+    email: "darius.freeman@fvsu.edu",
+    studentId: "FV2024-1016",
+    role: "CommitteeChair" as const,
+    committeeName: "Community Service",
+    gpa: "3.39",
+    graduationYear: 2027,
+    duesPaid: true,
+    membershipStatus: "Active",
+    nudgeStatus: "Active",
+    streakCount: 4,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-008",
@@ -156,6 +198,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 4,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-009",
@@ -170,6 +214,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Warning",
     streakCount: 2,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-010",
@@ -177,13 +223,15 @@ const SEED_MEMBERS = [
     email: "brandon.sims@fvsu.edu",
     studentId: "FV2024-1010",
     role: "Member" as const,
-    committeeName: "Economic Development",
+    committeeName: "Economic Empowerment",
     gpa: "2.89",
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
     nudgeStatus: "AtRisk",
     streakCount: 1,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-011",
@@ -198,6 +246,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 3,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-012",
@@ -212,6 +262,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 5,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-013",
@@ -226,6 +278,8 @@ const SEED_MEMBERS = [
     membershipStatus: "Probationary",
     nudgeStatus: "Critical",
     streakCount: 0,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-014",
@@ -233,13 +287,15 @@ const SEED_MEMBERS = [
     email: "donovan.pierce@fvsu.edu",
     studentId: "FV2025-1014",
     role: "Member" as const,
-    committeeName: "Health & Wellness",
+    committeeName: "Community Service",
     gpa: "3.61",
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
     nudgeStatus: "Active",
     streakCount: 6,
+    officerPosition: null,
+    positionType: null,
   },
   {
     authId: "seed-member-015",
@@ -247,13 +303,15 @@ const SEED_MEMBERS = [
     email: "reggie.holloway@fvsu.edu",
     studentId: "FV2025-1015",
     role: "Member" as const,
-    committeeName: "Bylaws",
+    committeeName: "Leadership Development",
     gpa: "3.22",
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
     nudgeStatus: "Warning",
     streakCount: 2,
+    officerPosition: null,
+    positionType: null,
   },
 ];
 
@@ -273,7 +331,8 @@ const SEED_EVENTS = [
   },
   {
     title: "Mentoring Night with Peach County HS",
-    description: "Trailblazers mentor 9th-10th graders on study habits and college planning.",
+    description:
+      "Trailblazers mentor 9th-10th graders on study habits and college planning.",
     eventType: "MentoringSession",
     committeeName: "Mentoring",
     date: "2026-02-05",
@@ -286,9 +345,10 @@ const SEED_EVENTS = [
   },
   {
     title: "Financial Literacy Workshop",
-    description: "Local CPA leads a session on credit, budgeting, and post-graduation finances.",
+    description:
+      "Local CPA leads a session on credit, budgeting, and post-graduation finances.",
     eventType: "Workshop",
-    committeeName: "Economic Development",
+    committeeName: "Economic Empowerment",
     date: "2026-02-19",
     startTime: "18:00",
     endTime: "19:30",
@@ -299,9 +359,10 @@ const SEED_EVENTS = [
   },
   {
     title: "Spring Blood Drive",
-    description: "Joint event with American Red Cross. Members staff intake, recovery, and outreach.",
+    description:
+      "Joint event with American Red Cross. Members staff intake, recovery, and outreach.",
     eventType: "CommunityService",
-    committeeName: "Health & Wellness",
+    committeeName: "Community Service",
     date: "2026-03-04",
     startTime: "10:00",
     endTime: "16:00",
@@ -312,7 +373,8 @@ const SEED_EVENTS = [
   },
   {
     title: "February General Body Meeting",
-    description: "Committee updates, conference selection criteria, and bylaws Q&A.",
+    description:
+      "Committee updates, conference selection criteria, and bylaws Q&A.",
     eventType: "GeneralBodyMeeting",
     committeeName: null,
     date: "2026-02-26",
@@ -325,7 +387,8 @@ const SEED_EVENTS = [
   },
   {
     title: "Tonight: Chapter Service Day Planning",
-    description: "Active QR check-in. Plan logistics for the April community service day.",
+    description:
+      "Active QR check-in. Plan logistics for the April community service day.",
     eventType: "CommitteeMeeting",
     committeeName: "Mentoring",
     date: new Date().toISOString().slice(0, 10),
@@ -339,9 +402,10 @@ const SEED_EVENTS = [
   },
   {
     title: "Spring Scholarship Fundraiser",
-    description: "Chapter dinner & silent auction supporting the Trailblazer scholarship fund.",
+    description:
+      "Chapter dinner & silent auction supporting the Trailblazer scholarship fund.",
     eventType: "Fundraiser",
-    committeeName: "Economic Development",
+    committeeName: "Economic Empowerment",
     date: "2026-05-09",
     startTime: "18:30",
     endTime: "21:30",
@@ -352,7 +416,8 @@ const SEED_EVENTS = [
   },
   {
     title: "Regional Collegiate 100 Conference",
-    description: "Travel event. Chapter delegates present at the regional conference.",
+    description:
+      "Travel event. Chapter delegates present at the regional conference.",
     eventType: "Conference",
     committeeName: null,
     date: "2026-05-22",
@@ -366,19 +431,24 @@ const SEED_EVENTS = [
 ];
 
 async function main() {
-  console.log("Seeding C100 system...");
+  console.log("Seeding C100 system (V2 Phase 0)...");
 
+  // Semester config
   await db
     .insert(semesterConfigTable)
     .values({
       semester: CURRENT_SEMESTER,
       participationThreshold: "75.00",
-      startDate: "2026-01-08",
+      startDate: SEMESTER_START,
       endDate: "2026-05-15",
       active: true,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: semesterConfigTable.semester,
+      set: { active: true },
+    });
 
+  // Insert committees (skip existing by name)
   for (const c of COMMITTEES) {
     await db
       .insert(committeesTable)
@@ -386,12 +456,40 @@ async function main() {
       .onConflictDoNothing({ target: committeesTable.name });
   }
 
+  // Phase 0 corrections: rename old committee names if they still exist
+  // Guard: only rename if the target name doesn't already exist (avoids unique constraint conflict
+  // when the seed is re-run after the correct names have already been inserted above)
+  const allCommitteesPreRename = await db.select().from(committeesTable);
+  const preRenameByName = new Map(allCommitteesPreRename.map((c) => [c.name, c]));
+
+  if (!preRenameByName.has("Economic Empowerment")) {
+    await db
+      .update(committeesTable)
+      .set({
+        name: "Economic Empowerment",
+        description:
+          "Hosts financial-literacy series, professional development clinics, and chapter fundraising for community partners and scholarship funding.",
+      })
+      .where(eq(committeesTable.name, "Economic Development"));
+  }
+
+  if (!preRenameByName.has("Leadership Development")) {
+    await db
+      .update(committeesTable)
+      .set({
+        name: "Leadership Development",
+        description:
+          "Oversees officer development, constitutional governance, and the chapter's pipeline of emerging leaders from general membership to executive office.",
+      })
+      .where(eq(committeesTable.name, "Bylaws"));
+  }
+
   const allCommittees = await db.select().from(committeesTable);
   const committeeByName = new Map(allCommittees.map((c) => [c.name, c]));
 
-  const userIdByAuthId = new Map<string, string>();
+  // Seed users
   for (const m of SEED_MEMBERS) {
-    const [user] = await db
+    await db
       .insert(usersTable)
       .values({
         id: m.authId,
@@ -403,11 +501,10 @@ async function main() {
       .onConflictDoUpdate({
         target: usersTable.id,
         set: { email: m.email, updatedAt: new Date() },
-      })
-      .returning();
-    userIdByAuthId.set(m.authId, user!.id);
+      });
   }
 
+  // Seed members
   const memberIdByAuthId = new Map<string, number>();
   for (const m of SEED_MEMBERS) {
     const committee = committeeByName.get(m.committeeName);
@@ -445,17 +542,19 @@ async function main() {
     memberIdByAuthId.set(m.authId, row!.id);
   }
 
-  // Set committee chairs.
-  const chairAssignments: Record<string, string> = {
-    Mentoring: "seed-chair-mentoring-004",
-    Education: "seed-chair-education-005",
-    "Economic Development": "seed-chair-econ-006",
-    "Health & Wellness": "seed-chair-health-007",
-    Bylaws: "seed-bylaws-003",
-  };
-  for (const [committeeName, chairAuthId] of Object.entries(chairAssignments)) {
+  // Set committee chairs on committee records
+  const chairAssignments: Array<{ committeeName: string; authId: string }> = [
+    { committeeName: "Mentoring", authId: "seed-chair-mentoring-004" },
+    { committeeName: "Education", authId: "seed-chair-education-005" },
+    { committeeName: "Economic Empowerment", authId: "seed-chair-econ-006" },
+    { committeeName: "Health & Wellness", authId: "seed-chair-health-007" },
+    { committeeName: "Community Service", authId: "seed-chair-service-008" },
+    { committeeName: "Leadership Development", authId: "seed-admin-001" },
+  ];
+
+  for (const { committeeName, authId } of chairAssignments) {
     const committee = committeeByName.get(committeeName);
-    const chairMemberId = memberIdByAuthId.get(chairAuthId);
+    const chairMemberId = memberIdByAuthId.get(authId);
     if (committee && chairMemberId) {
       await db
         .update(committeesTable)
@@ -464,12 +563,60 @@ async function main() {
     }
   }
 
-  // Events
+  // Seed committee_assignments (temporal records)
+  for (const m of SEED_MEMBERS) {
+    const memberId = memberIdByAuthId.get(m.authId);
+    const committee = committeeByName.get(m.committeeName);
+    if (!memberId || !committee) continue;
+
+    const isChair =
+      m.role === "CommitteeChair" ||
+      m.role === "BylawsChair" ||
+      m.authId === "seed-admin-001";
+    const role = isChair ? "chair" : "member";
+
+    await db
+      .insert(committeeAssignmentsTable)
+      .values({
+        memberId,
+        committeeId: committee.id,
+        role,
+        assignedAt: SEMESTER_START,
+        semesterLabel: CURRENT_SEMESTER,
+      })
+      .onConflictDoNothing();
+  }
+
+  // Seed officer_terms for exec board members
+  for (const m of SEED_MEMBERS) {
+    if (!m.officerPosition) continue;
+    const memberId = memberIdByAuthId.get(m.authId);
+    if (!memberId) continue;
+
+    await db
+      .insert(officerTermsTable)
+      .values({
+        memberId,
+        position: m.officerPosition,
+        positionType: m.positionType ?? "elected",
+        startedAt: SEMESTER_START,
+        semesterLabel: CURRENT_SEMESTER,
+        notes: "Seeded from Phase 0 migration",
+      })
+      .onConflictDoNothing();
+  }
+
+  // Seed events
+  const allCommitteesRefresh = await db.select().from(committeesTable);
+  const committeeByNameFresh = new Map(
+    allCommitteesRefresh.map((c) => [c.name, c]),
+  );
   const adminMemberId = memberIdByAuthId.get("seed-admin-001")!;
   const eventIdByTitle = new Map<string, number>();
+
   for (const e of SEED_EVENTS) {
     const committeeId = e.committeeName
-      ? (committeeByName.get(e.committeeName)?.id ?? null)
+      ? (committeeByNameFresh.get(e.committeeName)?.id ?? null)
       : null;
     const [row] = await db
       .insert(eventsTable)
@@ -485,7 +632,7 @@ async function main() {
         location: e.location,
         pointValue: e.pointValue,
         impactMultiplier: e.impactMultiplier,
-        qrActive: e.qrActive ?? false,
+        qrActive: (e as { qrActive?: boolean }).qrActive ?? false,
         status: e.status,
         semester: CURRENT_SEMESTER,
       })
@@ -494,15 +641,15 @@ async function main() {
     if (row) eventIdByTitle.set(e.title, row.id);
   }
 
-  // Attendance for completed events — most members attended most things.
+  // Attendance for completed events
   const completedEventTitles = SEED_EVENTS.filter(
     (e) => e.status === "Completed",
   ).map((e) => e.title);
-  for (let i = 0; i < SEED_MEMBERS.length; i++) {
-    const m = SEED_MEMBERS[i]!;
+
+  for (const m of SEED_MEMBERS) {
     const memberId = memberIdByAuthId.get(m.authId);
     if (!memberId) continue;
-    // Vary attendance: critical members attend few, active members attend most.
+
     const attendRate =
       m.nudgeStatus === "Critical"
         ? 0.25
@@ -511,10 +658,10 @@ async function main() {
           : m.nudgeStatus === "Warning"
             ? 0.7
             : 0.95;
+
     for (const title of completedEventTitles) {
       const eventId = eventIdByTitle.get(title);
       if (!eventId) continue;
-      // Deterministic-ish so re-running stays sane
       const seed = (memberId * 7 + eventId * 13) % 100;
       if (seed > attendRate * 100) continue;
       const event = SEED_EVENTS.find((e) => e.title === title)!;
@@ -534,7 +681,7 @@ async function main() {
     }
   }
 
-  console.log("Seed complete.");
+  console.log("Seed complete (V2 Phase 0).");
   process.exit(0);
 }
 

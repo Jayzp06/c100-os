@@ -1,0 +1,2 @@
+- [Seed authId idempotency](seed-authid-idempotency.md) — reseed must use the same authId per person as the original, or email unique constraint fires.
+- [Await in sync callbacks](await-sync-callbacks.md) — never use `await` inside `.map()`/`.filter()` callbacks; pre-fetch the value before the callback instead.

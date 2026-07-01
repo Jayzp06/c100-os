@@ -57,7 +57,7 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
   --font-sans: var(--app-font-sans);
-  --font-serif: var(--app-font-serif);
+  --font-display: var(--app-font-display);
   --font-mono: var(--app-font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -73,10 +73,8 @@
   --elevate-1: rgba(0,0,0, .02);
   --elevate-2: rgba(0,0,0, .06);
 
-  /* Black / white / grey + gold */
   --background: 0 0% 98%;
   --foreground: 0 0% 8%;
-
   --border: 0 0% 88%;
 
   --card: 0 0% 100%;
@@ -86,21 +84,21 @@
   --sidebar: 0 0% 8%;
   --sidebar-foreground: 0 0% 95%;
   --sidebar-border: 0 0% 14%;
-  --sidebar-primary: 42 95% 50%;        /* gold */
-  --sidebar-primary-foreground: 0 0% 8%;
-  --sidebar-accent: 0 0% 14%;
-  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-primary: 42 86% 39%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 13%;
+  --sidebar-accent-foreground: 0 0% 88%;
   --sidebar-ring: 0 0% 25%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 8%;
   --popover-border: 0 0% 88%;
 
-  --primary: 0 0% 9%;                   /* near-black */
+  --primary: 0 0% 9%;
   --primary-foreground: 0 0% 98%;
 
-  --secondary: 42 95% 50%;              /* gold */
-  --secondary-foreground: 0 0% 8%;
+  --secondary: 42 86% 39%;
+  --secondary-foreground: 0 0% 98%;
 
   --muted: 0 0% 95%;
   --muted-foreground: 0 0% 44%;
@@ -112,17 +110,22 @@
   --destructive-foreground: 0 0% 98%;
 
   --input: 0 0% 88%;
-  --ring: 42 95% 50%;                   /* gold focus ring */
+  --ring: 42 86% 39%;
 
   --chart-1: 0 0% 12%;
-  --chart-2: 42 95% 50%;
+  --chart-2: 42 86% 39%;
   --chart-3: 0 0% 35%;
   --chart-4: 0 0% 65%;
-  --chart-5: 42 70% 68%;
+  --chart-5: 42 70% 62%;
+
+  /* Gold accent: #C9A227 = hsl(42, 86%, 39%) */
+  --gold: 42 86% 39%;
+  --gold-light: 42 86% 52%;
+  --gold-muted: 42 50% 85%;
 
   --app-font-sans: 'Inter', sans-serif;
-  --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
+  --app-font-display: 'Inter Tight', 'Inter', sans-serif;
+  --app-font-mono: 'JetBrains Mono', 'Menlo', monospace;
   --radius: 0.25rem;
 
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -137,38 +140,38 @@
 .dark {
   --background: 0 0% 6%;
   --foreground: 0 0% 95%;
-  --border: 0 0% 16%;
+  --border: 0 0% 15%;
   --card: 0 0% 9%;
   --card-foreground: 0 0% 95%;
-  --card-border: 0 0% 16%;
+  --card-border: 0 0% 15%;
   --sidebar: 0 0% 5%;
-  --sidebar-foreground: 0 0% 95%;
-  --sidebar-border: 0 0% 12%;
-  --sidebar-primary: 42 95% 50%;
-  --sidebar-primary-foreground: 0 0% 8%;
-  --sidebar-accent: 0 0% 12%;
-  --sidebar-accent-foreground: 0 0% 95%;
-  --sidebar-ring: 0 0% 25%;
+  --sidebar-foreground: 0 0% 92%;
+  --sidebar-border: 0 0% 11%;
+  --sidebar-primary: 42 86% 39%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 11%;
+  --sidebar-accent-foreground: 0 0% 88%;
+  --sidebar-ring: 0 0% 22%;
   --popover: 0 0% 9%;
   --popover-foreground: 0 0% 95%;
-  --popover-border: 0 0% 16%;
+  --popover-border: 0 0% 15%;
   --primary: 0 0% 95%;
   --primary-foreground: 0 0% 8%;
-  --secondary: 42 95% 50%;
-  --secondary-foreground: 0 0% 8%;
-  --muted: 0 0% 14%;
+  --secondary: 42 86% 39%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 13%;
   --muted-foreground: 0 0% 55%;
-  --accent: 0 0% 14%;
+  --accent: 0 0% 13%;
   --accent-foreground: 0 0% 95%;
   --destructive: 0 62% 40%;
   --destructive-foreground: 0 0% 98%;
-  --input: 0 0% 16%;
-  --ring: 42 95% 50%;
+  --input: 0 0% 15%;
+  --ring: 42 86% 39%;
   --chart-1: 0 0% 90%;
-  --chart-2: 42 95% 50%;
+  --chart-2: 42 86% 39%;
   --chart-3: 0 0% 65%;
   --chart-4: 0 0% 30%;
-  --chart-5: 42 70% 68%;
+  --chart-5: 42 70% 62%;
 }
 
 @layer base {
@@ -177,5 +180,8 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--app-font-display);
   }
 }

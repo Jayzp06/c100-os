@@ -3,10 +3,10 @@ import { ListNudgesQueryParams } from "@workspace/api-zod";
 import { db, membersTable, nudgeLogsTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import {
-  CURRENT_SEMESTER,
   EXEC_OR_ADMIN,
   computeNudgeTier,
   eventsEligibleForMember,
+  getActiveSemester,
   nudgeMessageFor,
   requireRole,
 } from "../lib/c100";
@@ -77,7 +77,7 @@ router.post(
         deliveryChannel: channel,
         triggerReason: `participation=${pct}%`,
         memberStatusAtSend: status,
-        semester: CURRENT_SEMESTER,
+        semester: await getActiveSemester(),
       });
       nudgesSent += 1;
     }

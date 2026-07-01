@@ -961,6 +961,21 @@ components:
             type: string
         isTechChair:
           type: boolean
+        systemRoles:
+          type: array
+          items:
+            type: string
+          description: System-level role slugs held by this member (e.g. "platform_admin", "technology_chair").
+        orgRoles:
+          type: array
+          items:
+            type: string
+          description: Org-level role slugs held by this member (e.g. "president", "general_member").
+        permissionGroups:
+          type: array
+          items:
+            type: string
+          description: Union of all permission group slugs granted to this member through system + org roles.
         impersonating:
           nullable: true
           allOf:

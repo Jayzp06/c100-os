@@ -142,6 +142,24 @@ export const GetMyProfileResponse = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -206,6 +224,24 @@ export const UpdateMyProfileResponse = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -263,6 +299,24 @@ export const GetMyDashboardResponse = zod.object({
     ]),
     officerPositions: zod.array(zod.string()),
     isTechChair: zod.boolean().optional(),
+    systemRoles: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+      ),
+    orgRoles: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+      ),
+    permissionGroups: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        "Union of all permission group slugs granted to this member through system + org roles.",
+      ),
     impersonating: zod
       .object({
         viewAs: zod.string(),
@@ -449,6 +503,24 @@ export const ListMembersResponseItem = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -551,6 +623,24 @@ export const GetMemberResponse = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -631,6 +721,24 @@ export const UpdateMemberResponse = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -732,6 +840,24 @@ export const GetCommitteeRosterResponseItem = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -1090,6 +1216,24 @@ export const CheckInToEventResponse = zod.object({
     ]),
     officerPositions: zod.array(zod.string()),
     isTechChair: zod.boolean().optional(),
+    systemRoles: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+      ),
+    orgRoles: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+      ),
+    permissionGroups: zod
+      .array(zod.string())
+      .optional()
+      .describe(
+        "Union of all permission group slugs granted to this member through system + org roles.",
+      ),
     impersonating: zod
       .object({
         viewAs: zod.string(),
@@ -1410,6 +1554,24 @@ export const StartImpersonationResponse = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),
@@ -1466,6 +1628,24 @@ export const EndImpersonationResponse = zod.object({
   ]),
   officerPositions: zod.array(zod.string()),
   isTechChair: zod.boolean().optional(),
+  systemRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").',
+    ),
+  orgRoles: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      'Org-level role slugs held by this member (e.g. \"president\", \"general_member\").',
+    ),
+  permissionGroups: zod
+    .array(zod.string())
+    .optional()
+    .describe(
+      "Union of all permission group slugs granted to this member through system + org roles.",
+    ),
   impersonating: zod
     .object({
       viewAs: zod.string(),

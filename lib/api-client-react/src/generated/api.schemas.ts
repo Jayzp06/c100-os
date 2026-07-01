@@ -135,6 +135,12 @@ export interface Member {
   experience: MemberExperience;
   officerPositions: string[];
   isTechChair?: boolean;
+  /** System-level role slugs held by this member (e.g. "platform_admin", "technology_chair"). */
+  systemRoles?: string[];
+  /** Org-level role slugs held by this member (e.g. "president", "general_member"). */
+  orgRoles?: string[];
+  /** Union of all permission group slugs granted to this member through system + org roles. */
+  permissionGroups?: string[];
   impersonating?: ImpersonationState | null;
 }
 

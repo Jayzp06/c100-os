@@ -19,6 +19,12 @@ import {
   type ExperienceType,
 } from "@workspace/db";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import {
+  resolveRbacContext,
+  deriveExperience,
+  hasSystemRole,
+  type RbacContext,
+} from "./rbac";
 
 export const FALLBACK_SEMESTER = "Spring 2026";
 // Internal fallback only — do not import this constant in routes.
@@ -256,11 +262,15 @@ export function requireAuth(handler: AuthedHandler) {
 export function requireRole(...roles: Role[]) {
   return (handler: AuthedHandler) =>
     requireAuth(async (req, res, next) => {
-      if (!roles.includes(req.member.role as Role)) {
-        res.status(403).json({ error: "Insufficient role" });
-        return;
+      if (roles.includes(req.member.role as Role)) {
+        return handler(req, res, next);
       }
-      return handler(req, res, next);
+      // Allow platform admins and technology chairs to pass any role gate.
+      const rbac = await resolveRbacContext(req.member.id);
+      if (hasSystemRole(rbac, "platform_admin", "technology_chair")) {
+        return handler(req, res, next);
+      }
+      res.status(403).json({ error: "Insufficient role" });
     });
 }
 
@@ -294,6 +304,8 @@ export type ResolvedPermissions = {
   officerPositions: string[];
   committeeChairId: number | null;
   isTechChair: boolean;
+  /** Full RBAC context resolved from the new role/permission tables. */
+  rbac: RbacContext;
 };
 
 const VALID_VIEW_AS = [
@@ -307,6 +319,13 @@ export type ViewAs = (typeof VALID_VIEW_AS)[number];
 export const isValidViewAs = (v: unknown): v is ViewAs =>
   VALID_VIEW_AS.includes(v as ViewAs);
 
+const EMPTY_RBAC: RbacContext = {
+  systemRoles: [],
+  orgRoles: [],
+  highestTier: null,
+  permissionGroups: new Set(),
+};
+
 export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
   switch (viewAs as ViewAs) {
     case "CommitteeChair":
@@ -315,6 +334,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
         officerPositions: [],
         committeeChairId: 1,
         isTechChair: true,
+        rbac: EMPTY_RBAC,
       };
     case "BylawsChair":
       return {
@@ -322,6 +342,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
         officerPositions: [],
         committeeChairId: null,
         isTechChair: true,
+        rbac: EMPTY_RBAC,
       };
     case "ExecutiveBoard":
       return {
@@ -329,6 +350,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
         officerPositions: ["vice_president"],
         committeeChairId: null,
         isTechChair: true,
+        rbac: EMPTY_RBAC,
       };
     case "Admin":
       return {
@@ -336,6 +358,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
         officerPositions: ["president"],
         committeeChairId: null,
         isTechChair: true,
+        rbac: EMPTY_RBAC,
       };
     default:
       return {
@@ -343,6 +366,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
         officerPositions: [],
         committeeChairId: null,
         isTechChair: true,
+        rbac: EMPTY_RBAC,
       };
   }
 }
@@ -350,7 +374,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
 export async function resolvePermissions(
   member: MemberRow,
 ): Promise<ResolvedPermissions> {
-  const [activeTerms, chairAssignment] = await Promise.all([
+  const [activeTerms, chairAssignment, rbac] = await Promise.all([
     db
       .select({ position: officerTermsTable.position })
       .from(officerTermsTable)
@@ -371,6 +395,7 @@ export async function resolvePermissions(
         ),
       )
       .limit(1),
+    resolveRbacContext(member.id),
   ]);
 
   const officerPositions = activeTerms.map((t) => t.position);
@@ -392,18 +417,20 @@ export async function resolvePermissions(
     member.role === "ExecutiveBoard" || member.role === "Admin";
   const isLegacyChair =
     member.role === "CommitteeChair" || member.role === "BylawsChair";
-  const isTechChair = member.role === "TechnologyChair";
+  // isTechChair: legacy role column OR new system role
+  const isTechChair =
+    member.role === "TechnologyChair" ||
+    hasSystemRole(rbac, "technology_chair", "platform_admin");
 
-  let experience: ExperienceType;
-  if (hasOfficerTerm || isLegacyExec || isTechChair) {
-    experience = "operations_console";
-  } else if (!!committeeChairId || isLegacyChair) {
-    experience = "committee_portal";
-  } else {
-    experience = "member_portal";
-  }
+  const experience = deriveExperience(rbac, {
+    hasOfficerTerm,
+    isLegacyExec,
+    isLegacyChair,
+    isTechChair,
+    hasCommitteeChair: !!committeeChairId,
+  });
 
-  return { experience, officerPositions, committeeChairId, isTechChair };
+  return { experience, officerPositions, committeeChairId, isTechChair, rbac };
 }
 
 export async function writeAuditLog(entry: {

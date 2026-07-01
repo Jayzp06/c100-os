@@ -57,6 +57,9 @@ router.get(
       officerPositions: perms.officerPositions,
       committeeChairId: perms.committeeChairId,
       isTechChair: realPerms.isTechChair,
+      systemRoles: realPerms.rbac.systemRoles,
+      orgRoles: realPerms.rbac.orgRoles,
+      permissionGroups: [...realPerms.rbac.permissionGroups],
       impersonating,
     });
   }),

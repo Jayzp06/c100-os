@@ -1,0 +1,219 @@
+/**
+ * RBAC permission engine.
+ *
+ * Resolves permissions for a member by joining:
+ *   member_system_roles → system_role_permissions → permission_groups
+ *   member_org_roles    → org_role_permissions    → permission_groups
+ *
+ * All checks are additive — a member's permissions are the union of every
+ * role they hold.  System roles (platform_admin, technology_chair) are
+ * superset roles that can override org-level restrictions.
+ */
+
+import { type Request, type Response, type NextFunction } from "express";
+import {
+  db,
+  memberSystemRolesTable,
+  memberOrgRolesTable,
+  systemRolesTable,
+  orgRolesTable,
+  systemRolePermissionsTable,
+  orgRolePermissionsTable,
+  permissionGroupsTable,
+  type Member as MemberRow,
+} from "@workspace/db";
+import { eq, inArray } from "drizzle-orm";
+import type { AuthedHandler } from "./c100";
+
+// ─── Core resolution ────────────────────────────────────────────────────────────
+
+export interface RbacContext {
+  /** Slugs of system roles held (e.g. "platform_admin", "technology_chair"). */
+  systemRoles: string[];
+  /** Slugs of org roles held (e.g. "president", "general_member"). */
+  orgRoles: string[];
+  /** Highest org role tier held. */
+  highestTier: OrgRoleTier | null;
+  /** Union of all permission group slugs from system + org role assignments. */
+  permissionGroups: Set<string>;
+}
+
+export type OrgRoleTier =
+  | "executive_board"
+  | "appointed_officer"
+  | "committee_leadership"
+  | "committee_member"
+  | "general_member"
+  | "advisor"
+  | "parent_chapter";
+
+const TIER_RANK: Record<OrgRoleTier, number> = {
+  executive_board: 6,
+  appointed_officer: 5,
+  committee_leadership: 4,
+  committee_member: 3,
+  general_member: 2,
+  advisor: 1,
+  parent_chapter: 0,
+};
+
+export async function resolveRbacContext(memberId: number): Promise<RbacContext> {
+  const [sysRoleRows, orgRoleRows] = await Promise.all([
+    db
+      .select({ slug: systemRolesTable.slug })
+      .from(memberSystemRolesTable)
+      .innerJoin(
+        systemRolesTable,
+        eq(systemRolesTable.id, memberSystemRolesTable.systemRoleId),
+      )
+      .where(eq(memberSystemRolesTable.memberId, memberId)),
+    db
+      .select({ slug: orgRolesTable.slug, tier: orgRolesTable.tier })
+      .from(memberOrgRolesTable)
+      .innerJoin(
+        orgRolesTable,
+        eq(orgRolesTable.id, memberOrgRolesTable.orgRoleId),
+      )
+      .where(eq(memberOrgRolesTable.memberId, memberId)),
+  ]);
+
+  const systemRoles = sysRoleRows.map((r) => r.slug);
+  const orgRoles = orgRoleRows.map((r) => r.slug);
+
+  let highestTier: OrgRoleTier | null = null;
+  for (const row of orgRoleRows) {
+    const t = row.tier as OrgRoleTier;
+    if (
+      !highestTier ||
+      (TIER_RANK[t] ?? -1) > (TIER_RANK[highestTier] ?? -1)
+    ) {
+      highestTier = t;
+    }
+  }
+
+  const permissionGroups = new Set<string>();
+
+  if (systemRoles.length > 0) {
+    const sysRoleIds = await db
+      .select({ id: systemRolesTable.id })
+      .from(systemRolesTable)
+      .where(inArray(systemRolesTable.slug, systemRoles));
+    const ids = sysRoleIds.map((r) => r.id);
+
+    if (ids.length > 0) {
+      const sysPerms = await db
+        .select({ slug: permissionGroupsTable.slug })
+        .from(systemRolePermissionsTable)
+        .innerJoin(
+          permissionGroupsTable,
+          eq(permissionGroupsTable.id, systemRolePermissionsTable.permGroupId),
+        )
+        .where(inArray(systemRolePermissionsTable.systemRoleId, ids));
+      for (const p of sysPerms) permissionGroups.add(p.slug);
+    }
+  }
+
+  if (orgRoles.length > 0) {
+    const orgRoleIds = await db
+      .select({ id: orgRolesTable.id })
+      .from(orgRolesTable)
+      .where(inArray(orgRolesTable.slug, orgRoles));
+    const ids = orgRoleIds.map((r) => r.id);
+
+    if (ids.length > 0) {
+      const orgPerms = await db
+        .select({ slug: permissionGroupsTable.slug })
+        .from(orgRolePermissionsTable)
+        .innerJoin(
+          permissionGroupsTable,
+          eq(permissionGroupsTable.id, orgRolePermissionsTable.permGroupId),
+        )
+        .where(inArray(orgRolePermissionsTable.orgRoleId, ids));
+      for (const p of orgPerms) permissionGroups.add(p.slug);
+    }
+  }
+
+  return { systemRoles, orgRoles, highestTier, permissionGroups };
+}
+
+// ─── Convenience helpers ────────────────────────────────────────────────────────
+
+/** True if the member has ANY of the listed system role slugs. */
+export function hasSystemRole(ctx: RbacContext, ...slugs: string[]): boolean {
+  return slugs.some((s) => ctx.systemRoles.includes(s));
+}
+
+/** True if the member has the given permission group. */
+export function hasPermissionGroup(ctx: RbacContext, slug: string): boolean {
+  return ctx.permissionGroups.has(slug);
+}
+
+/** True if the member holds a system role with full platform access. */
+export function isPlatformAdmin(ctx: RbacContext): boolean {
+  return hasSystemRole(ctx, "platform_admin", "technology_chair");
+}
+
+/**
+ * Derive the UI experience shell from RBAC context + legacy officer data.
+ *
+ * Priority (highest first):
+ *   1. System role: platform_admin or technology_chair → operations_console
+ *   2. Org role tier: executive_board or appointed_officer → operations_console
+ *   3. Org role tier: committee_leadership → committee_portal
+ *   4. Legacy officer terms (passed in from resolvePermissions) → operations_console
+ *   5. Legacy committee chair assignment → committee_portal
+ *   6. Default → member_portal
+ */
+export function deriveExperience(
+  ctx: RbacContext,
+  legacy: {
+    hasOfficerTerm: boolean;
+    isLegacyExec: boolean;
+    isLegacyChair: boolean;
+    isTechChair: boolean;
+    hasCommitteeChair: boolean;
+  },
+): "operations_console" | "committee_portal" | "member_portal" {
+  if (isPlatformAdmin(ctx) || legacy.isTechChair) return "operations_console";
+
+  const tier = ctx.highestTier;
+  if (tier === "executive_board" || tier === "appointed_officer")
+    return "operations_console";
+  if (legacy.hasOfficerTerm || legacy.isLegacyExec) return "operations_console";
+
+  if (tier === "committee_leadership") return "committee_portal";
+  if (legacy.hasCommitteeChair || legacy.isLegacyChair) return "committee_portal";
+
+  return "member_portal";
+}
+
+// ─── Middleware ────────────────────────────────────────────────────────────────
+
+/**
+ * Requires the authenticated member to hold the given permission group slug.
+ * Platform admins and technology chairs always pass.
+ *
+ * Usage:
+ *   requirePermissionGroup("manage_members")(handler)
+ */
+export function requirePermissionGroup(permGroupSlug: string) {
+  return (handler: AuthedHandler) =>
+    async (req: Request & { user: any; member: MemberRow }, res: Response, next: NextFunction) => {
+      const ctx = await resolveRbacContext(req.member.id);
+      if (!isPlatformAdmin(ctx) && !hasPermissionGroup(ctx, permGroupSlug)) {
+        res.status(403).json({ error: "Insufficient permissions" });
+        return;
+      }
+      return handler(req as any, res, next);
+    };
+}
+
+/**
+ * Like requirePermissionGroup but with a pre-resolved context to avoid
+ * double-querying when the route handler also needs the context.
+ *
+ * Usage inside requireAuth:
+ *   const ctx = await resolveRbacContext(req.member.id);
+ *   if (!hasPermissionGroup(ctx, "manage_events")) { ... }
+ */
+export { resolveRbacContext as resolvePermissionContext };

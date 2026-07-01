@@ -1,0 +1,22 @@
+---
+name: RBAC permission engine
+description: DB-driven RBAC introduced in the multi-chapter refactor — key types, functions, and backward-compat shim.
+---
+
+## Rule
+All permission checks should call helpers in `artifacts/api-server/src/lib/rbac.ts` rather than doing raw DB queries in route handlers.
+
+## Key API
+- `resolveRbacContext(db, memberId)` — returns `RbacContext { systemRoles, orgRoles, permissionGroups }` from the new tables.
+- `requirePermissionGroup(ctx, slug)` — throws 403 if member lacks the named permission group.
+- `deriveExperience(ctx)` — returns `'operations' | 'committee' | 'member'` shell name based on org roles.
+- `hasSystemRole(ctx, slug)` / `hasPermissionGroup(ctx, slug)` / `isPlatformAdmin(ctx)` — boolean guards.
+
+## Backward-compat shim
+`resolvePermissions()` in `c100.ts` still works for existing routes. It now calls `resolveRbacContext()` in parallel and attaches the result as `rbac: RbacContext` on the returned `ResolvedPermissions` object. Routes that only read `resolvedPermissions.role` (legacy) continue to work unchanged.
+
+## Why
+Migrating all routes at once would be too risky. The shim lets new routes use `requirePermissionGroup()` while old routes use the legacy role string, with zero runtime divergence.
+
+## org_roles composite unique constraint
+The `org_roles` table requires a composite unique index on `(organization_id, slug)`, **not** just `slug`. This was added as a separate patch migration `0002_org_roles_unique_idx.sql` after the initial `0001_rbac_and_organizations.sql`.

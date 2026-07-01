@@ -35,6 +35,17 @@ type MeValue = {
   experience: ExperienceType | null;
   officerPositions: string[];
   committeeChairId: number | null;
+  /** System-level role slugs (e.g. "platform_admin", "technology_chair"). */
+  systemRoles: string[];
+  /** Org-level role slugs (e.g. "president", "general_member"). */
+  orgRoles: string[];
+  /** Union of all permission group slugs granted through system + org roles. */
+  permissionGroups: string[];
+  /**
+   * Returns true if the current member has the given permission group slug.
+   * Platform admins and technology chairs always return true.
+   */
+  can: (permGroupSlug: string) => boolean;
   isLoading: boolean;
   isAuthenticated: boolean;
   isPendingApproval: boolean;
@@ -81,11 +92,24 @@ function useMeValue(): MeValue {
   const isPendingApproval =
     auth.isAuthenticated && profileError?.status === 403;
 
-  const isTechChair = !!(member as { isTechChair?: boolean } | null)
-    ?.isTechChair;
-  const impersonating =
-    (member as { impersonating?: ImpersonationState | null } | null)
-      ?.impersonating ?? null;
+  const memberExt = member as
+    | (typeof member & {
+        isTechChair?: boolean;
+        systemRoles?: string[];
+        orgRoles?: string[];
+        permissionGroups?: string[];
+        impersonating?: ImpersonationState | null;
+      })
+    | null;
+
+  const isTechChair = !!memberExt?.isTechChair;
+  const systemRoles: string[] = memberExt?.systemRoles ?? [];
+  const orgRoles: string[] = memberExt?.orgRoles ?? [];
+  const permissionGroups: string[] = memberExt?.permissionGroups ?? [];
+  const impersonating = memberExt?.impersonating ?? null;
+
+  const permGroupSet = new Set(permissionGroups);
+  const can = (slug: string): boolean => permGroupSet.has(slug);
 
   return {
     auth,
@@ -94,6 +118,10 @@ function useMeValue(): MeValue {
     experience,
     officerPositions,
     committeeChairId,
+    systemRoles,
+    orgRoles,
+    permissionGroups,
+    can,
     isLoading: auth.isLoading || (auth.isAuthenticated && profile.isLoading),
     isAuthenticated: auth.isAuthenticated,
     isPendingApproval,

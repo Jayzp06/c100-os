@@ -12,6 +12,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./auth";
+import { organizationsTable } from "./orgs";
 
 export const ROLE_VALUES = [
   "Member",
@@ -104,6 +105,10 @@ export const membersTable = pgTable(
   "members",
   {
     id: serial("id").primaryKey(),
+    organizationId: integer("organization_id").references(
+      () => organizationsTable.id,
+      { onDelete: "set null" },
+    ),
     authId: varchar("auth_id")
       .notNull()
       .unique()
@@ -346,6 +351,10 @@ export const auditLogTable = pgTable(
 
 export const orgSettingsTable = pgTable("org_settings", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(
+    () => organizationsTable.id,
+    { onDelete: "set null" },
+  ),
   // Identity
   universityName: varchar("university_name", { length: 120 }).notNull(),
   chapterName: varchar("chapter_name", { length: 120 }).notNull(),

@@ -596,7 +596,6 @@ async function main() {
 
     const isChair =
       m.role === "CommitteeChair" ||
-      m.role === "BylawsChair" ||
       m.authId === "seed-admin-001";
     const role = isChair ? "chair" : "member";
 

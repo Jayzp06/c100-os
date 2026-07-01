@@ -1199,3 +1199,89 @@ export const GetAdminOverviewResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * Returns organisation-level configuration (identity, branding, participation thresholds). Public endpoint — used by the login page before the user signs in.
+
+ * @summary Get organisation settings
+ */
+export const GetOrgSettingsResponse = zod.object({
+  universityName: zod.string(),
+  chapterName: zod.string(),
+  chapterIdentifier: zod.string(),
+  motto: zod.string().nullish(),
+  primaryColor: zod.string(),
+  secondaryColor: zod.string(),
+  logoUrl: zod.string().nullish(),
+  participationGoalPct: zod.number(),
+  scholarshipMinPct: zod.number(),
+  conferenceMinPct: zod.number(),
+  awardsMinPct: zod.number(),
+  duesAmountCents: zod.number(),
+});
+
+/**
+ * @summary Update organisation settings (Admin only)
+ */
+export const updateOrgSettingsBodyParticipationGoalPctMin = 0;
+export const updateOrgSettingsBodyParticipationGoalPctMax = 100;
+
+export const updateOrgSettingsBodyScholarshipMinPctMin = 0;
+export const updateOrgSettingsBodyScholarshipMinPctMax = 100;
+
+export const updateOrgSettingsBodyConferenceMinPctMin = 0;
+export const updateOrgSettingsBodyConferenceMinPctMax = 100;
+
+export const updateOrgSettingsBodyAwardsMinPctMin = 0;
+export const updateOrgSettingsBodyAwardsMinPctMax = 100;
+
+export const updateOrgSettingsBodyDuesAmountCentsMin = 0;
+
+export const UpdateOrgSettingsBody = zod.object({
+  universityName: zod.string().optional(),
+  chapterName: zod.string().optional(),
+  chapterIdentifier: zod.string().optional(),
+  motto: zod.string().nullish(),
+  primaryColor: zod.string().optional(),
+  secondaryColor: zod.string().optional(),
+  logoUrl: zod.string().nullish(),
+  participationGoalPct: zod
+    .number()
+    .min(updateOrgSettingsBodyParticipationGoalPctMin)
+    .max(updateOrgSettingsBodyParticipationGoalPctMax)
+    .optional(),
+  scholarshipMinPct: zod
+    .number()
+    .min(updateOrgSettingsBodyScholarshipMinPctMin)
+    .max(updateOrgSettingsBodyScholarshipMinPctMax)
+    .optional(),
+  conferenceMinPct: zod
+    .number()
+    .min(updateOrgSettingsBodyConferenceMinPctMin)
+    .max(updateOrgSettingsBodyConferenceMinPctMax)
+    .optional(),
+  awardsMinPct: zod
+    .number()
+    .min(updateOrgSettingsBodyAwardsMinPctMin)
+    .max(updateOrgSettingsBodyAwardsMinPctMax)
+    .optional(),
+  duesAmountCents: zod
+    .number()
+    .min(updateOrgSettingsBodyDuesAmountCentsMin)
+    .optional(),
+});
+
+export const UpdateOrgSettingsResponse = zod.object({
+  universityName: zod.string(),
+  chapterName: zod.string(),
+  chapterIdentifier: zod.string(),
+  motto: zod.string().nullish(),
+  primaryColor: zod.string(),
+  secondaryColor: zod.string(),
+  logoUrl: zod.string().nullish(),
+  participationGoalPct: zod.number(),
+  scholarshipMinPct: zod.number(),
+  conferenceMinPct: zod.number(),
+  awardsMinPct: zod.number(),
+  duesAmountCents: zod.number(),
+});

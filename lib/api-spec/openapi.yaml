@@ -26,6 +26,8 @@ tags:
     description: Behavioral nudge messages
   - name: Reports
     description: Eligibility, leaderboards, and dashboards
+  - name: OrgSettings
+    description: Organisation-level configuration (identity, branding, thresholds)
 paths:
   /healthz:
     get:
@@ -709,6 +711,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminOverview'
+
+  /org/settings:
+    get:
+      tags: [OrgSettings]
+      operationId: getOrgSettings
+      summary: Get organisation settings
+      description: >
+        Returns organisation-level configuration (identity, branding,
+        participation thresholds). Public endpoint — used by the login page
+        before the user signs in.
+      responses:
+        '200':
+          description: Organisation settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgSettings'
+    patch:
+      tags: [OrgSettings]
+      operationId: updateOrgSettings
+      summary: Update organisation settings (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrgSettingsUpdate'
+      responses:
+        '200':
+          description: Updated organisation settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgSettings'
+        '400':
+          description: Missing required fields on first-time setup.
+        '403':
+          description: Forbidden — Admin role required.
 
 components:
   parameters:
@@ -1425,3 +1465,90 @@ components:
             $ref: '#/components/schemas/AttendanceRecord'
         participationGoalPct:
           type: number
+
+    OrgSettings:
+      type: object
+      required:
+        - universityName
+        - chapterName
+        - chapterIdentifier
+        - primaryColor
+        - secondaryColor
+        - participationGoalPct
+        - scholarshipMinPct
+        - conferenceMinPct
+        - awardsMinPct
+        - duesAmountCents
+      properties:
+        universityName:
+          type: string
+          example: Fort Valley State University
+        chapterName:
+          type: string
+          example: Trailblazing Chapter
+        chapterIdentifier:
+          type: string
+          example: Trailblazing
+        motto:
+          type: [string, 'null']
+          example: Discipline. Service. Excellence.
+        primaryColor:
+          type: string
+          example: 'hsl(221 100% 31%)'
+        secondaryColor:
+          type: string
+          example: '#C9A227'
+        logoUrl:
+          type: [string, 'null']
+        participationGoalPct:
+          type: number
+          example: 75
+        scholarshipMinPct:
+          type: number
+          example: 80
+        conferenceMinPct:
+          type: number
+          example: 85
+        awardsMinPct:
+          type: number
+          example: 90
+        duesAmountCents:
+          type: integer
+          example: 0
+
+    OrgSettingsUpdate:
+      type: object
+      properties:
+        universityName:
+          type: string
+        chapterName:
+          type: string
+        chapterIdentifier:
+          type: string
+        motto:
+          type: [string, 'null']
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        logoUrl:
+          type: [string, 'null']
+        participationGoalPct:
+          type: number
+          minimum: 0
+          maximum: 100
+        scholarshipMinPct:
+          type: number
+          minimum: 0
+          maximum: 100
+        conferenceMinPct:
+          type: number
+          minimum: 0
+          maximum: 100
+        awardsMinPct:
+          type: number
+          minimum: 0
+          maximum: 100
+        duesAmountCents:
+          type: integer
+          minimum: 0

@@ -7,6 +7,7 @@ import {
   semesterConfigTable,
   officerTermsTable,
   committeeAssignmentsTable,
+  orgSettingsTable,
   usersTable,
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -432,6 +433,30 @@ const SEED_EVENTS = [
 
 async function main() {
   console.log("Seeding C100 system (V2 Phase 0)...");
+
+  // Org settings — FVSU Trailblazing defaults (seeded data only; not hardcoded in app)
+  const existingOrg = await db
+    .select({ id: orgSettingsTable.id })
+    .from(orgSettingsTable)
+    .limit(1);
+  if (existingOrg.length === 0) {
+    await db.insert(orgSettingsTable).values({
+      universityName: "Fort Valley State University",
+      chapterName: "Trailblazing Chapter",
+      chapterIdentifier: "Trailblazing",
+      motto: "Discipline. Service. Excellence.",
+      primaryColor: "hsl(221 100% 31%)",
+      secondaryColor: "#C9A227",
+      participationGoalPct: "75.00",
+      scholarshipMinPct: "80.00",
+      conferenceMinPct: "85.00",
+      awardsMinPct: "90.00",
+      duesAmountCents: 0,
+    });
+    console.log("  Inserted org settings (FVSU Trailblazing defaults).");
+  } else {
+    console.log("  Org settings already exist — skipping.");
+  }
 
   // Semester config
   await db

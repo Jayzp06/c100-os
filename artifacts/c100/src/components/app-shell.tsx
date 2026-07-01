@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useGetOrgSettings } from "@workspace/api-client-react";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ const NAV: NavItem[] = [
 ];
 
 export function Brand({ collapsed = false }: { collapsed?: boolean }) {
+  const { data: org } = useGetOrgSettings();
   return (
     <Link href="/" className="flex items-center gap-2.5 group min-w-0">
       <span className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))] shadow-sm">
@@ -81,10 +83,10 @@ export function Brand({ collapsed = false }: { collapsed?: boolean }) {
       {!collapsed && (
         <span className="flex flex-col leading-tight min-w-0">
           <span className="font-display text-sm font-semibold text-[hsl(var(--sidebar-foreground))] truncate">
-            Trailblazing Chapter
+            {org?.chapterName ?? "Chapter"}
           </span>
           <span className="text-[9px] uppercase tracking-[0.2em] text-[hsl(var(--sidebar-accent-foreground))] truncate">
-            Collegiate 100 · FVSU
+            Collegiate 100 · {org?.universityName ?? ""}
           </span>
         </span>
       )}
@@ -255,6 +257,7 @@ export function CommitteePortalShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
   const me = useMe();
+  const { data: org } = useGetOrgSettings();
 
   const CHAIR_NAV: NavItem[] = [
     {
@@ -300,7 +303,7 @@ export function CommitteePortalShell({
               <span className="font-display text-xs font-bold">C</span>
             </span>
             <span className="font-display text-sm font-semibold hidden sm:block">
-              Trailblazing Chapter
+              {org?.chapterName ?? "Chapter"}
             </span>
           </Link>
 

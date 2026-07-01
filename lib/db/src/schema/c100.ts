@@ -338,6 +338,59 @@ export const auditLogTable = pgTable(
   ],
 );
 
+// ─── Org Settings ─────────────────────────────────────────────────────────────
+// Single-row settings table. Holds all organisation-configurable values so that
+// no university name, chapter name, branding colour, or eligibility threshold
+// is hardcoded in application code. FVSU/Trailblazing values live only in seed.
+
+export const orgSettingsTable = pgTable("org_settings", {
+  id: serial("id").primaryKey(),
+  // Identity
+  universityName: varchar("university_name", { length: 120 }).notNull(),
+  chapterName: varchar("chapter_name", { length: 120 }).notNull(),
+  chapterIdentifier: varchar("chapter_identifier", { length: 60 }).notNull(),
+  motto: varchar("motto", { length: 200 }),
+  // Branding
+  primaryColor: varchar("primary_color", { length: 40 })
+    .notNull()
+    .default("hsl(221 100% 31%)"),
+  secondaryColor: varchar("secondary_color", { length: 40 })
+    .notNull()
+    .default("#C9A227"),
+  logoUrl: varchar("logo_url", { length: 512 }),
+  // Participation & eligibility thresholds (org-wide defaults;
+  // semesterConfigTable.participationThreshold overrides per semester)
+  participationGoalPct: numeric("participation_goal_pct", {
+    precision: 5,
+    scale: 2,
+  })
+    .notNull()
+    .default("75.00"),
+  scholarshipMinPct: numeric("scholarship_min_pct", {
+    precision: 5,
+    scale: 2,
+  })
+    .notNull()
+    .default("80.00"),
+  conferenceMinPct: numeric("conference_min_pct", {
+    precision: 5,
+    scale: 2,
+  })
+    .notNull()
+    .default("85.00"),
+  awardsMinPct: numeric("awards_min_pct", {
+    precision: 5,
+    scale: 2,
+  })
+    .notNull()
+    .default("90.00"),
+  // Dues (in cents, 0 = no dues)
+  duesAmountCents: integer("dues_amount_cents").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Committee = typeof committeesTable.$inferSelect;
 export type Member = typeof membersTable.$inferSelect;
 export type EventRow = typeof eventsTable.$inferSelect;
@@ -347,3 +400,4 @@ export type SemesterConfig = typeof semesterConfigTable.$inferSelect;
 export type OfficerTerm = typeof officerTermsTable.$inferSelect;
 export type CommitteeAssignment = typeof committeeAssignmentsTable.$inferSelect;
 export type AuditLogEntry = typeof auditLogTable.$inferSelect;
+export type OrgSettings = typeof orgSettingsTable.$inferSelect;

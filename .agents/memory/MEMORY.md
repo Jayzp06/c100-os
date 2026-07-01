@@ -1,3 +1,5 @@
 - [Seed authId idempotency](seed-authid-idempotency.md) — reseed must use the same authId per person as the original, or email unique constraint fires.
 - [Await in sync callbacks](await-sync-callbacks.md) — never use `await` inside `.map()`/`.filter()` callbacks; pre-fetch the value before the callback instead.
 - [React Query persist-client context mismatch](rq-persist-context.md) — PersistQueryClientProvider causes "No QueryClient set" when pnpm installs a separate copy; use functional persistQueryClient() instead.
+- [Org settings architecture](org-settings-arch.md) — orgSettingsTable is singleton; getOrgSettings()/getParticipationThreshold() are cached; GET /api/org/settings is public (no auth); FVSU values are seed-only.
+- [React hook scope in split components](react-hook-scope.md) — hooks defined in a parent component are not in scope in a sibling/child function component; always call the hook inside the component that renders the value.

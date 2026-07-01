@@ -10,12 +10,12 @@ import {
 } from "@workspace/db";
 import { and, desc, eq, gte } from "drizzle-orm";
 import {
-  PARTICIPATION_THRESHOLD,
   attendanceToDto,
   buildCommitteeAggregate,
   buildMemberDto,
   eventToDto,
   getActiveSemester,
+  getParticipationThreshold,
   loadMember,
   requireAuth,
   resolvePermissions,
@@ -210,7 +210,7 @@ router.get(
       committeeLeaderboard: ranked,
       activeNudges,
       recentAttendance,
-      participationGoalPct: PARTICIPATION_THRESHOLD,
+      participationGoalPct: await getParticipationThreshold(),
     });
   }),
 );

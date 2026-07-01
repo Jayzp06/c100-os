@@ -7,6 +7,7 @@ import {
   computeNudgeTier,
   eventsEligibleForMember,
   getActiveSemester,
+  getParticipationThreshold,
   nudgeMessageFor,
   requireRole,
 } from "../lib/c100";
@@ -54,13 +55,16 @@ router.get(
 router.post(
   "/nudges/run",
   requireRole(...EXEC_OR_ADMIN)(async (_req, res) => {
-    const members = await db.select().from(membersTable);
+    const [members, goalPct] = await Promise.all([
+      db.select().from(membersTable),
+      getParticipationThreshold(),
+    ]);
     let nudgesSent = 0;
     for (const m of members) {
       const { eligible, attended } = await eventsEligibleForMember(m.id);
       const pct =
         eligible > 0 ? Math.round((attended / eligible) * 1000) / 10 : 0;
-      const { status } = computeNudgeTier(pct);
+      const { status } = computeNudgeTier(pct, goalPct);
       const { type, message, channel } = nudgeMessageFor(
         status,
         pct,

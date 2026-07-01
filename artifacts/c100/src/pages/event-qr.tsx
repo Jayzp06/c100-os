@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   useGetEvent,
   useGetCurrentEventQr,
+  useGetOrgSettings,
   getGetEventQueryKey,
   getGetCurrentEventQrQueryKey,
 } from "@workspace/api-client-react";
@@ -33,6 +34,7 @@ export default function EventQrPage() {
 }
 
 function QrDisplay({ id }: { id: number }) {
+  const { data: org } = useGetOrgSettings();
   const event = useGetEvent(id, {
     query: {
       queryKey: getGetEventQueryKey(id),
@@ -72,7 +74,7 @@ function QrDisplay({ id }: { id: number }) {
           </Button>
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-[0.22em] text-white/60">
-              Trailblazing Chapter
+              {org?.chapterName ?? "Chapter"}
             </p>
             <p className="font-serif text-sm text-white/80">
               C100 · Live check-in

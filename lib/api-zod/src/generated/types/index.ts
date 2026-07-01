@@ -51,6 +51,8 @@ export * from "./nudgeLogEntry";
 export * from "./nudgeLogEntryDeliveryChannel";
 export * from "./nudgeLogEntryNudgeType";
 export * from "./nudgeRunResult";
+export * from "./orgSettings";
+export * from "./orgSettingsUpdate";
 export * from "./qrToken";
 export * from "./updateEventInput";
 export * from "./updateEventInputEventType";

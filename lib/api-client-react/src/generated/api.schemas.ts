@@ -513,6 +513,57 @@ export interface MemberDashboard {
   participationGoalPct: number;
 }
 
+export interface OrgSettings {
+  universityName: string;
+  chapterName: string;
+  chapterIdentifier: string;
+  /** @nullable */
+  motto?: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  /** @nullable */
+  logoUrl?: string | null;
+  participationGoalPct: number;
+  scholarshipMinPct: number;
+  conferenceMinPct: number;
+  awardsMinPct: number;
+  duesAmountCents: number;
+}
+
+export interface OrgSettingsUpdate {
+  universityName?: string;
+  chapterName?: string;
+  chapterIdentifier?: string;
+  /** @nullable */
+  motto?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
+  /** @nullable */
+  logoUrl?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  participationGoalPct?: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  scholarshipMinPct?: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  conferenceMinPct?: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  awardsMinPct?: number;
+  /** @minimum 0 */
+  duesAmountCents?: number;
+}
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */

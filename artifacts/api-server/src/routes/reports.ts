@@ -3,10 +3,10 @@ import { db, membersTable, eventsTable, committeesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import {
   EXEC_OR_ADMIN,
-  PARTICIPATION_THRESHOLD,
   buildCommitteeAggregate,
   eventsEligibleForMember,
   getActiveSemester,
+  getParticipationThreshold,
   memberPointsAndImpact,
   recentChapterAttendance,
   requireRole,
@@ -23,8 +23,8 @@ interface EligibilityInput {
   membershipStatus: string;
 }
 
-function eligibility(rec: EligibilityInput) {
-  const meetsParticipation = rec.participationPct >= PARTICIPATION_THRESHOLD;
+function eligibility(rec: EligibilityInput, threshold: number) {
+  const meetsParticipation = rec.participationPct >= threshold;
   const meetsGpa = rec.gpa != null ? rec.gpa >= 2.5 : false;
   const meetsDues = rec.duesPaid;
   const meetsStatus =
@@ -46,10 +46,13 @@ function eligibility(rec: EligibilityInput) {
 }
 
 async function buildEligibilityList() {
-  const members = await db
-    .select({ m: membersTable, committeeName: committeesTable.name })
-    .from(membersTable)
-    .leftJoin(committeesTable, eq(committeesTable.id, membersTable.committeeId));
+  const [members, threshold] = await Promise.all([
+    db
+      .select({ m: membersTable, committeeName: committeesTable.name })
+      .from(membersTable)
+      .leftJoin(committeesTable, eq(committeesTable.id, membersTable.committeeId)),
+    getParticipationThreshold(),
+  ]);
   const records = await Promise.all(
     members.map(async ({ m, committeeName }) => {
       const [{ totalPoints, impactPoints }, { eligible, attended }] =
@@ -66,7 +69,7 @@ async function buildEligibilityList() {
         gpa: m.gpa != null ? Number(m.gpa) : null,
         duesPaid: m.duesPaid,
         membershipStatus: m.membershipStatus,
-      });
+      }, threshold);
       return {
         userId: m.id,
         fullName: m.fullName,

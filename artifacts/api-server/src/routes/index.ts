@@ -8,12 +8,14 @@ import committeesRouter from "./committees";
 import eventsRouter from "./events";
 import nudgesRouter from "./nudges";
 import reportsRouter from "./reports";
+import orgRouter from "./org";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
 router.use(bootstrapRouter);
+router.use(orgRouter);
 router.use(profileRouter);
 router.use(membersRouter);
 router.use(committeesRouter);

@@ -10,6 +10,7 @@ import {
   officerTermsTable,
   committeeAssignmentsTable,
   auditLogTable,
+  orgSettingsTable,
   type Member as MemberRow,
   type EventRow,
   type AttendanceRow,
@@ -20,7 +21,9 @@ import {
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 export const FALLBACK_SEMESTER = "Spring 2026";
-export const PARTICIPATION_THRESHOLD = 75;
+// Internal fallback only — do not import this constant in routes.
+// Use getParticipationThreshold() for the live, DB-sourced value.
+const PARTICIPATION_THRESHOLD = 75;
 export const QR_ROTATE_SECONDS = 60;
 
 let _semesterCache: { value: string; expires: number } | null = null;
@@ -42,6 +45,81 @@ export async function getActiveSemester(): Promise<string> {
 
 export function invalidateSemesterCache() {
   _semesterCache = null;
+}
+
+// ─── Org Settings ──────────────────────────────────────────────────────────────
+
+export interface OrgConfig {
+  universityName: string;
+  chapterName: string;
+  chapterIdentifier: string;
+  motto: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  logoUrl: string | null;
+  participationGoalPct: number;
+  scholarshipMinPct: number;
+  conferenceMinPct: number;
+  awardsMinPct: number;
+  duesAmountCents: number;
+}
+
+const FALLBACK_ORG: OrgConfig = {
+  universityName: "Collegiate 100",
+  chapterName: "Chapter",
+  chapterIdentifier: "Chapter",
+  motto: null,
+  primaryColor: "hsl(221 100% 31%)",
+  secondaryColor: "#C9A227",
+  logoUrl: null,
+  participationGoalPct: PARTICIPATION_THRESHOLD,
+  scholarshipMinPct: 80,
+  conferenceMinPct: 85,
+  awardsMinPct: 90,
+  duesAmountCents: 0,
+};
+
+let _orgCache: { value: OrgConfig; expires: number } | null = null;
+
+export async function getOrgSettings(): Promise<OrgConfig> {
+  const now = Date.now();
+  if (_orgCache && now < _orgCache.expires) return _orgCache.value;
+  const [row] = await db.select().from(orgSettingsTable).limit(1);
+  const value: OrgConfig = row
+    ? {
+        universityName: row.universityName,
+        chapterName: row.chapterName,
+        chapterIdentifier: row.chapterIdentifier,
+        motto: row.motto ?? null,
+        primaryColor: row.primaryColor,
+        secondaryColor: row.secondaryColor,
+        logoUrl: row.logoUrl ?? null,
+        participationGoalPct: parseFloat(row.participationGoalPct),
+        scholarshipMinPct: parseFloat(row.scholarshipMinPct),
+        conferenceMinPct: parseFloat(row.conferenceMinPct),
+        awardsMinPct: parseFloat(row.awardsMinPct),
+        duesAmountCents: row.duesAmountCents,
+      }
+    : FALLBACK_ORG;
+  _orgCache = { value, expires: now + 300_000 }; // 5-min cache
+  return value;
+}
+
+export function invalidateOrgCache() {
+  _orgCache = null;
+}
+
+/** Returns the effective participation threshold for the current semester.
+ *  Priority: active semesterConfig.participationThreshold → org default → 75 */
+export async function getParticipationThreshold(): Promise<number> {
+  const [row] = await db
+    .select({ threshold: semesterConfigTable.participationThreshold })
+    .from(semesterConfigTable)
+    .where(eq(semesterConfigTable.active, true))
+    .limit(1);
+  if (row?.threshold) return parseFloat(row.threshold);
+  const org = await getOrgSettings();
+  return org.participationGoalPct;
 }
 
 export const POINT_VALUES: Record<string, number> = {
@@ -504,12 +582,17 @@ export function isValidQrToken(eventId: number, token: string): boolean {
   return false;
 }
 
-export function computeNudgeTier(participationPct: number): {
+export function computeNudgeTier(
+  participationPct: number,
+  goalPct = PARTICIPATION_THRESHOLD,
+): {
   status: "Active" | "Warning" | "AtRisk" | "Critical";
 } {
-  if (participationPct >= PARTICIPATION_THRESHOLD) return { status: "Active" };
-  if (participationPct >= 60) return { status: "Warning" };
-  if (participationPct >= 40) return { status: "AtRisk" };
+  if (participationPct >= goalPct) return { status: "Active" };
+  // Warning at 80 % of goal (e.g. 60 when goal = 75)
+  if (participationPct >= goalPct * 0.8) return { status: "Warning" };
+  // AtRisk at ~53 % of goal (e.g. 40 when goal = 75)
+  if (participationPct >= goalPct * 0.533) return { status: "AtRisk" };
   return { status: "Critical" };
 }
 

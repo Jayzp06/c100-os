@@ -45,6 +45,8 @@ import type {
   MobileTokenExchangeSuccess,
   NudgeLogEntry,
   NudgeRunResult,
+  OrgSettings,
+  OrgSettingsUpdate,
   QrToken,
   UpdateEventInput,
   UpdateMemberInput,
@@ -3002,3 +3004,166 @@ export function useGetAdminOverview<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Returns organisation-level configuration (identity, branding, participation thresholds). Public endpoint — used by the login page before the user signs in.
+
+ * @summary Get organisation settings
+ */
+export const getGetOrgSettingsUrl = () => {
+  return `/api/org/settings`;
+};
+
+export const getOrgSettings = async (
+  options?: RequestInit,
+): Promise<OrgSettings> => {
+  return customFetch<OrgSettings>(getGetOrgSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOrgSettingsQueryKey = () => {
+  return [`/api/org/settings`] as const;
+};
+
+export const getGetOrgSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrgSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOrgSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOrgSettingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrgSettings>>> = ({
+    signal,
+  }) => getOrgSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrgSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOrgSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrgSettings>>
+>;
+export type GetOrgSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get organisation settings
+ */
+
+export function useGetOrgSettings<
+  TData = Awaited<ReturnType<typeof getOrgSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getOrgSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOrgSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update organisation settings (Admin only)
+ */
+export const getUpdateOrgSettingsUrl = () => {
+  return `/api/org/settings`;
+};
+
+export const updateOrgSettings = async (
+  orgSettingsUpdate: OrgSettingsUpdate,
+  options?: RequestInit,
+): Promise<OrgSettings> => {
+  return customFetch<OrgSettings>(getUpdateOrgSettingsUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(orgSettingsUpdate),
+  });
+};
+
+export const getUpdateOrgSettingsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOrgSettings>>,
+    TError,
+    { data: BodyType<OrgSettingsUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateOrgSettings>>,
+  TError,
+  { data: BodyType<OrgSettingsUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateOrgSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateOrgSettings>>,
+    { data: BodyType<OrgSettingsUpdate> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateOrgSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateOrgSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateOrgSettings>>
+>;
+export type UpdateOrgSettingsMutationBody = BodyType<OrgSettingsUpdate>;
+export type UpdateOrgSettingsMutationError = ErrorType<void>;
+
+/**
+ * @summary Update organisation settings (Admin only)
+ */
+export const useUpdateOrgSettings = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateOrgSettings>>,
+    TError,
+    { data: BodyType<OrgSettingsUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateOrgSettings>>,
+  TError,
+  { data: BodyType<OrgSettingsUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateOrgSettingsMutationOptions(options));
+};

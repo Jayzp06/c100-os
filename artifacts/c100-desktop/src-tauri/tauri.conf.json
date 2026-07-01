@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' https://*.replit.app https://*.replit.dev http://localhost:* ws://localhost:*; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'"
+      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' https://* http://localhost:* ws://localhost:*; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'"
     }
   },
   "bundle": {
@@ -53,7 +53,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://CONFIGURE_UPDATER_ENDPOINT/{{target}}/{{arch}}/{{current_version}}"
+        "https://github.com/YOUR_ORG/YOUR_REPO/releases/latest/download/latest.json"
       ],
       "dialog": true,
       "pubkey": "CONFIGURE_TAURI_PUBLIC_KEY"

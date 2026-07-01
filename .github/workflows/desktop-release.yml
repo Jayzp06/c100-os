@@ -22,6 +22,10 @@ env:
   # Vite build env vars required by artifacts/c100
   PORT: '23873'
   BASE_PATH: '/'
+  # Production API base URL — bake into the desktop bundle so the WebView can
+  # reach the live server.  Set VITE_API_URL in GitHub → Settings → Secrets.
+  # Example: https://c100-api.username.repl.co
+  VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
 jobs:
   # ─────────────────────────────────────────────────────────

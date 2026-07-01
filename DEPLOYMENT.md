@@ -53,7 +53,19 @@ cargo install tauri-cli --version "^2"
 tauri signer generate -w ~/.tauri/c100-operations.key
 ```
 
-#### 2. Configure GitHub repository secrets
+#### 2. Set `VITE_API_URL` — the production API base URL
+
+The desktop installer has the API URL baked in at build time. Add this secret
+to GitHub **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `VITE_API_URL` | The deployed API base URL, e.g. `https://c100-api.username.repl.co` |
+
+This is the HTTPS URL of the published Replit API server (Target 2 above).
+Without it the desktop build fails at startup with a clear error message.
+
+#### 3. Configure GitHub repository secrets
 
 | Secret | Description |
 |---|---|
@@ -66,18 +78,27 @@ tauri signer generate -w ~/.tauri/c100-operations.key
 | `APPLE_ID_PASSWORD` | App-specific password from appleid.apple.com |
 | `APPLE_TEAM_ID` | 10-character Apple Developer Team ID |
 
-Windows signing is optional for internal distribution. Add a code-signing
-certificate via `WINDOWS_CERTIFICATE` + `WINDOWS_CERTIFICATE_PASSWORD` if required.
+Windows signing is optional for internal distribution.
 
-#### 3. Configure the updater endpoint
+#### 4. Configure the updater endpoint
 
-Update `tauri.conf.json` → `plugins.updater.endpoints` with your update server URL,
-and set `plugins.updater.pubkey` to the public key output from step 1.
+Edit `artifacts/c100-desktop/src-tauri/tauri.conf.json`:
 
-A Cloudflare R2 bucket or GitHub Releases JSON are both valid update endpoints.
-`tauri-apps/tauri-action` generates the updater JSON automatically on each release.
+```json
+"updater": {
+  "endpoints": [
+    "https://github.com/YOUR_ORG/YOUR_REPO/releases/latest/download/latest.json"
+  ],
+  "pubkey": "<paste public key from step 1 here>"
+}
+```
 
-#### 4. Generate app icons
+Replace `YOUR_ORG/YOUR_REPO` with the actual GitHub org and repo name.
+`tauri-apps/tauri-action` generates `latest.json` automatically on each release
+and uploads it as a release asset — the `releases/latest/download/...` URL
+always resolves to the current release artifact.
+
+#### 5. Generate app icons
 
 Provide a single 1024×1024 source PNG and run:
 

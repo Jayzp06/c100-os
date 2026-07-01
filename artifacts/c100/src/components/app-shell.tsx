@@ -3,6 +3,7 @@ import { useGetOrgSettings } from "@workspace/api-client-react";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { IS_TAURI, desktopLogout } from "@/lib/desktop-auth";
 import {
   LayoutDashboard,
   UserCircle2,
@@ -31,6 +32,27 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+
+function LogoutButton({ className }: { className?: string }) {
+  if (IS_TAURI) {
+    return (
+      <button
+        onClick={() => desktopLogout()}
+        className={className}
+        data-testid="button-logout"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+        Sign out
+      </button>
+    );
+  }
+  return (
+    <a href="/api/logout" className={className} data-testid="button-logout">
+      <LogOut className="h-3.5 w-3.5" />
+      Sign out
+    </a>
+  );
+}
 
 type NavContext = {
   isLeader: boolean;
@@ -180,14 +202,7 @@ function SidebarUserPanel() {
           </span>
         </div>
       </div>
-      <a
-        href="/api/logout"
-        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[hsl(var(--sidebar-accent-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))] transition-colors"
-        data-testid="button-logout"
-      >
-        <LogOut className="h-3.5 w-3.5" />
-        Sign out
-      </a>
+      <LogoutButton className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[hsl(var(--sidebar-accent-foreground))] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))] transition-colors" />
     </div>
   );
 }
@@ -390,14 +405,7 @@ export function CommitteePortalShell({
           </nav>
 
           <div className="flex items-center gap-2">
-            <a
-              href="/api/logout"
-              className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              data-testid="button-logout"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Sign out
-            </a>
+            <LogoutButton className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground" />
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -430,13 +438,7 @@ export function CommitteePortalShell({
                       </Link>
                     );
                   })}
-                  <a
-                    href="/api/logout"
-                    className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </a>
+                  <LogoutButton className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent" />
                 </nav>
               </SheetContent>
             </Sheet>
@@ -487,14 +489,7 @@ export function MemberPortalShell({
               C100 Trailblazers
             </span>
           </Link>
-          <a
-            href="/api/logout"
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-            data-testid="button-logout"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Sign out</span>
-          </a>
+          <LogoutButton className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1" />
         </div>
       </header>
 

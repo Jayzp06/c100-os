@@ -5,6 +5,8 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MeProvider } from "@/lib/me";
+import { initDesktop, listenForDesktopAuthCallback, IS_TAURI } from "@/lib/desktop-auth";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
@@ -21,6 +23,13 @@ import EventQrPage from "@/pages/event-qr";
 import NudgesPage from "@/pages/nudges";
 import ReportsPage from "@/pages/reports";
 import TechConsolePage from "@/pages/tech-console";
+
+// ---------------------------------------------------------------------------
+// Desktop initialisation — must run before any component mounts so that
+// setBaseUrl and setAuthTokenGetter are configured prior to the first fetch.
+// This is a no-op in the web build (IS_TAURI === false).
+// ---------------------------------------------------------------------------
+initDesktop();
 
 // Persist query cache to localStorage so read-only views (dashboard, events,
 // members, committees) survive page reloads and brief network loss.
@@ -80,12 +89,27 @@ function Router() {
   );
 }
 
+function DesktopAuthListener() {
+  useEffect(() => {
+    if (!IS_TAURI) return;
+    let unlisten: (() => void) | null = null;
+    listenForDesktopAuthCallback().then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <MeProvider>
+            <DesktopAuthListener />
             <Router />
           </MeProvider>
         </WouterRouter>

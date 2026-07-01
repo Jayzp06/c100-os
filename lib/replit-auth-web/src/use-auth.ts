@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { customFetch } from "@workspace/api-client-react";
 import type { AuthUser } from "@workspace/api-client-react";
 
 export type { AuthUser };
@@ -18,12 +19,14 @@ export function useAuth(): AuthState {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/api/auth/user", { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{ user: AuthUser | null }>;
-      })
-      .then((data) => {
+    // customFetch respects setBaseUrl (desktop Tauri context) and
+    // setAuthTokenGetter (attaches Bearer token when configured).
+    // In the web context, setBaseUrl is null so relative URLs are used as-is,
+    // and credentials: "include" sends the session cookie.
+    customFetch<{ user: AuthUser | null }>("/api/auth/user", {
+      credentials: "include",
+    })
+      .then((data: { user: AuthUser | null }) => {
         if (!cancelled) {
           setUser(data.user ?? null);
           setIsLoading(false);

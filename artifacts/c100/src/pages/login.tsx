@@ -5,6 +5,7 @@ import { useMe } from "@/lib/me";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, ShieldCheck, Trophy, Users } from "lucide-react";
+import { IS_TAURI, startDesktopLogin } from "@/lib/desktop-auth";
 
 export default function LoginPage() {
   const me = useMe();
@@ -85,17 +86,31 @@ export default function LoginPage() {
                   Executive Board controls chapter membership.
                 </p>
               </div>
-              <Button
-                asChild
-                className="w-full"
-                size="lg"
-                data-testid="button-login"
-              >
-                <a href="/api/login?returnTo=/">
+
+              {IS_TAURI ? (
+                <Button
+                  className="w-full"
+                  size="lg"
+                  data-testid="button-login"
+                  onClick={() => startDesktopLogin()}
+                >
                   Continue with Replit
                   <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
-              </Button>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  className="w-full"
+                  size="lg"
+                  data-testid="button-login"
+                >
+                  <a href="/api/login?returnTo=/">
+                    Continue with Replit
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+
               <p className="text-center text-xs text-muted-foreground">
                 Not yet rostered? Reach out to your Executive Board to be added
                 to the chapter.

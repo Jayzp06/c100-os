@@ -269,4 +269,106 @@ router.post("/mobile-auth/logout", async (req: Request, res: Response) => {
   res.json(LogoutMobileSessionResponse.parse({ success: true }));
 });
 
+// ---------------------------------------------------------------------------
+// Desktop auth relay — server-side PKCE + OIDC, token delivered via deep-link
+//
+// The Tauri WebView opens the system browser to /api/desktop-auth/login.
+// The system browser completes the full OIDC flow against Replit.
+// The server exchanges the code, creates a session, and redirects the system
+// browser to c100ops://auth?token=<session_id>.  The OS routes that URL to
+// the Tauri app; the deep-link plugin delivers it to the frontend; the
+// frontend stores the token and reloads so the normal useAuth flow picks it up.
+//
+// PKCE state (verifier, nonce, state) is stored in cookies inside the system
+// browser — the same mechanism as the web flow, just with desktop_* names to
+// avoid colliding with any existing web-flow cookies.
+// ---------------------------------------------------------------------------
+
+router.get("/desktop-auth/login", async (req: Request, res: Response) => {
+  const config = await getOidcConfig();
+  const callbackUrl = `${getOrigin(req)}/api/desktop-auth/callback`;
+
+  const state = oidc.randomState();
+  const nonce = oidc.randomNonce();
+  const codeVerifier = oidc.randomPKCECodeVerifier();
+  const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
+
+  const redirectTo = oidc.buildAuthorizationUrl(config, {
+    redirect_uri: callbackUrl,
+    scope: "openid email profile offline_access",
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+    prompt: "login consent",
+    state,
+    nonce,
+  });
+
+  setOidcCookie(res, "desktop_code_verifier", codeVerifier);
+  setOidcCookie(res, "desktop_nonce", nonce);
+  setOidcCookie(res, "desktop_state", state);
+
+  res.redirect(redirectTo.href);
+});
+
+router.get("/desktop-auth/callback", async (req: Request, res: Response) => {
+  const config = await getOidcConfig();
+  const callbackUrl = `${getOrigin(req)}/api/desktop-auth/callback`;
+
+  const codeVerifier = req.cookies?.desktop_code_verifier as string | undefined;
+  const nonce = req.cookies?.desktop_nonce as string | undefined;
+  const expectedState = req.cookies?.desktop_state as string | undefined;
+
+  res.clearCookie("desktop_code_verifier", { path: "/" });
+  res.clearCookie("desktop_nonce", { path: "/" });
+  res.clearCookie("desktop_state", { path: "/" });
+
+  if (!codeVerifier || !expectedState) {
+    res.redirect("c100ops://auth?error=missing_state");
+    return;
+  }
+
+  const currentUrl = new URL(
+    `${callbackUrl}?${new URL(req.url, `http://${req.headers.host}`).searchParams}`,
+  );
+
+  let tokens: oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers;
+  try {
+    tokens = await oidc.authorizationCodeGrant(config, currentUrl, {
+      pkceCodeVerifier: codeVerifier,
+      expectedNonce: nonce,
+      expectedState,
+      idTokenExpected: true,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Desktop auth callback OIDC error");
+    res.redirect("c100ops://auth?error=oidc_failed");
+    return;
+  }
+
+  const claims = tokens.claims();
+  if (!claims) {
+    res.redirect("c100ops://auth?error=no_claims");
+    return;
+  }
+
+  const dbUser = await upsertUser(claims as unknown as Record<string, unknown>);
+
+  const now = Math.floor(Date.now() / 1000);
+  const sessionData: SessionData = {
+    user: {
+      id: dbUser.id,
+      email: dbUser.email,
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName,
+      profileImageUrl: dbUser.profileImageUrl,
+    },
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : claims.exp,
+  };
+
+  const sid = await createSession(sessionData);
+  res.redirect(`c100ops://auth?token=${encodeURIComponent(sid)}`);
+});
+
 export default router;

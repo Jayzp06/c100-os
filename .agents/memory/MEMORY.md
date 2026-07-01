@@ -1,3 +1,4 @@
+- [Desktop auth architecture](desktop-auth-arch.md) — server-side PKCE relay (desktop-auth/login → Replit OIDC → desktop-auth/callback → c100ops://); token in localStorage; initDesktop() at module scope in App.tsx.
 - [Seed authId idempotency](seed-authid-idempotency.md) — reseed must use the same authId per person as the original, or email unique constraint fires.
 - [Await in sync callbacks](await-sync-callbacks.md) — never use `await` inside `.map()`/`.filter()` callbacks; pre-fetch the value before the callback instead.
 - [React Query persist-client context mismatch](rq-persist-context.md) — PersistQueryClientProvider causes "No QueryClient set" when pnpm installs a separate copy; use functional persistQueryClient() instead.

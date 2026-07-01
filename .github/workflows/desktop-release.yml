@@ -61,16 +61,7 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Debug Vite environment
-        run: |
-          node -v
-          pnpm -v
-          pnpm --filter @workspace/c100 exec vite --version
-          pnpm list vite
-          pnpm list rollup
-          cat artifacts/c100/package.json
-
-     - name: Build frontend (artifacts/c100)
+      - name: Build frontend (artifacts/c100)
        working-directory: artifacts/c100
        env:
          PORT: 23873

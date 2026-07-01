@@ -62,13 +62,13 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Debug Vite environment
-  run: |
-    node -v
-    pnpm -v
-    pnpm --filter @workspace/c100 exec vite --version
-    pnpm list vite
-    pnpm list rollup
-    cat artifacts/c100/package.json
+        run: |
+          node -v
+          pnpm -v
+          pnpm --filter @workspace/c100 exec vite --version
+          pnpm list vite
+          pnpm list rollup
+          cat artifacts/c100/package.json
 
       - name: Build frontend (artifacts/c100)
         run: pnpm --filter @workspace/c100 run build

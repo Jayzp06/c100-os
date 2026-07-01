@@ -70,8 +70,16 @@ jobs:
           pnpm list rollup
           cat artifacts/c100/package.json
 
-      - name: Build frontend (artifacts/c100)
-        run: pnpm --filter @workspace/c100 run build
+     - name: Build frontend (artifacts/c100)
+       working-directory: artifacts/c100
+       env:
+         PORT: 23873
+         BASE_PATH: /
+         NODE_ENV: production
+       run: |
+         pwd
+         ls -la
+         pnpm exec vite build --config vite.config.ts
 
       - name: Import Apple code-signing certificate
         if: ${{ env.APPLE_CERTIFICATE != '' }}

@@ -5,6 +5,8 @@ name: Desktop Release
 #   - Manual dispatch from the GitHub Actions UI
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:

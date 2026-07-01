@@ -1,0 +1,29 @@
+[package]
+name = "c100-operations"
+version = "0.1.0"
+description = "C100 Trailblazing Chapter Operations Console"
+authors = ["FVSU Collegiate 100 Trailblazing Chapter"]
+edition = "2021"
+
+[lib]
+name = "c100_operations_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-notification = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-deep-link = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

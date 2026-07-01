@@ -1,0 +1,16 @@
+{
+  "name": "@workspace/c100-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:macos": "tauri build --target universal-apple-darwin",
+    "build:windows": "tauri build --target x86_64-pc-windows-msvc",
+    "tauri": "tauri",
+    "icon": "tauri icon"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

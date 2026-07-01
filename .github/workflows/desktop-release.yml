@@ -1,0 +1,146 @@
+name: Desktop Release
+
+# Triggers:
+#   - Push a version tag (e.g. git tag v0.2.0 && git push --tags)
+#   - Manual dispatch from the GitHub Actions UI
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: 'Publish as draft release'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  # Vite build env vars required by artifacts/c100
+  PORT: '23873'
+  BASE_PATH: '/'
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  #  macOS — universal binary (.dmg) covering Intel + Apple Silicon
+  # ─────────────────────────────────────────────────────────
+  build-macos:
+    name: Build macOS (.dmg)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: artifacts/c100-desktop/src-tauri -> target
+
+      - name: Install Node dependencies
+        run: pnpm install
+
+      - name: Build frontend (artifacts/c100)
+        run: pnpm --filter @workspace/c100 run build
+
+      - name: Import Apple code-signing certificate
+        if: ${{ env.APPLE_CERTIFICATE != '' }}
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+
+      - name: Build Tauri app (universal macOS)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: artifacts/c100-desktop
+          tauriScript: pnpm tauri
+          args: --target universal-apple-darwin
+          tagName: ${{ github.ref_name }}
+          releaseName: 'C100 Operations ${{ github.ref_name }}'
+          releaseBody: |
+            C100 Trailblazing Chapter Operations Console — macOS installer.
+            
+            Requires macOS 10.15 Catalina or later.
+          releaseDraft: ${{ github.event.inputs.draft != 'false' }}
+          prerelease: false
+          includeUpdaterJson: true
+
+  # ─────────────────────────────────────────────────────────
+  #  Windows — x64 MSI installer
+  # ─────────────────────────────────────────────────────────
+  build-windows:
+    name: Build Windows (.msi)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: artifacts/c100-desktop/src-tauri -> target
+
+      - name: Install Node dependencies
+        run: pnpm install
+
+      - name: Build frontend (artifacts/c100)
+        run: pnpm --filter @workspace/c100 run build
+
+      - name: Build Tauri app (Windows x64)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: artifacts/c100-desktop
+          tauriScript: pnpm tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: 'C100 Operations ${{ github.ref_name }}'
+          releaseBody: |
+            C100 Trailblazing Chapter Operations Console — Windows installer.
+            
+            Requires Windows 10 (1803+) or Windows 11.
+            WebView2 is included via the system component (auto-installed if absent).
+          releaseDraft: ${{ github.event.inputs.draft != 'false' }}
+          prerelease: false
+          includeUpdaterJson: true

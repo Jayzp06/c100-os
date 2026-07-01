@@ -1,5 +1,7 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MeProvider } from "@/lib/me";
@@ -19,13 +21,38 @@ import EventQrPage from "@/pages/event-qr";
 import NudgesPage from "@/pages/nudges";
 import ReportsPage from "@/pages/reports";
 
+// Persist query cache to localStorage so read-only views (dashboard, events,
+// members, committees) survive page reloads and brief network loss.
+// gcTime must exceed staleTime for persistence to be meaningful.
+// Using the functional API (not PersistQueryClientProvider) to avoid a React
+// context mismatch between the persist-client package's own react-query copy
+// and the copy used by the rest of the app.
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "c100-query-cache-v1",
+  throttleTime: 1_000,
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
+      gcTime: 1_000 * 60 * 60 * 24, // 24 h — keep cache across sessions
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,      // re-validate when network restores
       retry: 1,
     },
+  },
+});
+
+persistQueryClient({
+  queryClient,
+  persister,
+  maxAge: 1_000 * 60 * 60 * 24,
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query) =>
+      // Only persist successful reads — never persist mutations or error states
+      query.state.status === "success",
   },
 });
 

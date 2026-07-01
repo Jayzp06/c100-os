@@ -59,7 +59,7 @@ jobs:
           workspaces: artifacts/c100-desktop/src-tauri -> target
 
       - name: Install Node dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build frontend (artifacts/c100)
         run: pnpm --filter @workspace/c100 run build
@@ -126,7 +126,7 @@ jobs:
           workspaces: artifacts/c100-desktop/src-tauri -> target
 
       - name: Install Node dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build frontend (artifacts/c100)
         run: pnpm --filter @workspace/c100 run build

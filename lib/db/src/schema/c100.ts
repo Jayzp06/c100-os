@@ -19,6 +19,7 @@ export const ROLE_VALUES = [
   "BylawsChair",
   "ExecutiveBoard",
   "Admin",
+  "TechnologyChair",
 ] as const;
 export type Role = (typeof ROLE_VALUES)[number];
 

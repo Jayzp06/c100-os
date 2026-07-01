@@ -269,9 +269,12 @@ export const LEADERSHIP_ROLES: Role[] = [
   "BylawsChair",
   "ExecutiveBoard",
   "Admin",
+  "TechnologyChair",
 ];
 
 export const EXEC_OR_ADMIN: Role[] = ["ExecutiveBoard", "Admin"];
+
+export const TECH_OR_ADMIN: Role[] = ["TechnologyChair", "Admin"];
 
 const EXECUTIVE_POSITIONS = [
   "president",
@@ -290,7 +293,59 @@ export type ResolvedPermissions = {
   experience: ExperienceType;
   officerPositions: string[];
   committeeChairId: number | null;
+  isTechChair: boolean;
 };
+
+const VALID_VIEW_AS = [
+  "Member",
+  "CommitteeChair",
+  "BylawsChair",
+  "ExecutiveBoard",
+  "Admin",
+] as const;
+export type ViewAs = (typeof VALID_VIEW_AS)[number];
+export const isValidViewAs = (v: unknown): v is ViewAs =>
+  VALID_VIEW_AS.includes(v as ViewAs);
+
+export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
+  switch (viewAs as ViewAs) {
+    case "CommitteeChair":
+      return {
+        experience: "committee_portal",
+        officerPositions: [],
+        committeeChairId: 1,
+        isTechChair: true,
+      };
+    case "BylawsChair":
+      return {
+        experience: "committee_portal",
+        officerPositions: [],
+        committeeChairId: null,
+        isTechChair: true,
+      };
+    case "ExecutiveBoard":
+      return {
+        experience: "operations_console",
+        officerPositions: ["vice_president"],
+        committeeChairId: null,
+        isTechChair: true,
+      };
+    case "Admin":
+      return {
+        experience: "operations_console",
+        officerPositions: ["president"],
+        committeeChairId: null,
+        isTechChair: true,
+      };
+    default:
+      return {
+        experience: "member_portal",
+        officerPositions: [],
+        committeeChairId: null,
+        isTechChair: true,
+      };
+  }
+}
 
 export async function resolvePermissions(
   member: MemberRow,
@@ -337,9 +392,10 @@ export async function resolvePermissions(
     member.role === "ExecutiveBoard" || member.role === "Admin";
   const isLegacyChair =
     member.role === "CommitteeChair" || member.role === "BylawsChair";
+  const isTechChair = member.role === "TechnologyChair";
 
   let experience: ExperienceType;
-  if (hasOfficerTerm || isLegacyExec) {
+  if (hasOfficerTerm || isLegacyExec || isTechChair) {
     experience = "operations_console";
   } else if (!!committeeChairId || isLegacyChair) {
     experience = "committee_portal";
@@ -347,7 +403,7 @@ export async function resolvePermissions(
     experience = "member_portal";
   }
 
-  return { experience, officerPositions, committeeChairId };
+  return { experience, officerPositions, committeeChairId, isTechChair };
 }
 
 export async function writeAuditLog(entry: {

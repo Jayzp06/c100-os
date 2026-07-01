@@ -14,4 +14,5 @@ export const MemberRole = {
   BylawsChair: "BylawsChair",
   ExecutiveBoard: "ExecutiveBoard",
   Admin: "Admin",
+  TechnologyChair: "TechnologyChair",
 } as const;

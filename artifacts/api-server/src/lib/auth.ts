@@ -14,6 +14,7 @@ export interface SessionData {
   access_token: string;
   refresh_token?: string;
   expires_at?: number;
+  impersonating?: { viewAs: string; startedAt: string };
 }
 
 let oidcConfig: client.Configuration | null = null;

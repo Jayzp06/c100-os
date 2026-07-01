@@ -14,6 +14,7 @@ export const LEADERSHIP_ROLES: Role[] = [
   "BylawsChair",
   "ExecutiveBoard",
   "Admin",
+  "TechnologyChair",
 ];
 
 export const EXEC_OR_ADMIN: Role[] = ["ExecutiveBoard", "Admin"];
@@ -21,6 +22,11 @@ export const EXEC_OR_ADMIN: Role[] = ["ExecutiveBoard", "Admin"];
 export function hasRole(role: Role | null | undefined, allowed: Role[]) {
   return !!role && allowed.includes(role);
 }
+
+export type ImpersonationState = {
+  viewAs: string;
+  startedAt: string;
+};
 
 type MeValue = {
   auth: ReturnType<typeof useAuth>;
@@ -35,10 +41,12 @@ type MeValue = {
   isLeader: boolean;
   isExecOrAdmin: boolean;
   isAdmin: boolean;
+  isTechChair: boolean;
   isChair: boolean;
   isOpsConsole: boolean;
   isCommitteePortal: boolean;
   isMemberPortal: boolean;
+  impersonating: ImpersonationState | null;
   profileError: { status?: number } | null;
 };
 
@@ -73,6 +81,12 @@ function useMeValue(): MeValue {
   const isPendingApproval =
     auth.isAuthenticated && profileError?.status === 403;
 
+  const isTechChair = !!(member as { isTechChair?: boolean } | null)
+    ?.isTechChair;
+  const impersonating =
+    (member as { impersonating?: ImpersonationState | null } | null)
+      ?.impersonating ?? null;
+
   return {
     auth,
     member,
@@ -86,10 +100,12 @@ function useMeValue(): MeValue {
     isLeader: role !== null && LEADERSHIP_ROLES.includes(role),
     isExecOrAdmin: role !== null && EXEC_OR_ADMIN.includes(role),
     isAdmin: role === "Admin",
+    isTechChair,
     isChair: role === "CommitteeChair" || role === "BylawsChair",
     isOpsConsole: experience === "operations_console",
     isCommitteePortal: experience === "committee_portal",
     isMemberPortal: experience === "member_portal",
+    impersonating,
     profileError,
   };
 }

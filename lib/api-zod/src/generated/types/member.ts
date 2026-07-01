@@ -5,6 +5,7 @@
  * C100 System API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ImpersonationState } from "./impersonationState";
 import type { MemberExperience } from "./memberExperience";
 import type { MemberMembershipStatus } from "./memberMembershipStatus";
 import type { MemberNudgeStatus } from "./memberNudgeStatus";
@@ -48,4 +49,6 @@ export interface Member {
   profileImageUrl?: string | null;
   experience: MemberExperience;
   officerPositions: string[];
+  isTechChair?: boolean;
+  impersonating?: ImpersonationState | null;
 }

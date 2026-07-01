@@ -750,6 +750,42 @@ paths:
         '403':
           description: Forbidden — Admin role required.
 
+  /tech/impersonate:
+    post:
+      tags: [Tech]
+      operationId: startImpersonation
+      summary: Start role view impersonation (TechnologyChair only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartImpersonationInput'
+      responses:
+        '200':
+          description: Impersonation started. Returns updated profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Invalid viewAs value.
+        '403':
+          description: Forbidden — TechnologyChair role required.
+    delete:
+      tags: [Tech]
+      operationId: endImpersonation
+      summary: End active role view impersonation (TechnologyChair only)
+      responses:
+        '200':
+          description: Impersonation ended. Returns real profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '403':
+          description: Forbidden — TechnologyChair role required.
+
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -879,7 +915,7 @@ components:
           type: [integer, 'null']
         role:
           type: string
-          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin, TechnologyChair]
         committeeId:
           type: [integer, 'null']
         committeeName:
@@ -923,6 +959,12 @@ components:
           type: array
           items:
             type: string
+        isTechChair:
+          type: boolean
+        impersonating:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ImpersonationState'
 
     UpdateProfileInput:
       type: object
@@ -952,7 +994,7 @@ components:
           format: email
         role:
           type: string
-          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin, TechnologyChair]
         committeeId:
           type: [integer, 'null']
         studentId:
@@ -996,7 +1038,7 @@ components:
       properties:
         role:
           type: string
-          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin, TechnologyChair]
         committeeId:
           type: [integer, 'null']
         membershipStatus:
@@ -1552,3 +1594,24 @@ components:
         duesAmountCents:
           type: integer
           minimum: 0
+
+    ImpersonationState:
+      type: object
+      required:
+        - viewAs
+        - startedAt
+      properties:
+        viewAs:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+
+    StartImpersonationInput:
+      type: object
+      required:
+        - viewAs
+      properties:
+        viewAs:
+          type: string
+          enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]

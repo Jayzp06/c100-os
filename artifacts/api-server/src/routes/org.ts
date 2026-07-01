@@ -5,6 +5,7 @@ import {
   getOrgSettings,
   invalidateOrgCache,
   requireRole,
+  TECH_OR_ADMIN,
 } from "../lib/c100";
 
 const router: IRouter = Router();
@@ -17,10 +18,10 @@ router.get("/org/settings", async (_req, res) => {
 });
 
 // PATCH /org/settings
-// Admin only — update any subset of org settings fields.
+// Admin or TechnologyChair — update any subset of org settings fields.
 router.patch(
   "/org/settings",
-  requireRole("Admin")(async (req, res) => {
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
     const body = req.body as Partial<{
       universityName: string;
       chapterName: string;

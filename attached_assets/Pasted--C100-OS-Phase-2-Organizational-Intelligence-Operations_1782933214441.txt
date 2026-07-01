@@ -1,0 +1,449 @@
+# C100 OS — Phase 2: Organizational Intelligence & Operations
+
+The operational foundation is now complete.
+
+The next objective is to evolve the platform from an Operations Platform into a complete Organizational Operating System.
+
+Every feature added during this phase must strengthen one or more of the following:
+
+• Institutional Knowledge
+• Leadership Continuity
+• Committee Execution
+• Organizational Accountability
+
+Do not redesign previously implemented functionality.
+
+Extend the existing architecture while maintaining the current design system, permission model, API conventions, database architecture, and coding standards.
+
+---
+
+# Module 1 — Document & Knowledge Management
+
+Objective:
+
+Create the institutional memory of the chapter.
+
+Knowledge should remain with the organization rather than individual officers.
+
+Implement a complete document management module.
+
+Support:
+
+• Operations Handbook
+• Constitution
+• National Documents
+• Meeting Minutes
+• Executive Board Minutes
+• Committee Reports
+• Financial Reports
+• Officer Guides
+• Templates
+• Forms
+• Transition Documents
+• Policies
+• Event Reports
+• Historical Photos
+• Historical Documents
+
+Each document should support:
+
+• Categories
+• Tags
+• Version History
+• Author
+• Last Modified By
+• Approval Status
+• Visibility Permissions
+• Search
+• File Attachments
+• Rich Text Notes
+
+Implement global search across the knowledge base.
+
+Documents should be filterable by:
+
+Semester
+
+Committee
+
+Officer
+
+Document Type
+
+Date
+
+Author
+
+Tag
+
+Archived Status
+
+---
+
+# Module 2 — Officer Transition Center
+
+Leadership continuity is a primary design objective.
+
+Implement a Transition Center for every officer position.
+
+Each officer should have:
+
+Responsibilities
+
+Current Projects
+
+Pending Tasks
+
+Important Contacts
+
+Required Documents
+
+Annual Timeline
+
+Recurring Responsibilities
+
+Lessons Learned
+
+Advice for Success
+
+Transition Checklist
+
+Frequently Asked Questions
+
+Recommended Resources
+
+Outgoing officers should be able to leave transition notes.
+
+Incoming officers should have a structured onboarding workflow.
+
+Maintain historical transition records by semester.
+
+Nothing should be deleted.
+
+Everything should become institutional knowledge.
+
+---
+
+# Module 3 — Project & Task Management
+
+Projects should become first-class organizational objects.
+
+Support:
+
+Projects
+
+Subtasks
+
+Milestones
+
+Deadlines
+
+Priority
+
+Status
+
+Committee Ownership
+
+Project Lead
+
+Assigned Members
+
+Dependencies
+
+Risk Level
+
+Progress Percentage
+
+Deliverables
+
+Discussion Notes
+
+Attachments
+
+Projects may belong to:
+
+Committee
+
+Executive Board
+
+Operational Support Team
+
+Entire Chapter
+
+Every project should maintain a complete activity timeline.
+
+Support Kanban and List views.
+
+Allow Committee Chairs to manage committee projects.
+
+Allow Executive Board to view every project.
+
+Generate automatic reminders.
+
+---
+
+# Module 4 — Financial Operations Expansion
+
+Expand the existing financial module.
+
+Support:
+
+Semester Budgets
+
+Committee Budgets
+
+Budget Requests
+
+Expense Requests
+
+Reimbursements
+
+Donations
+
+Fundraisers
+
+Revenue
+
+Expenses
+
+Purchase Requests
+
+Receipt Uploads
+
+Approval Workflow
+
+Financial Reports
+
+Budget vs Actual
+
+Audit History
+
+Every transaction should maintain:
+
+Requestor
+
+Approver
+
+Status
+
+Date
+
+Supporting Documents
+
+Notes
+
+Approval History
+
+Nothing should ever be permanently deleted.
+
+Implement immutable audit history.
+
+---
+
+# Module 5 — Organizational Timeline
+
+Create a chapter-wide timeline.
+
+Display:
+
+Events
+
+Projects
+
+Officer Appointments
+
+Officer Transitions
+
+Committee Milestones
+
+Financial Milestones
+
+Meetings
+
+Deadlines
+
+Major Accomplishments
+
+Semester Rollovers
+
+Users should be able to filter by:
+
+Committee
+
+Semester
+
+Officer
+
+Project
+
+Category
+
+---
+
+# Module 6 — Technology Chair Console
+
+A new system role is required.
+
+Technology Chair
+
+Purpose:
+
+Manage the technology platform rather than chapter operations.
+
+This role is responsible for:
+
+Managing user roles
+
+Assigning permissions
+
+Managing organizational settings
+
+Managing feature flags
+
+Viewing system health
+
+Viewing audit logs
+
+Managing integrations
+
+Managing backups
+
+Managing notifications
+
+Managing desktop deployment settings
+
+Managing API keys
+
+Managing organization configuration
+
+Technology Chair should NOT automatically receive President permissions.
+
+Instead, Technology Chair should receive technical administration permissions.
+
+---
+
+# Module 7 — Impersonation / View Switching
+
+Because I currently serve multiple responsibilities:
+
+President
+
+Software Engineer
+
+Systems Architect
+
+Technology Chair
+
+I need to safely test every user experience.
+
+Implement Role View Switching.
+
+Requirements:
+
+Allow authorized Technology Chair users to temporarily assume another role's interface.
+
+Examples:
+
+View as General Member
+
+View as Committee Chair
+
+View as Membership Director
+
+View as Historian
+
+View as Treasurer
+
+View as President
+
+View as Advisor
+
+View as Executive Board
+
+View as Parent Chapter
+
+Switching views should:
+
+Never modify permissions permanently.
+
+Clearly indicate the active simulated role.
+
+Allow instant return to the original account.
+
+All impersonation activity must be logged.
+
+---
+
+# Module 8 — Audit & System Administration
+
+Create an Administration Center.
+
+Include:
+
+Audit Logs
+
+Authentication Logs
+
+Permission Changes
+
+Role Assignments
+
+Organization Settings
+
+Semester Configuration
+
+System Metrics
+
+Notification Queue
+
+Database Health
+
+API Status
+
+Desktop Client Versions
+
+Connected Devices
+
+Recent Activity
+
+Every administrative action should generate an audit record.
+
+Audit records should never be editable.
+
+---
+
+# Engineering Principles
+
+Do not duplicate business logic.
+
+Do not create separate APIs for desktop.
+
+Continue using:
+
+React
+
+TypeScript
+
+Tauri
+
+Express
+
+Drizzle ORM
+
+PostgreSQL
+
+React Query
+
+OpenAPI
+
+Role-based authorization
+
+Maintain backwards compatibility.
+
+Follow the existing design system.
+
+Build incrementally.
+
+Each completed module should remain deployable.
+
+Document all architectural decisions before implementation.

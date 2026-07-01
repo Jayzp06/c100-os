@@ -48,6 +48,7 @@ import type {
   OrgSettings,
   OrgSettingsUpdate,
   QrToken,
+  StartImpersonationInput,
   UpdateEventInput,
   UpdateMemberInput,
   UpdateProfileInput,
@@ -3166,4 +3167,171 @@ export const useUpdateOrgSettings = <
   TContext
 > => {
   return useMutation(getUpdateOrgSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Start role view impersonation (TechnologyChair only)
+ */
+export const getStartImpersonationUrl = () => {
+  return `/api/tech/impersonate`;
+};
+
+export const startImpersonation = async (
+  startImpersonationInput: StartImpersonationInput,
+  options?: RequestInit,
+): Promise<Member> => {
+  return customFetch<Member>(getStartImpersonationUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startImpersonationInput),
+  });
+};
+
+export const getStartImpersonationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startImpersonation>>,
+    TError,
+    { data: BodyType<StartImpersonationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startImpersonation>>,
+  TError,
+  { data: BodyType<StartImpersonationInput> },
+  TContext
+> => {
+  const mutationKey = ["startImpersonation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startImpersonation>>,
+    { data: BodyType<StartImpersonationInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return startImpersonation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartImpersonationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startImpersonation>>
+>;
+export type StartImpersonationMutationBody = BodyType<StartImpersonationInput>;
+export type StartImpersonationMutationError = ErrorType<void>;
+
+/**
+ * @summary Start role view impersonation (TechnologyChair only)
+ */
+export const useStartImpersonation = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startImpersonation>>,
+    TError,
+    { data: BodyType<StartImpersonationInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof startImpersonation>>,
+  TError,
+  { data: BodyType<StartImpersonationInput> },
+  TContext
+> => {
+  return useMutation(getStartImpersonationMutationOptions(options));
+};
+
+/**
+ * @summary End active role view impersonation (TechnologyChair only)
+ */
+export const getEndImpersonationUrl = () => {
+  return `/api/tech/impersonate`;
+};
+
+export const endImpersonation = async (
+  options?: RequestInit,
+): Promise<Member> => {
+  return customFetch<Member>(getEndImpersonationUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getEndImpersonationMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof endImpersonation>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof endImpersonation>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["endImpersonation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof endImpersonation>>,
+    void
+  > = () => {
+    return endImpersonation(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EndImpersonationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof endImpersonation>>
+>;
+
+export type EndImpersonationMutationError = ErrorType<void>;
+
+/**
+ * @summary End active role view impersonation (TechnologyChair only)
+ */
+export const useEndImpersonation = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof endImpersonation>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof endImpersonation>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getEndImpersonationMutationOptions(options));
 };

@@ -59,6 +59,7 @@ export const MemberRole = {
   BylawsChair: "BylawsChair",
   ExecutiveBoard: "ExecutiveBoard",
   Admin: "Admin",
+  TechnologyChair: "TechnologyChair",
 } as const;
 
 export type MemberMembershipStatus =
@@ -89,6 +90,11 @@ export const MemberExperience = {
   committee_portal: "committee_portal",
   member_portal: "member_portal",
 } as const;
+
+export interface ImpersonationState {
+  viewAs: string;
+  startedAt: string;
+}
 
 export interface Member {
   id: number;
@@ -128,6 +134,8 @@ export interface Member {
   profileImageUrl?: string | null;
   experience: MemberExperience;
   officerPositions: string[];
+  isTechChair?: boolean;
+  impersonating?: ImpersonationState | null;
 }
 
 export interface UpdateProfileInput {
@@ -147,6 +155,7 @@ export const CreateMemberInputRole = {
   BylawsChair: "BylawsChair",
   ExecutiveBoard: "ExecutiveBoard",
   Admin: "Admin",
+  TechnologyChair: "TechnologyChair",
 } as const;
 
 export type CreateMemberInputMembershipStatus =
@@ -194,6 +203,7 @@ export const UpdateMemberInputRole = {
   BylawsChair: "BylawsChair",
   ExecutiveBoard: "ExecutiveBoard",
   Admin: "Admin",
+  TechnologyChair: "TechnologyChair",
 } as const;
 
 export type UpdateMemberInputMembershipStatus =
@@ -562,6 +572,21 @@ export interface OrgSettingsUpdate {
   awardsMinPct?: number;
   /** @minimum 0 */
   duesAmountCents?: number;
+}
+
+export type StartImpersonationInputViewAs =
+  (typeof StartImpersonationInputViewAs)[keyof typeof StartImpersonationInputViewAs];
+
+export const StartImpersonationInputViewAs = {
+  Member: "Member",
+  CommitteeChair: "CommitteeChair",
+  BylawsChair: "BylawsChair",
+  ExecutiveBoard: "ExecutiveBoard",
+  Admin: "Admin",
+} as const;
+
+export interface StartImpersonationInput {
+  viewAs: StartImpersonationInputViewAs;
 }
 
 /**

@@ -10,6 +10,7 @@ import { db, membersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import {
   LEADERSHIP_ROLES,
+  TECH_OR_ADMIN,
   buildMemberDto,
   requireRole,
   writeAuditLog,
@@ -40,7 +41,7 @@ router.get(
 
 router.post(
   "/members/bulk-import",
-  requireRole("Admin")(async (req, res) => {
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
     const parsed = BulkImportMembersBody.safeParse(req.body);
     if (!parsed.success) {
       res
@@ -120,7 +121,7 @@ router.get(
 
 router.patch(
   "/members/:id",
-  requireRole("Admin")(async (req, res) => {
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
     const params = UpdateMemberParams.safeParse(req.params);
     const body = UpdateMemberBody.safeParse(req.body);
     if (!params.success || !body.success) {

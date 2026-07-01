@@ -20,6 +20,7 @@ import EventDetailPage from "@/pages/event-detail";
 import EventQrPage from "@/pages/event-qr";
 import NudgesPage from "@/pages/nudges";
 import ReportsPage from "@/pages/reports";
+import TechConsolePage from "@/pages/tech-console";
 
 // Persist query cache to localStorage so read-only views (dashboard, events,
 // members, committees) survive page reloads and brief network loss.
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/events/:id/qr" component={EventQrPage} />
       <Route path="/nudges" component={NudgesPage} />
       <Route path="/reports" component={ReportsPage} />
+      <Route path="/tech" component={TechConsolePage} />
       <Route component={NotFound} />
     </Switch>
   );

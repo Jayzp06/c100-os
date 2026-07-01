@@ -112,6 +112,7 @@ export const GetMyProfileResponse = zod.object({
     "BylawsChair",
     "ExecutiveBoard",
     "Admin",
+    "TechnologyChair",
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
@@ -140,6 +141,13 @@ export const GetMyProfileResponse = zod.object({
     "member_portal",
   ]),
   officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });
 
 /**
@@ -168,6 +176,7 @@ export const UpdateMyProfileResponse = zod.object({
     "BylawsChair",
     "ExecutiveBoard",
     "Admin",
+    "TechnologyChair",
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
@@ -196,6 +205,13 @@ export const UpdateMyProfileResponse = zod.object({
     "member_portal",
   ]),
   officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });
 
 /**
@@ -217,6 +233,7 @@ export const GetMyDashboardResponse = zod.object({
       "BylawsChair",
       "ExecutiveBoard",
       "Admin",
+      "TechnologyChair",
     ]),
     committeeId: zod.number().nullable(),
     committeeName: zod.string().nullish(),
@@ -245,6 +262,13 @@ export const GetMyDashboardResponse = zod.object({
       "member_portal",
     ]),
     officerPositions: zod.array(zod.string()),
+    isTechChair: zod.boolean().optional(),
+    impersonating: zod
+      .object({
+        viewAs: zod.string(),
+        startedAt: zod.coerce.date(),
+      })
+      .nullish(),
   }),
   upcomingEvents: zod.array(
     zod.object({
@@ -395,6 +419,7 @@ export const ListMembersResponseItem = zod.object({
     "BylawsChair",
     "ExecutiveBoard",
     "Admin",
+    "TechnologyChair",
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
@@ -423,6 +448,13 @@ export const ListMembersResponseItem = zod.object({
     "member_portal",
   ]),
   officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });
 export const ListMembersResponse = zod.array(ListMembersResponseItem);
 
@@ -444,6 +476,7 @@ export const BulkImportMembersBody = zod.object({
             "BylawsChair",
             "ExecutiveBoard",
             "Admin",
+            "TechnologyChair",
           ])
           .optional(),
         committeeId: zod.number().nullish(),
@@ -488,6 +521,7 @@ export const GetMemberResponse = zod.object({
     "BylawsChair",
     "ExecutiveBoard",
     "Admin",
+    "TechnologyChair",
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
@@ -516,6 +550,13 @@ export const GetMemberResponse = zod.object({
     "member_portal",
   ]),
   officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });
 
 /**
@@ -533,6 +574,7 @@ export const UpdateMemberBody = zod.object({
       "BylawsChair",
       "ExecutiveBoard",
       "Admin",
+      "TechnologyChair",
     ])
     .optional(),
   committeeId: zod.number().nullish(),
@@ -559,6 +601,7 @@ export const UpdateMemberResponse = zod.object({
     "BylawsChair",
     "ExecutiveBoard",
     "Admin",
+    "TechnologyChair",
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
@@ -587,6 +630,13 @@ export const UpdateMemberResponse = zod.object({
     "member_portal",
   ]),
   officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });
 
 /**
@@ -652,6 +702,7 @@ export const GetCommitteeRosterResponseItem = zod.object({
     "BylawsChair",
     "ExecutiveBoard",
     "Admin",
+    "TechnologyChair",
   ]),
   committeeId: zod.number().nullable(),
   committeeName: zod.string().nullish(),
@@ -680,6 +731,13 @@ export const GetCommitteeRosterResponseItem = zod.object({
     "member_portal",
   ]),
   officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });
 export const GetCommitteeRosterResponse = zod.array(
   GetCommitteeRosterResponseItem,
@@ -1002,6 +1060,7 @@ export const CheckInToEventResponse = zod.object({
       "BylawsChair",
       "ExecutiveBoard",
       "Admin",
+      "TechnologyChair",
     ]),
     committeeId: zod.number().nullable(),
     committeeName: zod.string().nullish(),
@@ -1030,6 +1089,13 @@ export const CheckInToEventResponse = zod.object({
       "member_portal",
     ]),
     officerPositions: zod.array(zod.string()),
+    isTechChair: zod.boolean().optional(),
+    impersonating: zod
+      .object({
+        viewAs: zod.string(),
+        startedAt: zod.coerce.date(),
+      })
+      .nullish(),
   }),
 });
 
@@ -1284,4 +1350,126 @@ export const UpdateOrgSettingsResponse = zod.object({
   conferenceMinPct: zod.number(),
   awardsMinPct: zod.number(),
   duesAmountCents: zod.number(),
+});
+
+/**
+ * @summary Start role view impersonation (TechnologyChair only)
+ */
+export const StartImpersonationBody = zod.object({
+  viewAs: zod.enum([
+    "Member",
+    "CommitteeChair",
+    "BylawsChair",
+    "ExecutiveBoard",
+    "Admin",
+  ]),
+});
+
+export const StartImpersonationResponse = zod.object({
+  id: zod.number(),
+  authId: zod.string(),
+  fullName: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  studentId: zod.string().nullish(),
+  gpa: zod.number().nullish(),
+  graduationYear: zod.number().nullish(),
+  role: zod.enum([
+    "Member",
+    "CommitteeChair",
+    "BylawsChair",
+    "ExecutiveBoard",
+    "Admin",
+    "TechnologyChair",
+  ]),
+  committeeId: zod.number().nullable(),
+  committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
+  membershipStatus: zod.enum([
+    "Active",
+    "Probationary",
+    "Suspended",
+    "Inactive",
+  ]),
+  duesPaid: zod.boolean(),
+  dateJoined: zod.coerce.date().nullish(),
+  totalPoints: zod.number(),
+  impactPoints: zod.number(),
+  participationPct: zod.number(),
+  streakCount: zod.number(),
+  nudgeStatus: zod.enum(["Active", "Warning", "AtRisk", "Critical"]),
+  accountActive: zod.boolean(),
+  lastLogin: zod.coerce.date().nullish(),
+  eventsAttended: zod.number(),
+  eventsEligible: zod.number(),
+  profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
+});
+
+/**
+ * @summary End active role view impersonation (TechnologyChair only)
+ */
+export const EndImpersonationResponse = zod.object({
+  id: zod.number(),
+  authId: zod.string(),
+  fullName: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  studentId: zod.string().nullish(),
+  gpa: zod.number().nullish(),
+  graduationYear: zod.number().nullish(),
+  role: zod.enum([
+    "Member",
+    "CommitteeChair",
+    "BylawsChair",
+    "ExecutiveBoard",
+    "Admin",
+    "TechnologyChair",
+  ]),
+  committeeId: zod.number().nullable(),
+  committeeName: zod.string().nullish(),
+  committeeChairId: zod.number().nullish(),
+  membershipStatus: zod.enum([
+    "Active",
+    "Probationary",
+    "Suspended",
+    "Inactive",
+  ]),
+  duesPaid: zod.boolean(),
+  dateJoined: zod.coerce.date().nullish(),
+  totalPoints: zod.number(),
+  impactPoints: zod.number(),
+  participationPct: zod.number(),
+  streakCount: zod.number(),
+  nudgeStatus: zod.enum(["Active", "Warning", "AtRisk", "Critical"]),
+  accountActive: zod.boolean(),
+  lastLogin: zod.coerce.date().nullish(),
+  eventsAttended: zod.number(),
+  eventsEligible: zod.number(),
+  profileImageUrl: zod.string().nullish(),
+  experience: zod.enum([
+    "operations_console",
+    "committee_portal",
+    "member_portal",
+  ]),
+  officerPositions: zod.array(zod.string()),
+  isTechChair: zod.boolean().optional(),
+  impersonating: zod
+    .object({
+      viewAs: zod.string(),
+      startedAt: zod.coerce.date(),
+    })
+    .nullish(),
 });

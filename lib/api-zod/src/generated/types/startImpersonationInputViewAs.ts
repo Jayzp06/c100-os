@@ -6,14 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type CreateMemberInputRole =
-  (typeof CreateMemberInputRole)[keyof typeof CreateMemberInputRole];
+export type StartImpersonationInputViewAs =
+  (typeof StartImpersonationInputViewAs)[keyof typeof StartImpersonationInputViewAs];
 
-export const CreateMemberInputRole = {
+export const StartImpersonationInputViewAs = {
   Member: "Member",
   CommitteeChair: "CommitteeChair",
   BylawsChair: "BylawsChair",
   ExecutiveBoard: "ExecutiveBoard",
   Admin: "Admin",
-  TechnologyChair: "TechnologyChair",
 } as const;

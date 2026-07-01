@@ -19,23 +19,45 @@ import {
   loadMember,
   requireAuth,
   resolvePermissions,
+  syntheticPermissionsFor,
   writeAuditLog,
 } from "../lib/c100";
+import { getSession, getSessionId } from "../lib/auth";
 
 const router: IRouter = Router();
 
 router.get(
   "/me",
   requireAuth(async (req, res) => {
-    const [dto, permissions] = await Promise.all([
+    const [dto, realPerms] = await Promise.all([
       buildMemberDto(req.member),
       resolvePermissions(req.member),
     ]);
+
+    let perms = realPerms;
+    let impersonating: { viewAs: string; startedAt: string } | null = null;
+
+    if (realPerms.isTechChair) {
+      const sid = getSessionId(req);
+      if (sid) {
+        const session = await getSession(sid);
+        if (session?.impersonating) {
+          impersonating = session.impersonating;
+          perms = {
+            ...syntheticPermissionsFor(session.impersonating.viewAs),
+            isTechChair: true,
+          };
+        }
+      }
+    }
+
     res.json({
       ...(dto as object),
-      experience: permissions.experience,
-      officerPositions: permissions.officerPositions,
-      committeeChairId: permissions.committeeChairId,
+      experience: perms.experience,
+      officerPositions: perms.officerPositions,
+      committeeChairId: perms.committeeChairId,
+      isTechChair: realPerms.isTechChair,
+      impersonating,
     });
   }),
 );

@@ -15,7 +15,14 @@ import {
   LogOut,
   Menu,
   ChevronRight,
+  Settings2,
+  X,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useEndImpersonation,
+  getGetMyProfileQueryKey,
+} from "@workspace/api-client-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -25,11 +32,17 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+type NavContext = {
+  isLeader: boolean;
+  isExecOrAdmin: boolean;
+  isTechChair: boolean;
+};
+
 type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  show: (ctx: { isLeader: boolean; isExecOrAdmin: boolean }) => boolean;
+  show: (ctx: NavContext) => boolean;
 };
 
 const NAV: NavItem[] = [
@@ -59,6 +72,12 @@ const NAV: NavItem[] = [
     label: "Reports",
     icon: ClipboardCheck,
     show: ({ isExecOrAdmin }) => isExecOrAdmin,
+  },
+  {
+    href: "/tech",
+    label: "System",
+    icon: Settings2,
+    show: ({ isTechChair }) => isTechChair,
   },
   {
     href: "/profile",
@@ -173,11 +192,44 @@ function SidebarUserPanel() {
   );
 }
 
+function ImpersonationBanner() {
+  const me = useMe();
+  const queryClient = useQueryClient();
+  const endMutation = useEndImpersonation({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.setQueryData(getGetMyProfileQueryKey(), data);
+      },
+    },
+  });
+
+  if (!me.impersonating) return null;
+
+  return (
+    <div className="flex shrink-0 items-center justify-between gap-3 bg-amber-400 px-4 py-1.5 text-amber-950">
+      <span className="text-xs font-medium">
+        Viewing as <strong>{me.impersonating.viewAs}</strong> — view only, real permissions unchanged
+      </span>
+      <button
+        onClick={() => endMutation.mutate()}
+        disabled={endMutation.isPending}
+        className="flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold hover:bg-amber-500 disabled:opacity-50 transition-colors"
+      >
+        <X className="h-3 w-3" />
+        {endMutation.isPending ? "Exiting…" : "Exit view"}
+      </button>
+    </div>
+  );
+}
+
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const me = useMe();
-  const items = NAV.filter((n) =>
-    n.show({ isLeader: me.isLeader, isExecOrAdmin: me.isExecOrAdmin }),
-  );
+  const ctx: NavContext = {
+    isLeader: me.isLeader,
+    isExecOrAdmin: me.isExecOrAdmin,
+    isTechChair: me.isTechChair,
+  };
+  const items = NAV.filter((n) => n.show(ctx));
 
   return (
     <div className="flex h-full flex-col bg-[hsl(var(--sidebar))]">
@@ -204,7 +256,9 @@ export function OperationsConsoleShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[hsl(var(--background))]">
+    <div className="flex h-screen flex-col overflow-hidden bg-[hsl(var(--background))]">
+      <ImpersonationBanner />
+      <div className="flex flex-1 overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 lg:w-60 shrink-0 flex-col border-r border-[hsl(var(--sidebar-border))]">
         <Sidebar />
@@ -244,6 +298,7 @@ export function OperationsConsoleShell({
             {children}
           </div>
         </main>
+      </div>
       </div>
     </div>
   );

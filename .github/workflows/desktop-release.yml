@@ -33,17 +33,25 @@ jobs:
   # ─────────────────────────────────────────────────────────
   #  macOS — universal binary (.dmg) covering Intel + Apple Silicon
   #
-  #  Two build steps gate on APPLE_CERTIFICATE:
-  #    • Secret absent/empty  → unsigned DMG (works out of the box)
-  #    • Secret present       → signed + notarized DMG
+  #  Signing mode is selected automatically:
+  #    • APPLE_CERTIFICATE absent/empty  → unsigned DMG (default)
+  #    • APPLE_CERTIFICATE present       → signed + notarized DMG
   #
   #  To enable signing, add these GitHub repository secrets:
-  #    APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD,
-  #    APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_ID_PASSWORD, APPLE_TEAM_ID
+  #    APPLE_CERTIFICATE            (base64-encoded .p12 file)
+  #    APPLE_CERTIFICATE_PASSWORD   (password for the .p12)
+  #    APPLE_SIGNING_IDENTITY       (e.g. "Developer ID Application: ...")
+  #    APPLE_ID                     (Apple ID email)
+  #    APPLE_ID_PASSWORD            (app-specific password)
+  #    APPLE_TEAM_ID                (10-character team ID)
   # ─────────────────────────────────────────────────────────
   build-macos:
     name: Build macOS (.dmg)
     runs-on: macos-latest
+    # Expose the secret as a job-level env var so step if: conditions can read
+    # it via the env context (secrets context is not available in if: expressions).
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -72,11 +80,10 @@ jobs:
       - name: Build frontend (artifacts/c100)
         run: pnpm --filter @workspace/c100 run build
 
-      # ── Unsigned build ─────────────────────────────────────
-      # Runs when no Apple Developer certificate is configured.
-      # Produces a working unsigned .dmg suitable for internal use.
+      # ── Unsigned build ──────────────────────────────────────────────────────
+      # No Apple signing env vars are passed — Tauri will not attempt signing.
       - name: Build Tauri app (universal macOS, unsigned)
-        if: ${{ secrets.APPLE_CERTIFICATE == '' }}
+        if: ${{ env.APPLE_CERTIFICATE == '' }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,11 +103,11 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
 
-      # ── Signed + notarized build ────────────────────────────
-      # Runs only when APPLE_CERTIFICATE secret is present.
+      # ── Signed + notarized build ────────────────────────────────────────────
+      # Apple signing env vars are only injected when APPLE_CERTIFICATE is set.
       # tauri-action v0 handles certificate import internally.
       - name: Build Tauri app (universal macOS, signed)
-        if: ${{ secrets.APPLE_CERTIFICATE != '' }}
+        if: ${{ env.APPLE_CERTIFICATE != '' }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

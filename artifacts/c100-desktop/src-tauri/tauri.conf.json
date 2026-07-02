@@ -7,7 +7,7 @@
     "frontendDist": "../../c100/dist/public",
     "devUrl": "http://localhost:23873",
     "beforeDevCommand": "",
-    "beforeBuildCommand": "pnpm --filter @workspace/c100 run build"
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [

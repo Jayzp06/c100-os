@@ -1,0 +1,147 @@
+You are now acting as a senior DevOps engineer specializing in pnpm monorepos, Vite 7, Tauri v2, GitHub Actions, and cross-platform desktop builds.
+Do not make guesses or apply random fixes.
+Your goal is to determine the root cause of the GitHub Actions build failure and leave the repository in a working state.
+Repository
+This is a pnpm workspace.
+Relevant projects:
+artifacts/c100 (React + Vite frontend)
+artifacts/c100-desktop (Tauri v2 app)
+The Tauri config currently contains
+"beforeBuildCommand": "pnpm --filter @workspace/c100 run build"
+The GitHub Action also builds the frontend before invoking Tauri.
+
+Current symptoms
+Local
+Running
+PORT=23873 \
+BASE_PATH=/ \
+NODE_ENV=production \
+pnpm --filter @workspace/c100 run build
+builds successfully.
+Likewise,
+pnpm exec vite build --config vite.config.ts
+works locally.
+
+GitHub Actions
+The workflow fails almost immediately.
+Sometimes with
+Source phase import "vite/modulepreload-polyfill"
+Other times after disabling modulePreload it changes to
+Source phase import "/src/main.tsx"
+Both occur before the frontend actually transforms.
+This strongly suggests the GitHub runner is not executing the same build that succeeds locally.
+
+Important constraints
+Do NOT simply keep changing vite.config.ts.
+Do NOT keep disabling Vite features.
+Instead determine WHY GitHub behaves differently.
+
+Investigate
+Systematically verify:
+1. Workflow
+Inspect
+.github/workflows/desktop-release.yml
+Ensure
+valid YAML
+correct indentation
+no duplicate build commands
+no malformed run blocks
+correct working-directory
+correct env variables
+
+2. Build duplication
+Determine whether the frontend is built:
+by GitHub Actions
+AND by Tauri
+If both occur,
+decide which one should remain.
+Remove the duplicate.
+
+3. Tauri
+Inspect
+artifacts/c100-desktop/src-tauri/tauri.conf.json
+Determine whether
+beforeBuildCommand
+should be
+removed
+replaced
+or left alone.
+Explain why.
+
+4. Vite
+Inspect
+artifacts/c100/vite.config.ts
+Determine whether anything in this config is incompatible with GitHub Actions.
+Specifically inspect
+root
+base
+modulePreload
+plugins
+aliases
+build.outDir
+Do not modify unless there is evidence.
+
+5. index.html
+Inspect
+artifacts/c100/index.html
+Ensure it is a completely standard Vite entry.
+
+6. Package versions
+Verify
+vite
+rollup
+@vitejs/plugin-react
+tailwind plugin
+Resolve where each package is actually loaded from.
+Make sure GitHub isn't resolving another Vite installation.
+
+7. pnpm workspace
+Inspect
+pnpm-workspace.yaml
+package.json
+pnpm-lock.yaml
+Ensure
+catalogs
+overrides
+workspace filters
+cannot cause a different dependency graph inside GitHub.
+
+8. GitHub install
+Determine whether GitHub should use
+pnpm install --frozen-lockfile
+or
+pnpm install --no-frozen-lockfile
+Explain why.
+
+9. Compare environments
+Generate a comparison between
+LOCAL
+and
+GitHub Actions
+including
+Node version
+pnpm version
+vite version
+rollup version
+cwd
+working directory
+environment variables
+resolved vite binary
+resolved config
+Identify any mismatch.
+
+Expected deliverables
+Do NOT stop after identifying one issue.
+Provide:
+Root cause
+Why GitHub behaves differently
+Exact files modified
+Unified diff
+Explanation for every change
+Final verification that
+pnpm --filter @workspace/c100 run build
+works
+and
+the GitHub Action should now succeed.
+If additional problems remain after fixing the first one, continue until the workflow completes successfully.
+Do not leave the repository in a partially-debugged state.

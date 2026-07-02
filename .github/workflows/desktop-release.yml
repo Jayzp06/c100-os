@@ -32,6 +32,14 @@ env:
 jobs:
   # ─────────────────────────────────────────────────────────
   #  macOS — universal binary (.dmg) covering Intel + Apple Silicon
+  #
+  #  Two build steps gate on APPLE_CERTIFICATE:
+  #    • Secret absent/empty  → unsigned DMG (works out of the box)
+  #    • Secret present       → signed + notarized DMG
+  #
+  #  To enable signing, add these GitHub repository secrets:
+  #    APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD,
+  #    APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_ID_PASSWORD, APPLE_TEAM_ID
   # ─────────────────────────────────────────────────────────
   build-macos:
     name: Build macOS (.dmg)
@@ -64,16 +72,35 @@ jobs:
       - name: Build frontend (artifacts/c100)
         run: pnpm --filter @workspace/c100 run build
 
-      - name: Import Apple code-signing certificate
-        if: ${{ env.APPLE_CERTIFICATE != '' }}
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      # ── Unsigned build ─────────────────────────────────────
+      # Runs when no Apple Developer certificate is configured.
+      # Produces a working unsigned .dmg suitable for internal use.
+      - name: Build Tauri app (universal macOS, unsigned)
+        if: ${{ secrets.APPLE_CERTIFICATE == '' }}
+        uses: tauri-apps/tauri-action@v0
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: artifacts/c100-desktop
+          tauriScript: pnpm tauri
+          args: --target universal-apple-darwin
+          tagName: ${{ github.ref_name }}
+          releaseName: 'C100 Operations ${{ github.ref_name }}'
+          releaseBody: |
+            C100 Trailblazing Chapter Operations Console — macOS installer.
 
-      - name: Build Tauri app (universal macOS)
+            Requires macOS 10.15 Catalina or later.
+          releaseDraft: ${{ github.event.inputs.draft != 'false' }}
+          prerelease: false
+          includeUpdaterJson: true
+
+      # ── Signed + notarized build ────────────────────────────
+      # Runs only when APPLE_CERTIFICATE secret is present.
+      # tauri-action v0 handles certificate import internally.
+      - name: Build Tauri app (universal macOS, signed)
+        if: ${{ secrets.APPLE_CERTIFICATE != '' }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,7 +120,7 @@ jobs:
           releaseName: 'C100 Operations ${{ github.ref_name }}'
           releaseBody: |
             C100 Trailblazing Chapter Operations Console — macOS installer.
-            
+
             Requires macOS 10.15 Catalina or later.
           releaseDraft: ${{ github.event.inputs.draft != 'false' }}
           prerelease: false
@@ -144,7 +171,7 @@ jobs:
           releaseName: 'C100 Operations ${{ github.ref_name }}'
           releaseBody: |
             C100 Trailblazing Chapter Operations Console — Windows installer.
-            
+
             Requires Windows 10 (1803+) or Windows 11.
             WebView2 is included via the system component (auto-installed if absent).
           releaseDraft: ${{ github.event.inputs.draft != 'false' }}

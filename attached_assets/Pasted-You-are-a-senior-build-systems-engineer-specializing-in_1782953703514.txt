@@ -1,0 +1,155 @@
+You are a senior build systems engineer specializing in Vite 7, pnpm workspaces, Rollup, GitHub Actions, and Tauri v2.
+
+Do NOT make random changes or apply workarounds. Find the actual root cause.
+
+Current Situation
+
+The frontend builds perfectly locally:
+
+PORT=23873 BASE_PATH=/ NODE_ENV=production pnpm --filter @workspace/c100 run build
+
+Output:
+
+1873 modules transformed
+Production build succeeds
+Vite 7.3.6
+
+However GitHub Actions fails almost immediately:
+
+vite v7.3.6 building client environment for production...
+
+✓ 2 modules transformed.
+
+Build failed
+
+Source phase import "vite/modulepreload-polyfill" in "index.html" must be external.
+
+Sometimes after modifications it instead becomes
+
+Source phase import "/src/main.tsx" in "index.html" must be external.
+
+Both errors occur after only 2 modules transformed, meaning Vite never reaches the React application.
+
+Things already verified
+
+Local build succeeds.
+
+Environment variables exist:
+
+PORT
+BASE_PATH
+NODE_ENV
+
+Workflow exports them correctly.
+
+The workflow uses
+
+pnpm --filter @workspace/c100 run build
+
+not raw Rollup.
+
+The project uses
+
+vite 7.3.6
+rollup 4.62.x
+
+The build succeeds locally with exactly these versions.
+
+Changes already attempted
+
+Removed duplicate frontend build from Tauri
+
+beforeBuildCommand: ""
+
+Removed
+
+modulePreload: false
+
+from vite.config.ts
+
+Switched between
+
+--frozen-lockfile
+
+and
+
+--no-frozen-lockfile
+
+Added platform Rollup binaries
+
+Adjusted workflow indentation
+
+Verified working directory
+
+Verified package.json
+
+Verified vite.config.ts
+
+Verified index.html
+
+Verified the build script
+
+None fixed the issue.
+
+Repository Structure
+
+Workspace:
+
+artifacts/
+    c100/
+    c100-desktop/
+lib/
+scripts/
+
+Frontend:
+
+artifacts/c100
+
+Desktop:
+
+artifacts/c100-desktop
+What I want
+
+Do NOT guess.
+
+Perform a complete audit.
+
+Specifically investigate:
+
+Vite 7 source-phase import support
+Rollup compatibility
+pnpm workspace resolution
+GitHub Actions environment
+GitHub runner differences
+Whether GitHub is executing a different Vite binary than expected
+Whether a dependency is bundling Rollup incorrectly
+Whether any plugin modifies HTML transforms
+Any known Vite 7 / Rollup 4.62 bugs involving
+vite/modulepreload-polyfill
+
+or
+
+Source phase import
+Whether the build is accidentally invoking Rollup instead of Vite's HTML pipeline.
+Your Tasks
+Search the entire repository for anything that affects:
+rollupOptions
+build plugins
+HTML transforms
+modulePreload
+optimizeDeps
+plugins
+vite aliases
+custom HTML plugins
+Rollup plugins
+Inspect every package.json.
+Inspect every vite.config.ts.
+Inspect every tauri.conf.json.
+Inspect the GitHub workflow.
+Explain exactly WHY GitHub behaves differently from local.
+Identify the root cause.
+Produce the minimal correct fix, not a workaround.
+Explain why the fix works.
+If this is a known upstream Vite or Rollup issue, provide the issue reference and recommend the proper version change.
+
+Do not stop after finding one possible cause. Continue until you are confident you have identified the actual root cause and can justify it with evidence from the repository.

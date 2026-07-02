@@ -8,3 +8,4 @@
 - [Drizzle migrate baseline strategy](drizzle-migrate-baseline.md) — Drizzle uses schema `drizzle`, table `__drizzle_migrations`, compares by folderMillis timestamp; pre-insert baseline SHA-256 + exact when timestamp to skip re-running it.
 - [RBAC permission engine](rbac-permission-engine.md) — DB-driven RBAC in artifacts/api-server/src/lib/rbac.ts; `resolveRbacContext()` queries new tables; `requireRole()` is shim that also honors system roles; ResolvedPermissions now includes `rbac: RbacContext`.
 - [scripts rootDir cannot import lib sources](scripts-rootdir.md) — scripts tsconfig rootDir is scripts/src; importing lib/db/src/* directly causes TS6059; always import from @workspace/db (compiled lib) or add a seed-rbac npm script in lib/db/package.json.
+- [Rollup CI native binary](rollup-ci-native-binary.md) — pnpm-workspace overrides for darwin/win32 rollup binaries break Tauri CI; remove them or the JS fallback causes "Source phase import must be external".

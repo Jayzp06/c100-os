@@ -152,10 +152,9 @@ export const membersTable = pgTable(
     profileImageUrl: varchar("profile_image_url", { length: 500 }),
     // Soft-delete: member is hidden from active rosters/counts but attendance,
     // audit-log, and historical references are preserved. Never hard-deleted.
+    // Real historical data is protected by this soft-delete/restore mechanism
+    // plus the audit_log trail, not by classifying rows as seed-vs-real.
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    // Marks rows created by the seed script so an admin "clean up demo data"
-    // action can never accidentally target real chapter members.
-    isDemoSeed: boolean("is_demo_seed").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -193,7 +192,6 @@ export const eventsTable = pgTable(
     attendanceEligibility: varchar("attendance_eligibility", { length: 16 })
       .notNull()
       .default("Chapter"),
-    isDemoSeed: boolean("is_demo_seed").notNull().default(false),
     date: date("date").notNull(),
     startTime: varchar("start_time", { length: 8 }).notNull(),
     endTime: varchar("end_time", { length: 8 }).notNull(),

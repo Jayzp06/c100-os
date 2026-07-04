@@ -279,14 +279,24 @@ export interface Committee {
   fourForFutureAlignment: string;
 }
 
-export interface CommitteeLeaderboardEntry {
-  committeeId: number;
-  name: string;
-  rank: number;
+export interface MyCommitteeMember {
+  id: number;
+  fullName: string;
+  role: string;
   participationPct: number;
-  totalImpactPoints: number;
-  totalEventsHosted: number;
-  memberCount: number;
+  totalPoints: number;
+  impactPoints: number;
+  nudgeStatus: string;
+}
+
+export interface MyCommitteeActivity {
+  id: number;
+  /** @nullable */
+  memberName: string | null;
+  /** @nullable */
+  eventTitle: string | null;
+  checkInTime: string;
+  pointsAwarded: number;
 }
 
 export type EventEventType = typeof EventEventType[keyof typeof EventEventType];
@@ -336,6 +346,60 @@ export interface Event {
   totalAttendees: number;
   status: EventStatus;
   createdAt: string;
+}
+
+export interface MyCommittee {
+  committee: Committee;
+  isChair: boolean;
+  myStats: Member;
+  /** Full private roster — present only when the caller is this committee's chair (or chapter-wide leadership). */
+  roster?: MyCommitteeMember[];
+  /** Roster members below the participation goal — chair view only. */
+  followUpMembers?: MyCommitteeMember[];
+  upcomingEvents?: Event[];
+  /** Recent check-ins for this committee — chair view only. */
+  recentActivity?: MyCommitteeActivity[];
+}
+
+export type EventTypeConfigEventType = typeof EventTypeConfigEventType[keyof typeof EventTypeConfigEventType];
+
+
+export const EventTypeConfigEventType = {
+  GeneralBodyMeeting: 'GeneralBodyMeeting',
+  CommitteeMeeting: 'CommitteeMeeting',
+  CommunityService: 'CommunityService',
+  MentoringSession: 'MentoringSession',
+  Workshop: 'Workshop',
+  Fundraiser: 'Fundraiser',
+  Conference: 'Conference',
+  Social: 'Social',
+} as const;
+
+export interface EventTypeConfig {
+  eventType: EventTypeConfigEventType;
+  pointValue: number;
+  impactMultiplier: number;
+  /** @nullable */
+  updatedAt?: string | null;
+  /** @nullable */
+  updatedByName?: string | null;
+}
+
+export interface EventTypeConfigUpdate {
+  /** @minimum 0 */
+  pointValue?: number;
+  /** @minimum 0 */
+  impactMultiplier?: number;
+}
+
+export interface CommitteeLeaderboardEntry {
+  committeeId: number;
+  name: string;
+  rank: number;
+  participationPct: number;
+  totalImpactPoints: number;
+  totalEventsHosted: number;
+  memberCount: number;
 }
 
 export type AttendanceRecordMethod = typeof AttendanceRecordMethod[keyof typeof AttendanceRecordMethod];

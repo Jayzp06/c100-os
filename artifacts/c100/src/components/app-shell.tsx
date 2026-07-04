@@ -455,9 +455,7 @@ export function CommitteePortalShell({
       show: () => true,
     },
     {
-      href: me.committeeChairId
-        ? `/committees/${me.committeeChairId}`
-        : "/committees",
+      href: "/my-committee",
       label: "My Committee",
       icon: Layers3,
       show: () => true,
@@ -581,9 +579,7 @@ export function MemberPortalShell({
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/events", label: "Events", icon: CalendarDays },
     {
-      href: me.member?.committeeId
-        ? `/committees/${me.member.committeeId}`
-        : "/committees",
+      href: "/my-committee",
       label: "Committee",
       icon: Layers3,
     },

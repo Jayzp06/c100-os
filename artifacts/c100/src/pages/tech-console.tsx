@@ -1,21 +1,37 @@
+import { useEffect, useState } from "react";
 import { useMe } from "@/lib/me";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   useStartImpersonation,
   useEndImpersonation,
   useGetOrgSettings,
   useListMembers,
+  useListEventTypeConfig,
+  useUpdateEventTypeConfig,
+  getListEventTypeConfigQueryKey,
   getGetMyProfileQueryKey,
   type Member,
+  type EventTypeConfig,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import LoginPage from "@/pages/login";
-import { ErrorBlock } from "@/components/page-states";
+import { ErrorBlock, LoadingBlock } from "@/components/page-states";
 import { cn } from "@/lib/utils";
-import { Shield, Users, Settings, Eye, EyeOff, RotateCcw } from "lucide-react";
+import { eventTypeLabel } from "@/components/badges";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Shield,
+  Users,
+  Settings,
+  Eye,
+  EyeOff,
+  RotateCcw,
+  Sliders,
+} from "lucide-react";
 
 const VIEW_OPTIONS: {
   value: string;
@@ -78,6 +94,7 @@ export default function TechConsolePage() {
       <div className="space-y-6">
         <RoleViewSwitcher />
         <SystemSummary />
+        <ScoringRules />
       </div>
     </AppShell>
   );
@@ -237,5 +254,157 @@ function SystemSummary() {
         );
       })}
     </div>
+  );
+}
+
+function ScoringRules() {
+  const { data, isLoading, error } = useListEventTypeConfig();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [drafts, setDrafts] = useState<
+    Record<string, { pointValue: string; impactMultiplier: string }>
+  >({});
+
+  useEffect(() => {
+    if (!data) return;
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (const cfg of data) {
+        if (!next[cfg.eventType]) {
+          next[cfg.eventType] = {
+            pointValue: String(cfg.pointValue),
+            impactMultiplier: String(cfg.impactMultiplier),
+          };
+        }
+      }
+      return next;
+    });
+  }, [data]);
+
+  const update = useUpdateEventTypeConfig({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Scoring rule updated." });
+        qc.invalidateQueries({ queryKey: getListEventTypeConfigQueryKey() });
+      },
+      onError: () => {
+        toast({ title: "Could not update scoring rule.", variant: "destructive" });
+      },
+    },
+  });
+
+  function save(cfg: EventTypeConfig) {
+    const draft = drafts[cfg.eventType];
+    if (!draft) return;
+    const pointValue = Number(draft.pointValue);
+    const impactMultiplier = Number(draft.impactMultiplier);
+    if (!Number.isFinite(pointValue) || !Number.isFinite(impactMultiplier)) {
+      toast({ title: "Enter valid numbers.", variant: "destructive" });
+      return;
+    }
+    update.mutate({
+      eventType: cfg.eventType,
+      data: { pointValue, impactMultiplier },
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <Sliders className="h-4 w-4 text-muted-foreground" />
+          Event Scoring Rules
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Point values and impact multipliers auto-score new events by type.
+          Changing a rule here only affects events created after the change —
+          existing events keep the scoring they were created with.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <LoadingBlock />
+        ) : error || !data ? (
+          <ErrorBlock />
+        ) : (
+          <div className="space-y-3">
+            {data.map((cfg) => {
+              const draft = drafts[cfg.eventType] ?? {
+                pointValue: String(cfg.pointValue),
+                impactMultiplier: String(cfg.impactMultiplier),
+              };
+              const dirty =
+                draft.pointValue !== String(cfg.pointValue) ||
+                draft.impactMultiplier !== String(cfg.impactMultiplier);
+              return (
+                <div
+                  key={cfg.eventType}
+                  className="grid grid-cols-1 items-end gap-3 rounded-md border p-3 sm:grid-cols-[1fr_auto_auto_auto]"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {eventTypeLabel(cfg.eventType)}
+                    </p>
+                    {cfg.updatedByName ? (
+                      <p className="text-xs text-muted-foreground">
+                        Last updated by {cfg.updatedByName}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Points
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      className="w-24"
+                      value={draft.pointValue}
+                      onChange={(e) =>
+                        setDrafts((prev) => ({
+                          ...prev,
+                          [cfg.eventType]: {
+                            ...draft,
+                            pointValue: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Impact multiplier
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      className="w-28"
+                      value={draft.impactMultiplier}
+                      onChange={(e) =>
+                        setDrafts((prev) => ({
+                          ...prev,
+                          [cfg.eventType]: {
+                            ...draft,
+                            impactMultiplier: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!dirty || update.isPending}
+                    onClick={() => save(cfg)}
+                  >
+                    Save
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

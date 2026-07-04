@@ -476,6 +476,63 @@ export const ListMembersResponse = zod.array(ListMembersResponseItem)
 
 
 /**
+ * @summary Create a single member (admin only)
+ */
+export const createMemberBodyFullNameMin = 2;
+
+
+
+export const CreateMemberBody = zod.object({
+  "fullName": zod.string().min(createMemberBodyFullNameMin),
+  "email": zod.string(),
+  "role": zod.enum(['Member', 'CommitteeChair', 'BylawsChair', 'ExecutiveBoard', 'Admin', 'TechnologyChair']).optional(),
+  "committeeId": zod.number().nullish(),
+  "studentId": zod.string().nullish(),
+  "membershipStatus": zod.enum(['Active', 'Probationary', 'Suspended', 'Inactive']).optional()
+})
+
+export const CreateMemberResponse = zod.object({
+  "id": zod.number(),
+  "authId": zod.string(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "studentId": zod.string().nullish(),
+  "gpa": zod.number().nullish(),
+  "graduationYear": zod.number().nullish(),
+  "role": zod.enum(['Member', 'CommitteeChair', 'BylawsChair', 'ExecutiveBoard', 'Admin', 'TechnologyChair']),
+  "committeeId": zod.number().nullable(),
+  "committeeName": zod.string().nullish(),
+  "committeeChairId": zod.number().nullish(),
+  "membershipStatus": zod.enum(['Active', 'Probationary', 'Suspended', 'Inactive']),
+  "duesPaid": zod.boolean(),
+  "dateJoined": zod.coerce.date().nullish(),
+  "totalPoints": zod.number(),
+  "impactPoints": zod.number(),
+  "participationPct": zod.number(),
+  "streakCount": zod.number(),
+  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
+  "accountActive": zod.boolean(),
+  "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
+  "lastLogin": zod.coerce.date().nullish(),
+  "eventsAttended": zod.number(),
+  "eventsEligible": zod.number(),
+  "profileImageUrl": zod.string().nullish(),
+  "experience": zod.enum(['operations_console', 'committee_portal', 'member_portal']),
+  "officerPositions": zod.array(zod.string()),
+  "isTechChair": zod.boolean().optional(),
+  "systemRoles": zod.array(zod.string()).optional().describe('System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").'),
+  "orgRoles": zod.array(zod.string()).optional().describe('Org-level role slugs held by this member (e.g. \"president\", \"general_member\").'),
+  "permissionGroups": zod.array(zod.string()).optional().describe('Union of all permission group slugs granted to this member through system + org roles.'),
+  "impersonating": zod.object({
+  "viewAs": zod.string(),
+  "startedAt": zod.coerce.date()
+}).nullish(),
+  "availableExperiences": zod.array(zod.enum(['operations_console', 'committee_portal', 'member_portal'])).optional().describe('All experience shells this member legitimately qualifies for, for the multi-role \"switch view\" affordance.')
+})
+
+
+/**
  * @summary Import multiple members at once (admin only)
  */
 export const bulkImportMembersBodyMembersItemFullNameMin = 2;
@@ -792,6 +849,114 @@ export const GetCommitteeRosterResponseItem = zod.object({
   "availableExperiences": zod.array(zod.enum(['operations_console', 'committee_portal', 'member_portal'])).optional().describe('All experience shells this member legitimately qualifies for, for the multi-role \"switch view\" affordance.')
 })
 export const GetCommitteeRosterResponse = zod.array(GetCommitteeRosterResponseItem)
+
+
+/**
+ * Chairs get the full private roster with per-member participation, impact points, and nudge status, plus upcoming events, recent activity, and a follow-up list of members below the participation goal. Plain members get their own stats and the committee's aggregate stats only — never a peer roster, preserving the chapter's privacy rule that individual standings are visible to leadership only.
+ * @summary My Committee — chair or member view of their own committee
+ */
+export const GetMyCommitteeResponse = zod.object({
+  "committee": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "chairUserId": zod.number().nullish(),
+  "chairName": zod.string().nullish(),
+  "memberCount": zod.number(),
+  "totalEventsHosted": zod.number(),
+  "aggregateParticipationPct": zod.number(),
+  "totalImpactPoints": zod.number(),
+  "committeeRank": zod.number(),
+  "semester": zod.string(),
+  "fourForFutureAlignment": zod.string()
+}),
+  "isChair": zod.boolean(),
+  "myStats": zod.object({
+  "id": zod.number(),
+  "authId": zod.string(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "studentId": zod.string().nullish(),
+  "gpa": zod.number().nullish(),
+  "graduationYear": zod.number().nullish(),
+  "role": zod.enum(['Member', 'CommitteeChair', 'BylawsChair', 'ExecutiveBoard', 'Admin', 'TechnologyChair']),
+  "committeeId": zod.number().nullable(),
+  "committeeName": zod.string().nullish(),
+  "committeeChairId": zod.number().nullish(),
+  "membershipStatus": zod.enum(['Active', 'Probationary', 'Suspended', 'Inactive']),
+  "duesPaid": zod.boolean(),
+  "dateJoined": zod.coerce.date().nullish(),
+  "totalPoints": zod.number(),
+  "impactPoints": zod.number(),
+  "participationPct": zod.number(),
+  "streakCount": zod.number(),
+  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
+  "accountActive": zod.boolean(),
+  "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
+  "lastLogin": zod.coerce.date().nullish(),
+  "eventsAttended": zod.number(),
+  "eventsEligible": zod.number(),
+  "profileImageUrl": zod.string().nullish(),
+  "experience": zod.enum(['operations_console', 'committee_portal', 'member_portal']),
+  "officerPositions": zod.array(zod.string()),
+  "isTechChair": zod.boolean().optional(),
+  "systemRoles": zod.array(zod.string()).optional().describe('System-level role slugs held by this member (e.g. \"platform_admin\", \"technology_chair\").'),
+  "orgRoles": zod.array(zod.string()).optional().describe('Org-level role slugs held by this member (e.g. \"president\", \"general_member\").'),
+  "permissionGroups": zod.array(zod.string()).optional().describe('Union of all permission group slugs granted to this member through system + org roles.'),
+  "impersonating": zod.object({
+  "viewAs": zod.string(),
+  "startedAt": zod.coerce.date()
+}).nullish(),
+  "availableExperiences": zod.array(zod.enum(['operations_console', 'committee_portal', 'member_portal'])).optional().describe('All experience shells this member legitimately qualifies for, for the multi-role \"switch view\" affordance.')
+}),
+  "roster": zod.array(zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "role": zod.string(),
+  "participationPct": zod.number(),
+  "totalPoints": zod.number(),
+  "impactPoints": zod.number(),
+  "nudgeStatus": zod.string()
+})).optional().describe('Full private roster — present only when the caller is this committee\'s chair (or chapter-wide leadership).'),
+  "followUpMembers": zod.array(zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "role": zod.string(),
+  "participationPct": zod.number(),
+  "totalPoints": zod.number(),
+  "impactPoints": zod.number(),
+  "nudgeStatus": zod.string()
+})).optional().describe('Roster members below the participation goal — chair view only.'),
+  "upcomingEvents": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventType": zod.enum(['GeneralBodyMeeting', 'CommitteeMeeting', 'CommunityService', 'MentoringSession', 'Workshop', 'Fundraiser', 'Conference', 'Social']),
+  "committeeId": zod.number().nullable(),
+  "committeeName": zod.string().nullish(),
+  "createdBy": zod.number(),
+  "createdByName": zod.string().nullish(),
+  "date": zod.coerce.date(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "location": zod.string(),
+  "pointValue": zod.number(),
+  "impactMultiplier": zod.number(),
+  "qrActive": zod.boolean(),
+  "checkInWindowMinutes": zod.number(),
+  "totalAttendees": zod.number(),
+  "status": zod.enum(['Upcoming', 'Active', 'Completed', 'Cancelled']),
+  "createdAt": zod.coerce.date()
+})).optional(),
+  "recentActivity": zod.array(zod.object({
+  "id": zod.number(),
+  "memberName": zod.string().nullable(),
+  "eventTitle": zod.string().nullable(),
+  "checkInTime": zod.coerce.date(),
+  "pointsAwarded": zod.number()
+})).optional().describe('Recent check-ins for this committee — chair view only.')
+})
 
 
 /**
@@ -1355,6 +1520,47 @@ export const UpdateOrgSettingsResponse = zod.object({
   "conferenceMinPct": zod.number(),
   "awardsMinPct": zod.number(),
   "duesAmountCents": zod.number()
+})
+
+
+/**
+ * @summary List auto-scoring rules for every event type (Admin/TechnologyChair only)
+ */
+export const ListEventTypeConfigResponseItem = zod.object({
+  "eventType": zod.enum(['GeneralBodyMeeting', 'CommitteeMeeting', 'CommunityService', 'MentoringSession', 'Workshop', 'Fundraiser', 'Conference', 'Social']),
+  "pointValue": zod.number(),
+  "impactMultiplier": zod.number(),
+  "updatedAt": zod.coerce.date().nullish(),
+  "updatedByName": zod.string().nullish()
+})
+export const ListEventTypeConfigResponse = zod.array(ListEventTypeConfigResponseItem)
+
+
+/**
+ * Changes only apply to events created after the update — existing events keep the point value they were created with.
+ * @summary Update the auto-scoring rule for an event type (Admin/TechnologyChair only)
+ */
+export const UpdateEventTypeConfigParams = zod.object({
+  "eventType": zod.enum(['GeneralBodyMeeting', 'CommitteeMeeting', 'CommunityService', 'MentoringSession', 'Workshop', 'Fundraiser', 'Conference', 'Social'])
+})
+
+export const updateEventTypeConfigBodyPointValueMin = 0;
+
+export const updateEventTypeConfigBodyImpactMultiplierMin = 0;
+
+
+
+export const UpdateEventTypeConfigBody = zod.object({
+  "pointValue": zod.number().min(updateEventTypeConfigBodyPointValueMin).optional(),
+  "impactMultiplier": zod.number().min(updateEventTypeConfigBodyImpactMultiplierMin).optional()
+})
+
+export const UpdateEventTypeConfigResponse = zod.object({
+  "eventType": zod.enum(['GeneralBodyMeeting', 'CommitteeMeeting', 'CommunityService', 'MentoringSession', 'Workshop', 'Fundraiser', 'Conference', 'Social']),
+  "pointValue": zod.number(),
+  "impactMultiplier": zod.number(),
+  "updatedAt": zod.coerce.date().nullish(),
+  "updatedByName": zod.string().nullish()
 })
 
 

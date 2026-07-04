@@ -4,6 +4,7 @@ import {
   GetMemberParams,
   UpdateMemberBody,
   UpdateMemberParams,
+  CreateMemberBody,
   BulkImportMembersBody,
   DeleteMemberParams,
   RestoreMemberParams,
@@ -46,6 +47,69 @@ router.get(
 
     const dtos = await Promise.all(rows.map((m) => buildMemberDto(m)));
     res.json(dtos);
+  }),
+);
+
+router.post(
+  "/members",
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
+    const parsed = CreateMemberBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
+
+    const emailNorm = parsed.data.email.toLowerCase().trim();
+    const [existing] = await db
+      .select({ id: membersTable.id })
+      .from(membersTable)
+      .where(eq(membersTable.email, emailNorm));
+    if (existing) {
+      res
+        .status(400)
+        .json({ error: "A member with this email already exists" });
+      return;
+    }
+
+    const authId = `manual-${randomUUID()}`;
+    const [created] = await db
+      .insert(membersTable)
+      .values({
+        authId,
+        fullName: parsed.data.fullName.trim(),
+        email: emailNorm,
+        role: parsed.data.role ?? "Member",
+        committeeId: parsed.data.committeeId ?? null,
+        studentId: parsed.data.studentId ?? null,
+        membershipStatus: parsed.data.membershipStatus ?? "Active",
+        accountActive: true,
+        duesPaid: false,
+      })
+      .returning();
+
+    await writeAuditLog({
+      actorId: req.member.id,
+      targetType: "member",
+      targetId: created.id,
+      action: "member_created",
+      before: null,
+      after: {
+        fullName: created.fullName,
+        email: created.email,
+        role: created.role,
+        committeeId: created.committeeId,
+        membershipStatus: created.membershipStatus,
+      },
+      ipAddress: req.ip,
+    });
+
+    const dto = await buildMemberDto(created);
+    res.json(dto);
   }),
 );
 

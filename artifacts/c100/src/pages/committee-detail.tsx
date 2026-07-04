@@ -1,9 +1,7 @@
 import { Link, useParams } from "wouter";
 import {
   useGetCommittee,
-  useGetCommitteeRoster,
   getGetCommitteeQueryKey,
-  getGetCommitteeRosterQueryKey,
 } from "@workspace/api-client-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,20 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBlock, LoadingBlock } from "@/components/page-states";
 import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
-import {
-  MembershipBadge,
-  NudgeBadge,
-  Pill,
-  RoleBadge,
-} from "@/components/badges";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Pill } from "@/components/badges";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
 export default function CommitteeDetailPage() {
@@ -48,12 +33,6 @@ function CommitteeDetail({ id }: { id: number }) {
     query: {
       queryKey: getGetCommitteeQueryKey(id),
       enabled: Number.isFinite(id),
-    },
-  });
-  const roster = useGetCommitteeRoster(id, {
-    query: {
-      queryKey: getGetCommitteeRosterQueryKey(id),
-      enabled: me.isLeader && Number.isFinite(id),
     },
   });
 
@@ -123,68 +102,27 @@ function CommitteeDetail({ id }: { id: number }) {
             <CardTitle className="font-serif">Committee roster</CardTitle>
           </CardHeader>
           <CardContent>
-            {!me.isLeader ? (
-              <div className="flex items-start gap-3 rounded-md border bg-[hsl(var(--muted)/0.4)] p-4 text-sm">
-                <ShieldAlert className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Roster is private.</p>
-                  <p className="text-muted-foreground">
-                    Individual standings are visible to leadership only. The
-                    chapter publishes aggregate committee results, never
-                    individual rankings.
-                  </p>
-                </div>
+            <div className="flex items-start gap-3 rounded-md border bg-[hsl(var(--muted)/0.4)] p-4 text-sm">
+              <ShieldAlert className="mt-0.5 h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Roster is private.</p>
+                <p className="text-muted-foreground">
+                  Individual standings are visible to leadership only. The
+                  chapter publishes aggregate committee results, never
+                  individual rankings.
+                  {me.isLeader ? (
+                    <>
+                      {" "}
+                      If this is your committee, view the full roster on{" "}
+                      <Link href="/my-committee" className="underline">
+                        My Committee
+                      </Link>
+                      .
+                    </>
+                  ) : null}
+                </p>
               </div>
-            ) : roster.isLoading ? (
-              <LoadingBlock />
-            ) : !roster.data || roster.data.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No members assigned to this committee yet.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Membership</TableHead>
-                      <TableHead>Nudge</TableHead>
-                      <TableHead className="text-right">Participation</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {roster.data.map((m) => (
-                      <TableRow key={m.id}>
-                        <TableCell>
-                          <Link
-                            href={`/members/${m.id}`}
-                            className="block hover:underline"
-                          >
-                            <p className="font-medium">{m.fullName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {m.email}
-                            </p>
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <RoleBadge role={m.role} />
-                        </TableCell>
-                        <TableCell>
-                          <MembershipBadge status={m.membershipStatus} />
-                        </TableCell>
-                        <TableCell>
-                          <NudgeBadge status={m.nudgeStatus} />
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {m.participationPct.toFixed(0)}%
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>

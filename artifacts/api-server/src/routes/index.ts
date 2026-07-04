@@ -10,6 +10,7 @@ import nudgesRouter from "./nudges";
 import reportsRouter from "./reports";
 import orgRouter from "./org";
 import techRouter from "./tech";
+import eventTypeConfigRouter from "./event-type-config";
 
 const router: IRouter = Router();
 
@@ -18,6 +19,7 @@ router.use(authRouter);
 router.use(bootstrapRouter);
 router.use(orgRouter);
 router.use(techRouter);
+router.use(eventTypeConfigRouter);
 router.use(profileRouter);
 router.use(membersRouter);
 router.use(committeesRouter);

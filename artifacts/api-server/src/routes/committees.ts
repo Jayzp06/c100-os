@@ -3,16 +3,26 @@ import {
   GetCommitteeParams,
   GetCommitteeRosterParams,
 } from "@workspace/api-zod";
-import { db, committeesTable, membersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  db,
+  committeesTable,
+  membersTable,
+  eventsTable,
+  attendanceTable,
+  type Role,
+} from "@workspace/db";
+import { and, desc, eq } from "drizzle-orm";
 import {
   buildCommitteeAggregate,
   buildMemberDto,
+  eventToDto,
   getActiveSemester,
-  LEADERSHIP_ROLES,
+  memberPointsAndImpact,
+  eventsEligibleForMember,
   requireAuth,
-  requireRole,
+  resolvePermissions,
 } from "../lib/c100";
+import { hasSystemRole } from "../lib/rbac";
 
 const router: IRouter = Router();
 
@@ -64,6 +74,141 @@ router.get("/committees", async (_req, res) => {
   res.json(dtos);
 });
 
+// Place /committees/mine before /committees/:id to avoid path collision.
+router.get(
+  "/committees/mine",
+  requireAuth(async (req, res) => {
+    const perms = await resolvePermissions(req.member);
+    const committeeId = req.member.committeeId ?? perms.committeeChairId;
+    if (!committeeId) {
+      res.status(404).json({ error: "You are not assigned to a committee" });
+      return;
+    }
+    const [committeeRow] = await db
+      .select()
+      .from(committeesTable)
+      .where(eq(committeesTable.id, committeeId));
+    if (!committeeRow) {
+      res.status(404).json({ error: "Committee not found" });
+      return;
+    }
+
+    const [agg, all, sem, myStats] = await Promise.all([
+      buildCommitteeAggregate(committeeRow),
+      db.select().from(committeesTable),
+      getActiveSemester(),
+      buildMemberDto(req.member),
+    ]);
+    const aggregates = await Promise.all(all.map((c) => buildCommitteeAggregate(c)));
+    const ranked = [...aggregates].sort(
+      (a, b) => b.totalImpactPoints - a.totalImpactPoints,
+    );
+    const rank = ranked.findIndex((r) => r.committee.id === committeeRow.id) + 1;
+
+    const committeeDto = {
+      id: committeeRow.id,
+      name: committeeRow.name,
+      description: committeeRow.description,
+      chairUserId: committeeRow.chairUserId,
+      chairName: agg.chairName,
+      memberCount: agg.memberCount,
+      totalEventsHosted: agg.totalEventsHosted,
+      aggregateParticipationPct: agg.aggregateParticipationPct,
+      totalImpactPoints: agg.totalImpactPoints,
+      committeeRank: rank,
+      semester: sem,
+      fourForFutureAlignment: committeeRow.fourForFutureAlignment,
+    };
+
+    // Own-committee members always see the committee's own upcoming events.
+    const upcomingRows = await db
+      .select({
+        e: eventsTable,
+        committeeName: committeesTable.name,
+        createdByName: membersTable.fullName,
+      })
+      .from(eventsTable)
+      .leftJoin(committeesTable, eq(committeesTable.id, eventsTable.committeeId))
+      .leftJoin(membersTable, eq(membersTable.id, eventsTable.createdBy))
+      .where(
+        and(
+          eq(eventsTable.committeeId, committeeId),
+          eq(eventsTable.status, "Upcoming"),
+        ),
+      )
+      .orderBy(eventsTable.date)
+      .limit(5);
+    const upcomingEvents = upcomingRows.map((r) =>
+      eventToDto(r.e, r.committeeName ?? null, r.createdByName ?? null, 0),
+    );
+
+    const isChair =
+      committeeRow.chairUserId === req.member.id ||
+      perms.committeeChairId === committeeId;
+
+    if (!isChair) {
+      res.json({
+        committee: committeeDto,
+        isChair: false,
+        myStats,
+        upcomingEvents,
+      });
+      return;
+    }
+
+    const rosterMembers = await db
+      .select()
+      .from(membersTable)
+      .where(eq(membersTable.committeeId, committeeId));
+    const roster = await Promise.all(
+      rosterMembers.map(async (m) => {
+        const [{ totalPoints, impactPoints }, { eligible, attended }] =
+          await Promise.all([
+            memberPointsAndImpact(m.id, sem),
+            eventsEligibleForMember(m.id, sem),
+          ]);
+        return {
+          id: m.id,
+          fullName: m.fullName,
+          role: m.role,
+          participationPct:
+            eligible > 0 ? Math.round((attended / eligible) * 1000) / 10 : 0,
+          totalPoints,
+          impactPoints,
+          nudgeStatus: m.nudgeStatus,
+        };
+      }),
+    );
+    const followUpMembers = roster.filter((m) => m.nudgeStatus !== "Active");
+
+    const activityRows = await db
+      .select({ a: attendanceTable, memberName: membersTable.fullName, eventTitle: eventsTable.title })
+      .from(attendanceTable)
+      .innerJoin(membersTable, eq(membersTable.id, attendanceTable.userId))
+      .innerJoin(eventsTable, eq(eventsTable.id, attendanceTable.eventId))
+      .where(eq(eventsTable.committeeId, committeeId))
+      .orderBy(desc(attendanceTable.checkInTime))
+      .limit(10);
+    const recentActivity = activityRows.map((r) => ({
+      id: r.a.id,
+      memberName: r.memberName,
+      eventTitle: r.eventTitle,
+      checkInTime: r.a.checkInTime.toISOString(),
+      pointsAwarded: r.a.pointsAwarded,
+    }));
+
+    res.json({
+      committee: committeeDto,
+      isChair: true,
+      myStats,
+      roster,
+      followUpMembers,
+      upcomingEvents,
+      recentActivity,
+    });
+  }),
+);
+
 router.get("/committees/:id", async (req, res) => {
   const params = GetCommitteeParams.safeParse(req.params);
   if (!params.success) {
@@ -102,16 +247,32 @@ router.get("/committees/:id", async (req, res) => {
     semester: sem,
     fourForFutureAlignment: committee.fourForFutureAlignment,
   });
-  void requireAuth;
 });
+
+const CHAPTER_WIDE_ROSTER_ROLES: Role[] = [
+  "BylawsChair",
+  "ExecutiveBoard",
+  "Admin",
+  "TechnologyChair",
+];
 
 router.get(
   "/committees/:id/roster",
-  requireRole(...LEADERSHIP_ROLES)(async (req, res) => {
+  requireAuth(async (req, res) => {
     const params = GetCommitteeRosterParams.safeParse(req.params);
     if (!params.success) {
       res.status(400).json({ error: "Invalid id" });
       return;
+    }
+    if (!CHAPTER_WIDE_ROSTER_ROLES.includes(req.member.role as Role)) {
+      const perms = await resolvePermissions(req.member);
+      const isOwnCommitteeChair = perms.committeeChairId === params.data.id;
+      const isPlatformAdmin =
+        perms.isTechChair || hasSystemRole(perms.rbac, "platform_admin");
+      if (!isOwnCommitteeChair && !isPlatformAdmin) {
+        res.status(403).json({ error: "Insufficient role" });
+        return;
+      }
     }
     const rows = await db
       .select()

@@ -4,6 +4,9 @@ import {
   useListMembers,
   useListCommittees,
   useBulkImportMembers,
+  useCreateMember,
+  type CreateMemberInputRole,
+  type CreateMemberInputMembershipStatus,
 } from "@workspace/api-client-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +37,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   CardSkeleton,
   EmptyBlock,
@@ -47,7 +51,7 @@ import {
   NudgeBadge,
   RoleBadge,
 } from "@/components/badges";
-import { Search, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, Upload, CheckCircle, AlertCircle, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListMembersQueryKey } from "@workspace/api-client-react";
 import { invalidateAggregates } from "@/lib/query-invalidation";
@@ -224,6 +228,191 @@ function ImportDialog({ onImported }: { onImported: () => void }) {
   );
 }
 
+const ROLES = [
+  "Member",
+  "CommitteeChair",
+  "BylawsChair",
+  "ExecutiveBoard",
+  "Admin",
+];
+const STATUSES = ["Active", "Probationary", "Suspended", "Inactive"];
+
+function AddMemberDialog({ onCreated }: { onCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("Member");
+  const [committeeId, setCommitteeId] = useState("none");
+  const [membershipStatus, setMembershipStatus] = useState("Active");
+  const [studentId, setStudentId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const committees = useListCommittees();
+  const mutation = useCreateMember();
+
+  const canSubmit = fullName.trim().length >= 2 && email.trim().includes("@");
+
+  function resetForm() {
+    setFullName("");
+    setEmail("");
+    setRole("Member");
+    setCommitteeId("none");
+    setMembershipStatus("Active");
+    setStudentId("");
+    setError(null);
+  }
+
+  function handleClose() {
+    setOpen(false);
+    setTimeout(resetForm, 300);
+  }
+
+  async function handleCreate() {
+    if (!canSubmit) return;
+    setError(null);
+    try {
+      await mutation.mutateAsync({
+        data: {
+          fullName: fullName.trim(),
+          email: email.trim(),
+          role: role as CreateMemberInputRole,
+          committeeId: committeeId === "none" ? null : Number(committeeId),
+          membershipStatus:
+            membershipStatus as CreateMemberInputMembershipStatus,
+          studentId: studentId.trim() || null,
+        },
+      });
+      onCreated();
+      handleClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create member",
+      );
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) handleClose();
+        else setOpen(true);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-2 bg-[hsl(var(--gold))] text-black hover:bg-[hsl(var(--gold)/0.85)]" data-testid="button-add-member">
+          <UserPlus className="h-4 w-4" />
+          Add Member
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Add a member</DialogTitle>
+          <DialogDescription>
+            Create a single member record directly, without a bulk import.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Full name</Label>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Jordan Whitfield"
+              data-testid="input-add-member-name"
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="jwhitfield@fvsu.edu"
+              data-testid="input-add-member-email"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Student ID</Label>
+            <Input
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              placeholder="Optional"
+              data-testid="input-add-member-student-id"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Role</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger data-testid="select-add-member-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Committee</Label>
+            <Select value={committeeId} onValueChange={setCommitteeId}>
+              <SelectTrigger data-testid="select-add-member-committee">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Unassigned</SelectItem>
+                {(committees.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Membership status</Label>
+            <Select value={membershipStatus} onValueChange={setMembershipStatus}>
+              <SelectTrigger data-testid="select-add-member-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {error && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreate}
+            disabled={!canSubmit || mutation.isPending}
+            className="bg-[hsl(var(--gold))] text-black hover:bg-[hsl(var(--gold)/0.85)]"
+            data-testid="button-submit-add-member"
+          >
+            {mutation.isPending ? "Creating…" : "Create member"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function MembersPage() {
   const me = useMe();
   if (me.isLoading) {
@@ -272,13 +461,25 @@ function MembersList({ isAdmin }: { isAdmin: boolean }) {
     invalidateAggregates(queryClient);
   }
 
+  function handleCreated() {
+    queryClient.invalidateQueries({ queryKey: getListMembersQueryKey() });
+    invalidateAggregates(queryClient);
+  }
+
   return (
     <AppShell>
       <PageHeader
         eyebrow="Roster"
         title="Chapter members"
         description="Private roster. Use this view to monitor standing and follow up with members directly."
-        actions={isAdmin ? <ImportDialog onImported={handleImported} /> : undefined}
+        actions={
+          isAdmin ? (
+            <div className="flex gap-2">
+              <AddMemberDialog onCreated={handleCreated} />
+              <ImportDialog onImported={handleImported} />
+            </div>
+          ) : undefined
+        }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">

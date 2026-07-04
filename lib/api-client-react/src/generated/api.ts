@@ -31,10 +31,13 @@ import type {
   Committee,
   CommitteeLeaderboardEntry,
   CreateEventInput,
+  CreateMemberInput,
   EligibilityRecord,
   ErrorEnvelope,
   Event,
   EventDetail,
+  EventTypeConfig,
+  EventTypeConfigUpdate,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   ListEventsParams,
@@ -46,6 +49,7 @@ import type {
   MemberDashboard,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  MyCommittee,
   NudgeLogEntry,
   NudgeRunResult,
   OrgSettings,
@@ -1155,6 +1159,77 @@ export function useListMembers<TData = Awaited<ReturnType<typeof listMembers>>, 
 
 
 
+export const getCreateMemberUrl = () => {
+
+
+
+
+  return `/api/members`
+}
+
+/**
+ * @summary Create a single member (admin only)
+ */
+export const createMember = async (createMemberInput: CreateMemberInput, options?: RequestInit): Promise<Member> => {
+
+  return customFetch<Member>(getCreateMemberUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createMemberInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMemberMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMember>>, TError,{data: BodyType<CreateMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMember>>, TError,{data: BodyType<CreateMemberInput>}, TContext> => {
+
+const mutationKey = ['createMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMember>>, {data: BodyType<CreateMemberInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMember(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMemberMutationResult = NonNullable<Awaited<ReturnType<typeof createMember>>>
+    export type CreateMemberMutationBody = BodyType<CreateMemberInput>
+    export type CreateMemberMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Create a single member (admin only)
+ */
+export const useCreateMember = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMember>>, TError,{data: BodyType<CreateMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMember>>,
+        TError,
+        {data: BodyType<CreateMemberInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMemberMutationOptions(options));
+    }
+
 export const getBulkImportMembersUrl = () => {
 
 
@@ -1736,6 +1811,84 @@ export function useGetCommitteeRoster<TData = Awaited<ReturnType<typeof getCommi
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCommitteeRosterQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyCommitteeUrl = () => {
+
+
+
+
+  return `/api/committees/mine`
+}
+
+/**
+ * Chairs get the full private roster with per-member participation, impact points, and nudge status, plus upcoming events, recent activity, and a follow-up list of members below the participation goal. Plain members get their own stats and the committee's aggregate stats only — never a peer roster, preserving the chapter's privacy rule that individual standings are visible to leadership only.
+ * @summary My Committee — chair or member view of their own committee
+ */
+export const getMyCommittee = async ( options?: RequestInit): Promise<MyCommittee> => {
+
+  return customFetch<MyCommittee>(getGetMyCommitteeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyCommitteeQueryKey = () => {
+    return [
+    `/api/committees/mine`
+    ] as const;
+    }
+
+
+export const getGetMyCommitteeQueryOptions = <TData = Awaited<ReturnType<typeof getMyCommittee>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyCommittee>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyCommitteeQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyCommittee>>> = ({ signal }) => getMyCommittee({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyCommittee>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyCommitteeQueryResult = NonNullable<Awaited<ReturnType<typeof getMyCommittee>>>
+export type GetMyCommitteeQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary My Committee — chair or member view of their own committee
+ */
+
+export function useGetMyCommittee<TData = Awaited<ReturnType<typeof getMyCommittee>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyCommittee>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyCommitteeQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3246,6 +3399,156 @@ export const useUpdateOrgSettings = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateOrgSettingsMutationOptions(options));
+    }
+
+export const getListEventTypeConfigUrl = () => {
+
+
+
+
+  return `/api/event-type-config`
+}
+
+/**
+ * @summary List auto-scoring rules for every event type (Admin/TechnologyChair only)
+ */
+export const listEventTypeConfig = async ( options?: RequestInit): Promise<EventTypeConfig[]> => {
+
+  return customFetch<EventTypeConfig[]>(getListEventTypeConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEventTypeConfigQueryKey = () => {
+    return [
+    `/api/event-type-config`
+    ] as const;
+    }
+
+
+export const getListEventTypeConfigQueryOptions = <TData = Awaited<ReturnType<typeof listEventTypeConfig>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEventTypeConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEventTypeConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEventTypeConfig>>> = ({ signal }) => listEventTypeConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEventTypeConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEventTypeConfigQueryResult = NonNullable<Awaited<ReturnType<typeof listEventTypeConfig>>>
+export type ListEventTypeConfigQueryError = ErrorType<void>
+
+
+/**
+ * @summary List auto-scoring rules for every event type (Admin/TechnologyChair only)
+ */
+
+export function useListEventTypeConfig<TData = Awaited<ReturnType<typeof listEventTypeConfig>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEventTypeConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEventTypeConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateEventTypeConfigUrl = (eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social',) => {
+
+
+
+
+  return `/api/event-type-config/${eventType}`
+}
+
+/**
+ * Changes only apply to events created after the update — existing events keep the point value they were created with.
+ * @summary Update the auto-scoring rule for an event type (Admin/TechnologyChair only)
+ */
+export const updateEventTypeConfig = async (eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social',
+    eventTypeConfigUpdate: EventTypeConfigUpdate, options?: RequestInit): Promise<EventTypeConfig> => {
+
+  return customFetch<EventTypeConfig>(getUpdateEventTypeConfigUrl(eventType),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(eventTypeConfigUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateEventTypeConfigMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEventTypeConfig>>, TError,{eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social';data: BodyType<EventTypeConfigUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEventTypeConfig>>, TError,{eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social';data: BodyType<EventTypeConfigUpdate>}, TContext> => {
+
+const mutationKey = ['updateEventTypeConfig'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEventTypeConfig>>, {eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social';data: BodyType<EventTypeConfigUpdate>}> = (props) => {
+          const {eventType,data} = props ?? {};
+
+          return  updateEventTypeConfig(eventType,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEventTypeConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updateEventTypeConfig>>>
+    export type UpdateEventTypeConfigMutationBody = BodyType<EventTypeConfigUpdate>
+    export type UpdateEventTypeConfigMutationError = ErrorType<void>
+
+    /**
+ * @summary Update the auto-scoring rule for an event type (Admin/TechnologyChair only)
+ */
+export const useUpdateEventTypeConfig = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEventTypeConfig>>, TError,{eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social';data: BodyType<EventTypeConfigUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEventTypeConfig>>,
+        TError,
+        {eventType: 'GeneralBodyMeeting' | 'CommitteeMeeting' | 'CommunityService' | 'MentoringSession' | 'Workshop' | 'Fundraiser' | 'Conference' | 'Social';data: BodyType<EventTypeConfigUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateEventTypeConfigMutationOptions(options));
     }
 
 export const getStartImpersonationUrl = () => {

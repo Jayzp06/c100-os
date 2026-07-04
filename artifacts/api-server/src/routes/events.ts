@@ -22,17 +22,18 @@ import {
   membersTable,
   attendanceTable,
   committeesTable,
+  type Role,
 } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import {
-  IMPACT_MULTIPLIER,
   LEADERSHIP_ROLES,
-  POINT_VALUES,
   QR_ROTATE_SECONDS,
+  TECH_OR_ADMIN,
   attendanceToDto,
   buildMemberDto,
   eventToDto,
   getActiveSemester,
+  getEventTypeScoring,
   isValidQrToken,
   requireAuth,
   requireRole,
@@ -93,6 +94,11 @@ router.post(
       return;
     }
     const d = parsed.data;
+    // Scoring is auto-determined from event_type_config (C100 OS v0.2): chairs
+    // pick only the event type. Manual pointValue/impactMultiplier overrides
+    // are accepted only from Admin/TechnologyChair for edge-case corrections.
+    const isScoringAdmin = TECH_OR_ADMIN.includes(req.member.role as Role);
+    const scoring = await getEventTypeScoring(d.eventType);
     const [event] = await db
       .insert(eventsTable)
       .values({
@@ -108,9 +114,14 @@ router.post(
         startTime: d.startTime,
         endTime: d.endTime,
         location: d.location,
-        pointValue: d.pointValue ?? POINT_VALUES[d.eventType] ?? 10,
+        pointValue:
+          isScoringAdmin && d.pointValue != null
+            ? d.pointValue
+            : scoring.pointValue,
         impactMultiplier: String(
-          d.impactMultiplier ?? IMPACT_MULTIPLIER[d.eventType] ?? 1.0,
+          isScoringAdmin && d.impactMultiplier != null
+            ? d.impactMultiplier
+            : scoring.impactMultiplier,
         ),
         checkInWindowMinutes: d.checkInWindowMinutes ?? 30,
         status: "Upcoming",
@@ -169,6 +180,10 @@ router.patch(
       return;
     }
     const d = body.data;
+    // Scoring overrides (pointValue/impactMultiplier) are Admin/TechnologyChair
+    // only — regular chairs edit everything else about an event but cannot
+    // hand-tune its point value; that's derived from event_type_config.
+    const isScoringAdmin = TECH_OR_ADMIN.includes(req.member.role as Role);
     const update: Record<string, unknown> = {};
     if (d.title !== undefined) update["title"] = d.title;
     if (d.description !== undefined) update["description"] = d.description;
@@ -182,8 +197,9 @@ router.patch(
     if (d.startTime !== undefined) update["startTime"] = d.startTime;
     if (d.endTime !== undefined) update["endTime"] = d.endTime;
     if (d.location !== undefined) update["location"] = d.location;
-    if (d.pointValue !== undefined) update["pointValue"] = d.pointValue;
-    if (d.impactMultiplier !== undefined)
+    if (isScoringAdmin && d.pointValue !== undefined)
+      update["pointValue"] = d.pointValue;
+    if (isScoringAdmin && d.impactMultiplier !== undefined)
       update["impactMultiplier"] = String(d.impactMultiplier);
     if (d.checkInWindowMinutes !== undefined)
       update["checkInWindowMinutes"] = d.checkInWindowMinutes;

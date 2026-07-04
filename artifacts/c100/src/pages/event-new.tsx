@@ -86,8 +86,6 @@ function NewEventForm() {
     startTime: "18:00",
     endTime: "19:30",
     location: "",
-    pointValue: "",
-    impactMultiplier: "",
     checkInWindowMinutes: "",
   });
 
@@ -113,10 +111,6 @@ function NewEventForm() {
       startTime: form.startTime,
       endTime: form.endTime,
       location: form.location,
-      pointValue: form.pointValue ? Number(form.pointValue) : undefined,
-      impactMultiplier: form.impactMultiplier
-        ? Number(form.impactMultiplier)
-        : undefined,
       checkInWindowMinutes: form.checkInWindowMinutes
         ? Number(form.checkInWindowMinutes)
         : undefined,
@@ -241,31 +235,14 @@ function NewEventForm() {
                   data-testid="input-end"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="pts">Point value (optional)</Label>
-                <Input
-                  id="pts"
-                  type="number"
-                  min="0"
-                  value={form.pointValue}
-                  onChange={(e) => update("pointValue", e.target.value)}
-                  placeholder="Defaults from event type"
-                  data-testid="input-points"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="mult">Impact multiplier (optional)</Label>
-                <Input
-                  id="mult"
-                  type="number"
-                  step="0.01"
-                  min="0.5"
-                  max="3"
-                  value={form.impactMultiplier}
-                  onChange={(e) => update("impactMultiplier", e.target.value)}
-                  placeholder="Defaults from event type"
-                  data-testid="input-multiplier"
-                />
+              <div className="space-y-1.5 sm:col-span-2">
+                <p className="rounded-md border bg-[hsl(var(--muted)/0.4)] p-3 text-xs text-muted-foreground">
+                  Points and impact multiplier are set automatically from the
+                  event type's scoring rules.
+                  {" "}
+                  Technology Chairs and Admins can adjust the rules for each
+                  event type from the Tech Console.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="window">Check-in window (minutes)</Label>

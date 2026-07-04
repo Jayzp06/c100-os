@@ -15,6 +15,7 @@ import MembersPage from "@/pages/members";
 import MemberDetailPage from "@/pages/member-detail";
 import CommitteesPage from "@/pages/committees";
 import CommitteeDetailPage from "@/pages/committee-detail";
+import MyCommitteePage from "@/pages/my-committee";
 import LeaderboardPage from "@/pages/leaderboard";
 import EventsPage from "@/pages/events";
 import NewEventPage from "@/pages/event-new";
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/members" component={MembersPage} />
       <Route path="/members/:id" component={MemberDetailPage} />
       <Route path="/committees" component={CommitteesPage} />
+      <Route path="/my-committee" component={MyCommitteePage} />
       <Route path="/committees/:id" component={CommitteeDetailPage} />
       <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/events" component={EventsPage} />

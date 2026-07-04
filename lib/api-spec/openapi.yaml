@@ -28,6 +28,8 @@ tags:
     description: Eligibility, leaderboards, and dashboards
   - name: OrgSettings
     description: Organisation-level configuration (identity, branding, thresholds)
+  - name: EventTypeConfig
+    description: Admin-configurable auto-scoring rules per event type
 paths:
   /healthz:
     get:
@@ -274,6 +276,29 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Member'
+    post:
+      tags: [Members]
+      operationId: createMember
+      summary: Create a single member (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMemberInput'
+      responses:
+        '200':
+          description: Member created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Invalid input, or a member with this email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 
   /members/bulk-import:
     post:
@@ -468,6 +493,33 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Member'
+
+  /committees/mine:
+    get:
+      tags: [Committees]
+      operationId: getMyCommittee
+      summary: My Committee — chair or member view of their own committee
+      description: >
+        Chairs get the full private roster with per-member participation,
+        impact points, and nudge status, plus upcoming events, recent
+        activity, and a follow-up list of members below the participation
+        goal. Plain members get their own stats and the committee's
+        aggregate stats only — never a peer roster, preserving the
+        chapter's privacy rule that individual standings are visible to
+        leadership only.
+      responses:
+        '200':
+          description: The caller's committee view.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyCommittee'
+        '404':
+          description: Caller is not assigned to a committee.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 
   /committees/leaderboard:
     get:
@@ -867,6 +919,66 @@ paths:
         '403':
           description: Forbidden — Admin role required.
 
+  /event-type-config:
+    get:
+      tags: [EventTypeConfig]
+      operationId: listEventTypeConfig
+      summary: List auto-scoring rules for every event type (Admin/TechnologyChair only)
+      responses:
+        '200':
+          description: Current point value and impact multiplier per event type.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventTypeConfig'
+        '403':
+          description: Forbidden — Admin or TechnologyChair role required.
+
+  /event-type-config/{eventType}:
+    patch:
+      tags: [EventTypeConfig]
+      operationId: updateEventTypeConfig
+      summary: Update the auto-scoring rule for an event type (Admin/TechnologyChair only)
+      description: >
+        Changes only apply to events created after the update — existing
+        events keep the point value they were created with.
+      parameters:
+        - name: eventType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - GeneralBodyMeeting
+              - CommitteeMeeting
+              - CommunityService
+              - MentoringSession
+              - Workshop
+              - Fundraiser
+              - Conference
+              - Social
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTypeConfigUpdate'
+      responses:
+        '200':
+          description: Updated scoring rule.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeConfig'
+        '400':
+          description: Invalid request.
+        '403':
+          description: Forbidden — Admin or TechnologyChair role required.
+        '404':
+          description: Unknown event type.
+
   /tech/impersonate:
     post:
       tags: [Tech]
@@ -1236,6 +1348,113 @@ components:
           type: string
         fourForFutureAlignment:
           type: string
+
+    MyCommitteeMember:
+      type: object
+      required:
+        - id
+        - fullName
+        - role
+        - participationPct
+        - totalPoints
+        - impactPoints
+        - nudgeStatus
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        role:
+          type: string
+        participationPct:
+          type: number
+        totalPoints:
+          type: integer
+        impactPoints:
+          type: integer
+        nudgeStatus:
+          type: string
+
+    MyCommitteeActivity:
+      type: object
+      required: [id, memberName, eventTitle, checkInTime, pointsAwarded]
+      properties:
+        id:
+          type: integer
+        memberName:
+          type: [string, 'null']
+        eventTitle:
+          type: [string, 'null']
+        checkInTime:
+          type: string
+          format: date-time
+        pointsAwarded:
+          type: integer
+
+    MyCommittee:
+      type: object
+      required: [committee, isChair, myStats]
+      properties:
+        committee:
+          $ref: '#/components/schemas/Committee'
+        isChair:
+          type: boolean
+        myStats:
+          $ref: '#/components/schemas/Member'
+        roster:
+          description: Full private roster — present only when the caller is this committee's chair (or chapter-wide leadership).
+          type: array
+          items:
+            $ref: '#/components/schemas/MyCommitteeMember'
+        followUpMembers:
+          description: Roster members below the participation goal — chair view only.
+          type: array
+          items:
+            $ref: '#/components/schemas/MyCommitteeMember'
+        upcomingEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        recentActivity:
+          description: Recent check-ins for this committee — chair view only.
+          type: array
+          items:
+            $ref: '#/components/schemas/MyCommitteeActivity'
+
+    EventTypeConfig:
+      type: object
+      required: [eventType, pointValue, impactMultiplier]
+      properties:
+        eventType:
+          type: string
+          enum:
+            - GeneralBodyMeeting
+            - CommitteeMeeting
+            - CommunityService
+            - MentoringSession
+            - Workshop
+            - Fundraiser
+            - Conference
+            - Social
+        pointValue:
+          type: integer
+        impactMultiplier:
+          type: number
+        updatedAt:
+          type: [string, 'null']
+          format: date-time
+        updatedByName:
+          type: [string, 'null']
+
+    EventTypeConfigUpdate:
+      type: object
+      properties:
+        pointValue:
+          type: integer
+          minimum: 0
+        impactMultiplier:
+          type: number
+          minimum: 0
 
     CommitteeLeaderboardEntry:
       type: object

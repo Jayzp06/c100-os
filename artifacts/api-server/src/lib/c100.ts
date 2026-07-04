@@ -10,6 +10,7 @@ import {
   committeeAssignmentsTable,
   auditLogTable,
   orgSettingsTable,
+  eventTypeConfigTable,
   type Member as MemberRow,
   type EventRow,
   type AttendanceRow,
@@ -150,6 +151,79 @@ export const IMPACT_MULTIPLIER: Record<string, number> = {
   Conference: 2.0,
   Social: 0.5,
 };
+
+export const EVENT_TYPES = Object.keys(POINT_VALUES);
+
+export type EventTypeScoring = { pointValue: number; impactMultiplier: number };
+
+let _eventTypeConfigCache: {
+  value: Map<string, EventTypeScoring>;
+  expires: number;
+} | null = null;
+
+/** Admin-configurable scoring per event type, DB-driven via event_type_config.
+ *  Falls back to the legacy hardcoded maps for any type missing a config row
+ *  (should not happen once ensureEventTypeConfigSeeded() has run). */
+export async function getEventTypeConfigs(): Promise<
+  Map<string, EventTypeScoring>
+> {
+  const now = Date.now();
+  if (_eventTypeConfigCache && now < _eventTypeConfigCache.expires) {
+    return _eventTypeConfigCache.value;
+  }
+  const map = new Map<string, EventTypeScoring>();
+  for (const eventType of EVENT_TYPES) {
+    map.set(eventType, {
+      pointValue: POINT_VALUES[eventType]!,
+      impactMultiplier: IMPACT_MULTIPLIER[eventType]!,
+    });
+  }
+  const rows = await db.select().from(eventTypeConfigTable);
+  for (const row of rows) {
+    map.set(row.eventType, {
+      pointValue: row.pointValue,
+      impactMultiplier: Number(row.impactMultiplier),
+    });
+  }
+  _eventTypeConfigCache = { value: map, expires: now + 60_000 };
+  return map;
+}
+
+export function invalidateEventTypeConfigCache() {
+  _eventTypeConfigCache = null;
+}
+
+export async function getEventTypeScoring(
+  eventType: string,
+): Promise<EventTypeScoring> {
+  const map = await getEventTypeConfigs();
+  return (
+    map.get(eventType) ?? {
+      pointValue: POINT_VALUES[eventType] ?? 10,
+      impactMultiplier: IMPACT_MULTIPLIER[eventType] ?? 1.0,
+    }
+  );
+}
+
+/** Idempotently seeds event_type_config from the legacy hardcoded maps for
+ *  any event type that doesn't already have a row. Safe to call on every
+ *  server startup — only inserts what's missing. */
+export async function ensureEventTypeConfigSeeded(): Promise<void> {
+  const existing = await db
+    .select({ eventType: eventTypeConfigTable.eventType })
+    .from(eventTypeConfigTable);
+  const existingTypes = new Set(existing.map((r) => r.eventType));
+  const missing = EVENT_TYPES.filter((t) => !existingTypes.has(t));
+  if (missing.length === 0) return;
+  await db.insert(eventTypeConfigTable).values(
+    missing.map((eventType) => ({
+      eventType,
+      pointValue: POINT_VALUES[eventType]!,
+      impactMultiplier: String(IMPACT_MULTIPLIER[eventType]!),
+    })),
+  );
+  invalidateEventTypeConfigCache();
+}
 
 export type AuthedHandler = (
   req: Request & { user: NonNullable<Request["user"]>; member: MemberRow },
@@ -504,10 +578,14 @@ export async function memberPointsAndImpact(
   const rows = await db
     .select({
       totalPoints: sql<number>`coalesce(sum(${attendanceTable.pointsAwarded}), 0)`,
-      impactPoints: sql<number>`coalesce(sum(case when ${eventsTable.eventType} in ('CommunityService','MentoringSession','Fundraiser','Conference') then ${attendanceTable.pointsAwarded} else 0 end), 0)`,
+      impactPoints: sql<number>`coalesce(sum(case when coalesce(${eventTypeConfigTable.impactMultiplier}, 1.00) > 1.00 then ${attendanceTable.pointsAwarded} else 0 end), 0)`,
     })
     .from(attendanceTable)
     .innerJoin(eventsTable, eq(eventsTable.id, attendanceTable.eventId))
+    .leftJoin(
+      eventTypeConfigTable,
+      eq(eventTypeConfigTable.eventType, eventsTable.eventType),
+    )
     .where(
       and(
         eq(attendanceTable.userId, memberId),

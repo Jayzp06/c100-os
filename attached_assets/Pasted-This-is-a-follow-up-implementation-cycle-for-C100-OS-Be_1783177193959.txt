@@ -1,0 +1,842 @@
+This is a follow-up implementation cycle for C100 OS.
+
+Before making changes, review the work completed during the previous architectural upgrade and inspect the current database state, member records, reporting architecture, event creation workflow, document generation architecture, and authorization system.
+
+Do not undo or duplicate previous work.
+
+This development cycle has three primary objectives:
+
+1. Remove all fake/demo/bot member accounts and preserve only the two currently authorized real/test accounts specified below.
+2. Implement the actual Fort Valley State University Facilities Use Form generation workflow using the provided official PDF as the source document.
+3. Expand report export capabilities to all Executive Officer positions with role-appropriate authorization.
+
+==================================================
+PHASE 1 — REMOVE ALL FAKE, BOT, DEMO, AND SEED ACCOUNTS
+==================================================
+
+The current production database contains fake/demo/bot member accounts created during application development.
+
+These accounts must be removed.
+
+After cleanup, ONLY the following two member/user accounts should remain:
+
+1. Test Account
+
+Email:
+
+toeattryin@gmail.com
+
+2. Administrator Account
+
+Email:
+
+jaylinziare@gmail.com
+
+IMPORTANT DATA SAFETY REQUIREMENTS
+
+Do NOT simply truncate the users or members tables.
+
+Do NOT reset the production database.
+
+Do NOT reseed the production database.
+
+Do NOT delete the two accounts listed above.
+
+Before deletion:
+
+1. Inspect all current users/member records.
+
+2. Identify every account other than:
+
+toeattryin@gmail.com
+
+and
+
+jaylinziare@gmail.com
+
+3. Inspect all foreign-key relationships and associated records involving those accounts.
+
+This may include:
+
+- committee assignments
+- leadership assignments
+- attendance
+- participation records
+- points
+- events
+- action items
+- nudges
+- reports
+- authentication records
+- event ownership
+- meeting records
+- financial records
+- historical records
+- any other related database entities
+
+4. Determine the safest deletion strategy.
+
+5. Remove all fake/demo/bot accounts and their associated development data without creating orphaned records or corrupting the database.
+
+6. Preserve the two authorized accounts.
+
+7. Verify that exactly two user/member accounts remain after cleanup.
+
+8. Verify that both accounts can still authenticate.
+
+9. Verify that the administrator account retains Administrator access.
+
+10. Do not automatically assign fake committee chairs or leadership officers after cleanup.
+
+If a leadership position or committee chair position becomes vacant after removing demo accounts, display:
+
+Vacant
+
+or an appropriate empty state.
+
+Do not repopulate positions with fake users.
+
+==================================================
+PHASE 2 — PERMANENT DEMO DATA PREVENTION
+==================================================
+
+Audit the repository for:
+
+- seed scripts
+- startup scripts
+- database initialization logic
+- development fixtures
+- hardcoded users
+- hardcoded members
+- hardcoded committee chairs
+- hardcoded Executive Officers
+- automatic demo-data generation
+
+Ensure production startup does not recreate deleted bot/demo accounts.
+
+Development seed data may remain available for local development only if it is clearly separated from production.
+
+Production must never automatically create fake chapter members.
+
+==================================================
+PHASE 3 — OFFICIAL FVSU FACILITIES USE FORM
+==================================================
+
+I am providing the official two-page Fort Valley State University Facilities Use Form.
+
+Inspect the uploaded PDF carefully.
+
+The objective is NOT to create a generic substitute form.
+
+The objective is to allow authorized C100 OS users to enter event information once and generate a completed or partially completed version of the actual FVSU Facilities Use Form for download.
+
+Preserve the official form’s structure and appearance as closely as technically practical.
+
+==================================================
+PHASE 4 — FORM DATA ARCHITECTURE
+==================================================
+
+Divide Facilities Use Form information into four categories:
+
+A. CHAPTER PROFILE DATA
+
+B. EVENT DATA ALREADY STORED IN C100 OS
+
+C. ADDITIONAL FACILITY REQUEST DATA ENTERED BY THE USER
+
+D. OFFICE USE ONLY DATA
+
+Each category must be handled differently.
+
+==================================================
+A — CHAPTER PROFILE DATA
+==================================================
+
+The following information should be stored centrally in C100 OS chapter/system settings.
+
+Authorized administrators should be able to configure this information once.
+
+Where applicable, automatically insert it into every Facilities Use Form.
+
+Fields include:
+
+SPONSORING ORGANIZATION INFORMATION
+
+- Organization or Department
+- Default Contact Person, if appropriate
+- Address
+- Contact Number
+- Contact Number Type
+- Email
+- Fax, if applicable
+
+FACULTY/STAFF ADVISOR INFORMATION
+
+- Faculty/Staff Advisor Name
+- Campus Address
+- Home Address, if the chapter chooses to store it
+- Contact Number
+- Contact Number Type
+- Secondary Contact Number, if applicable
+- Email
+- Fax, if applicable
+
+IMPORTANT PRIVACY REQUIREMENT
+
+Do not require unnecessary sensitive personal information to be stored.
+
+If Home Address or other personal information is not necessary for C100 OS operation, allow the field to remain blank and be entered manually when generating the form.
+
+Do not expose Advisor personal information to unauthorized users.
+
+==================================================
+B — EVENT DATA ALREADY STORED IN C100 OS
+==================================================
+
+When generating a Facilities Use Form from an existing event, automatically populate all available information already stored in C100 OS.
+
+This includes:
+
+- Sponsoring Organization
+- Contact Person, where appropriate
+- Contact Email
+- Event Date
+- Detailed Description of Event
+- Requested Area
+- Room
+- Start Time of Event
+- End Time of Event
+- Expected/Estimated Attendance
+- Sponsoring Committee
+- Event Owner
+
+If event creation already collects setup and cleanup times, use those values.
+
+Otherwise, extend the event/facility request architecture to support them.
+
+The user should not need to repeatedly type information C100 OS already knows.
+
+==================================================
+C — ADDITIONAL FACILITY REQUEST DATA
+==================================================
+
+When an authorized user selects:
+
+Generate Facilities Use Form
+
+open a workflow containing only information that is missing or must be confirmed.
+
+The workflow should collect the following information from the official form.
+
+ADVISOR ATTENDANCE
+
+- Will Faculty/Staff Advisor attend the event/activity?
+- Yes
+- No
+
+If No:
+
+- Which advisor(s) will chaperone the event/activity?
+- Attending Advisor
+- Attending Advisor Contact Number
+
+EVENT LOGISTICS
+
+- Time to Start Setup
+- Time to End Cleanup
+
+FUNDRAISING
+
+- Is this a fundraiser?
+- Yes
+- No
+
+ADMISSION OR REGISTRATION
+
+- Is there an admission or registration fee?
+- Yes
+- No
+
+If Yes:
+
+- Fee Amount
+
+FOOD
+
+- Will food be served?
+- Yes
+- No
+
+If Yes:
+
+- Who is preparing the food?
+
+AUDIENCE
+
+Allow selection of one or more:
+
+- FVSU Students
+- FVSU Faculty
+- FVSU Staff
+- FVSU Alumni
+- Graduate Students
+- General Public
+- Prospective Students
+- Community Youth
+- Community Adults
+- Academic/Professional Associates
+
+BUILDINGS AND GROUNDS REQUIREMENTS
+
+- Number of Tables
+- Number of Chairs
+- Staging Size
+- Earliest Date Setup Can Be Completed
+- Earliest Date Setup Can Be Disassembled
+- Housekeeping Requirements
+- Comments
+
+Use conditional form logic.
+
+Examples:
+
+If Fundraiser = No:
+
+Do not request unnecessary fundraising information.
+
+If Admission Fee = No:
+
+Hide or disable Fee Amount.
+
+If Food Served = No:
+
+Hide or disable Food Preparation information.
+
+If Advisor Attending = Yes:
+
+Do not require alternate chaperone information.
+
+==================================================
+PHASE 5 — FACILITY REQUEST UX
+==================================================
+
+The workflow should be simple for Committee Chairs and other authorized event creators.
+
+Recommended workflow:
+
+1. User creates an event.
+
+2. Event information is saved in C100 OS.
+
+3. User selects:
+
+Generate Facilities Use Form
+
+4. C100 OS retrieves:
+
+- chapter information
+- advisor information
+- event information
+- contact information
+
+5. C100 OS displays only missing or confirmable Facilities Use Form information.
+
+6. User completes the additional fields.
+
+7. User selects:
+
+Preview Form
+
+8. C100 OS generates a preview.
+
+9. User selects:
+
+Download Completed Form
+
+10. C100 OS exports the official FVSU Facilities Use Form as a completed PDF.
+
+The user should NOT need to manually copy event information from C100 OS into the PDF.
+
+==================================================
+PHASE 6 — PDF GENERATION REQUIREMENTS
+==================================================
+
+Generate a downloadable PDF based on the official FVSU Facilities Use Form.
+
+Preferred implementation:
+
+Use the existing official PDF as the background/template and programmatically overlay entered data onto the appropriate fields.
+
+Do not unnecessarily recreate the entire official document from scratch if the provided PDF can safely function as the template.
+
+The exported document must:
+
+- remain two pages
+- preserve the FVSU Facilities Use Form appearance
+- contain readable text
+- place values in the correct locations
+- correctly mark Yes/No selections
+- correctly mark audience selections
+- handle long event descriptions appropriately
+- handle missing optional data gracefully
+- preserve blank signature fields where signatures are still required
+- preserve Office Use Only sections
+- download as a valid PDF
+
+Use meaningful filenames.
+
+Example:
+
+FVSU_Facilities_Use_Form_Leadership_Workshop_2026-09-15.pdf
+
+Sanitize event names before using them in filenames.
+
+==================================================
+PHASE 7 — SIGNATURE HANDLING
+==================================================
+
+The official form contains signature fields.
+
+Do not automatically generate fake signatures.
+
+Do not treat a typed name as a legally binding signature unless a future approved electronic-signature workflow explicitly supports that.
+
+Leave signature fields blank for:
+
+- Contact Signature
+- Faculty/Staff Advisor Signature
+- Director of Plant Operations Signature
+- Director of Campus Police & Safety
+- Campus Life Representative
+- Director of Auxiliary and Support Service
+
+The generated PDF should be ready for the appropriate approval/signature process after download.
+
+==================================================
+PHASE 8 — OFFICE USE ONLY
+==================================================
+
+The second page contains Office Use Only sections.
+
+These include:
+
+FACILITY AVAILABILITY
+
+- facility available Yes/No
+- Director
+
+POLICE APPROVAL
+
+- officers required Yes/No
+- number of officers required
+- officers hired
+- cost per hour
+- amount paid
+- Director of Campus Police & Safety
+- date
+
+CAMPUS LIFE
+
+- Campus Life Representative
+- date
+
+DIRECTOR OF AUXILIARY AND SUPPORT SERVICE
+
+- Approved
+- Not Approved
+- Facility Not Available
+- Conference Required
+- Director
+- Date
+
+C100 OS must NOT automatically complete these fields.
+
+Leave them blank in the generated Facilities Use Form.
+
+These fields belong to FVSU administrative officials.
+
+==================================================
+PHASE 9 — FACILITY REQUEST RECORDS
+==================================================
+
+Do not make Facilities Use Form generation a one-time stateless action.
+
+Store facility request information associated with the event.
+
+Authorized users should be able to:
+
+- create facility request
+- save draft
+- edit facility request
+- preview PDF
+- download PDF
+- regenerate PDF after changes
+- view request history
+- see when the form was generated
+- see who generated it
+
+Suggested statuses:
+
+- Draft
+- Ready for Export
+- Exported
+- Submitted
+- Approved
+- Denied
+- Revision Requested
+
+Do not automatically mark a request Approved.
+
+Approval occurs outside C100 OS unless a future authorized integration is implemented.
+
+==================================================
+PHASE 10 — FACILITY REQUEST AUTHORIZATION
+==================================================
+
+Committee Chairs should be able to generate Facilities Use Forms for events they are authorized to manage.
+
+Executive Officers should be able to generate forms for events within their organizational authority.
+
+Administrators should have chapter-wide access.
+
+General Members should not have unrestricted access to facility request generation.
+
+Apply authorization on the backend.
+
+Do not rely only on hidden frontend buttons.
+
+==================================================
+PHASE 11 — REPORT EXPORTS FOR ALL EXECUTIVE OFFICERS
+==================================================
+
+All Executive Officer positions must have report export capabilities.
+
+Executive Officers are:
+
+- President
+- Vice President
+- Chief of Staff
+- Secretary
+- Treasurer
+- Sergeant-at-Arms
+
+Each Executive Officer should be able to export reports relevant to their organizational outcome and authorized data.
+
+Do NOT simply give every Executive Officer unrestricted access to every database table.
+
+Use role-appropriate report authorization.
+
+==================================================
+PRESIDENT REPORTS
+==================================================
+
+Allow export of:
+
+- Chapter Operations Summary
+- Committee Health Report
+- Executive Officer Status Report
+- Chapter Participation Report
+- Member Engagement Summary
+- Action Item Report
+- Strategic Decision Report
+- Leadership Pipeline/Succession Report
+- Event Summary
+- Chapter Annual Report data
+
+==================================================
+VICE PRESIDENT REPORTS
+==================================================
+
+Allow export of:
+
+- Committee Health Report
+- Committee Performance Report
+- Committee Participation Report
+- Committee Chair Check-In Report
+- Committee Event Report
+- Committee Goal Progress Report
+- Leadership Development/Pipeline Report
+
+==================================================
+CHIEF OF STAFF REPORTS
+==================================================
+
+Allow export of:
+
+- Member Engagement Report
+- Communication Report
+- Follow-Up Report
+- Organizational Accountability Report
+- Nudge/Warning Report
+- Executive Action Item Report
+- Member Follow-Up Queue
+
+==================================================
+SECRETARY REPORTS
+==================================================
+
+Allow export of:
+
+- Meeting Minutes
+- Meeting Attendance Report
+- Action Item Report
+- Decision Log
+- Chapter Calendar Report
+- Executive Calendar Report
+- Meeting History
+- Organizational Records Index
+- Transition Documentation
+
+==================================================
+TREASURER REPORTS
+==================================================
+
+Allow export of:
+
+- Financial Summary
+- Budget vs Actual
+- Income Report
+- Expense Report
+- Dues Status Report
+- Reimbursement Report
+- Event Financial Report
+- Fundraising Financial Report
+- Transaction History
+- Financial Projection Report
+- Audit Trail
+
+Financial reports must have especially strict authorization.
+
+==================================================
+SERGEANT-AT-ARMS REPORTS
+==================================================
+
+Allow export of appropriate non-sensitive reports such as:
+
+- Official Function Attendance Report
+- Accountability Follow-Up Report
+- Professionalism/Conduct Trend Summary
+- Recurring Issue Summary
+- Meeting/Event Order Report
+
+Do not create exports that unnecessarily expose sensitive personal notes or private disciplinary information.
+
+==================================================
+PHASE 12 — REPORT FORMAT SUPPORT
+==================================================
+
+Where appropriate, support:
+
+- PDF
+- CSV
+- XLSX
+
+Not every report needs every format.
+
+Use the format appropriate for the information.
+
+Examples:
+
+PDF:
+
+- formatted leadership reports
+- meeting minutes
+- chapter summaries
+- financial summaries
+
+CSV/XLSX:
+
+- participation data
+- attendance data
+- committee metrics
+- financial transactions
+- action item data
+
+Every report must:
+
+- enforce backend authorization
+- respect selected date ranges
+- respect selected filters
+- use current database data
+- handle empty datasets
+- include report title
+- include generation date
+- identify relevant date range
+- use meaningful filenames
+
+==================================================
+PHASE 13 — CENTRAL REPORT CENTER
+==================================================
+
+Improve the existing Reports section.
+
+Create a role-aware Report Center.
+
+The Report Center should display only reports the current user is authorized to generate.
+
+Organize reports by category.
+
+Possible categories:
+
+- Chapter
+- Membership
+- Committees
+- Events
+- Executive Operations
+- Meetings
+- Financial
+- Accountability
+
+Allow users to:
+
+- choose report
+- choose date range
+- apply relevant filters
+- preview data where appropriate
+- choose export format
+- generate report
+- download report
+
+Avoid duplicating separate export logic across every dashboard.
+
+Create reusable reporting infrastructure.
+
+==================================================
+PHASE 14 — AUDIT LOGGING
+==================================================
+
+Record important administrative/export actions where appropriate.
+
+At minimum consider recording:
+
+- member deletion
+- demo data cleanup
+- Facilities Use Form generation
+- Facilities Use Form export
+- report generation
+- financial report export
+
+Audit records should include:
+
+- user
+- action
+- timestamp
+- relevant resource
+- relevant resource ID
+
+Do not log sensitive report contents unnecessarily.
+
+==================================================
+PHASE 15 — TESTING
+==================================================
+
+Test database cleanup.
+
+Verify:
+
+- only toeattryin@gmail.com remains as the test account
+- only jaylinziare@gmail.com remains as the administrator account
+- both accounts can authenticate
+- no demo users return after application restart
+- no hardcoded fake Committee Chairs remain
+- vacant leadership positions display correctly
+
+Test Facilities Use Form generation.
+
+Verify:
+
+- existing event data auto-populates
+- chapter data auto-populates
+- user is only asked for missing/additional information
+- conditional fields work
+- PDF preview works
+- PDF download works
+- exported PDF contains two pages
+- text aligns correctly with the official form
+- Yes/No selections are correct
+- audience selections are correct
+- signature fields remain blank
+- Office Use Only remains blank
+- meaningful filename is generated
+
+Test report exports.
+
+Verify each Executive Officer persona can:
+
+- access the Report Center
+- see only authorized reports
+- apply filters
+- select date ranges
+- generate reports
+- download authorized reports
+
+Verify unauthorized users cannot access restricted report APIs directly.
+
+==================================================
+FINAL REQUIREMENTS
+==================================================
+
+Do not wipe the production database.
+
+Do not delete:
+
+toeattryin@gmail.com
+
+or
+
+jaylinziare@gmail.com
+
+Do not recreate fake accounts after cleanup.
+
+Do not hardcode fake leadership assignments.
+
+Do not create a generic substitute for the official FVSU Facilities Use Form.
+
+Use the provided official PDF as the source/template where technically appropriate.
+
+Do not auto-fill Office Use Only fields.
+
+Do not generate fake signatures.
+
+Do not give all Executive Officers unrestricted access to all data.
+
+Use role-appropriate report authorization.
+
+Do not implement frontend-only authorization.
+
+Preserve working web functionality.
+
+Preserve working Tauri desktop functionality.
+
+Preserve authentication.
+
+Preserve the production API connection.
+
+Preserve the GitHub Actions desktop release workflow and updater architecture created during the previous development cycle.
+
+After implementation:
+
+1. Run type checking.
+2. Run available tests.
+3. Build the web application.
+4. Verify database cleanup.
+5. Verify both preserved accounts can authenticate.
+6. Test Facilities Use Form generation.
+7. Generate at least one test Facilities Use Form PDF.
+8. Verify the exported PDF visually against the official two-page form.
+9. Test report authorization for every Executive Officer position.
+10. Test PDF exports.
+11. Test CSV exports.
+12. Test XLSX exports where implemented.
+13. Summarize all changed files.
+14. Summarize all database changes.
+15. Summarize all new API routes.
+16. Summarize all authorization changes.
+17. Clearly identify anything requiring manual configuration.
+18. Clearly identify anything that could not be completed or tested.
+
+Begin by auditing the existing implementation from the previous development cycle.
+
+Then provide a concise implementation plan.
+
+Then proceed with the work.

@@ -53,10 +53,10 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/YOUR_ORG/YOUR_REPO/releases/latest/download/latest.json"
+        "https://github.com/Jayzp06/c100-os/releases/latest/download/latest.json"
       ],
       "dialog": true,
-      "pubkey": "CONFIGURE_TAURI_PUBLIC_KEY"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc2M0RBM0ZEMjRFOUY0RDYKUldUVzlPa2svYU05ZHJDR0d5WDhJM3djWGpuZCtmYlpTdVJqcTd1blZuS3dkcmx4KzVFTDFXLy8K"
     },
     "deep-link": {
       "desktop": {

@@ -1,0 +1,1360 @@
+You are continuing development of C100 OS, the native/web Chapter Operations Platform for the FVSU Collegiate 100.
+
+IMPORTANT: Before changing code, inspect the existing repository, database schema, API routes, authentication system, role/permission logic, React Query cache behavior, Tauri configuration, GitHub Actions release workflow, and existing UI architecture.
+
+Do not blindly rewrite the application.
+
+Preserve all currently working functionality, especially:
+
+- Replit authentication
+- Desktop authentication
+- Tauri macOS build
+- Tauri Windows build
+- GitHub Actions CI/CD
+- GitHub draft release creation
+- Existing backend/API connectivity
+- Existing database data unless explicitly identified as demo/seed data
+- Current working navigation where it is not affected by the requirements below
+
+The application successfully builds and runs as:
+
+- a web application
+- a native macOS application
+- a native Windows application
+
+The native desktop clients connect to the published production backend using VITE_API_URL.
+
+The objective of this development cycle is C100 OS v0.2.
+
+This is not simply a collection of bug fixes.
+
+Testing revealed architectural problems involving:
+
+- navigation
+- stale state
+- role modeling
+- permission modeling
+- committee structure
+- leadership dashboards
+- event management
+- QR check-in
+- administrative CRUD
+- reporting
+- chapter operational workflows
+- desktop application updates
+
+Implement these changes as a coherent architectural upgrade.
+
+==================================================
+PHASE 0 — AUDIT BEFORE IMPLEMENTATION
+==================================================
+
+Before modifying code:
+
+1. Inspect the current database schema.
+
+2. Inspect all role, permission, committee, and leadership-related fields.
+
+3. Inspect all hardcoded member names, committee chairs, roles, committees, event types, point values, multipliers, and permissions.
+
+4. Inspect React Query configuration and determine why permission and role changes can remain stale after administrative updates.
+
+5. Inspect all routing and navigation behavior.
+
+6. Inspect the QR code and rotating check-in code implementation end-to-end.
+
+7. Inspect all event CRUD functionality.
+
+8. Inspect all member CRUD functionality.
+
+9. Inspect the Reports page and current reporting API capabilities.
+
+10. Inspect the Tauri updater configuration.
+
+11. Inspect the GitHub Actions desktop release workflow.
+
+12. Inspect how versions are currently assigned to desktop builds and GitHub releases.
+
+13. Identify any placeholder Tauri updater configuration, including placeholder repository URLs or public keys.
+
+14. Produce a concise implementation plan before making changes.
+
+Then implement the work in logical phases.
+
+Do not solve these requirements with additional hardcoded role checks or hardcoded member names.
+
+==================================================
+PHASE 1 — FIX THE ORGANIZATIONAL DATA MODEL
+==================================================
+
+The current role system is too broad.
+
+Do not model a user as simply one mutually exclusive role such as:
+
+Member OR Committee Chair OR Executive Board OR Admin.
+
+Replace or evolve the architecture into a composable organizational model.
+
+A person may simultaneously have:
+
+MEMBERSHIP STATUS
+
+Examples:
+
+- Active
+- Inactive
+- Alumni
+- Suspended, if already supported by chapter policy
+
+SYSTEM ACCESS
+
+Examples:
+
+- Member
+- Administrator
+
+COMMITTEE ASSIGNMENT
+
+A member may belong to an operational committee.
+
+COMMITTEE POSITION
+
+Examples:
+
+- Member
+- Chair
+- Co-Chair, if supported
+
+CHAPTER LEADERSHIP CLASSIFICATION
+
+Examples:
+
+- Executive Officer
+- Director
+- Executive Support Officer
+- Strategic Advisor
+- None
+
+SPECIFIC CHAPTER POSITION
+
+Executive Officers:
+
+- President
+- Vice President
+- Chief of Staff
+- Secretary
+- Treasurer
+- Sergeant-at-Arms
+
+Directors:
+
+- Membership Director
+- Social Media Director
+
+Executive Support Officers:
+
+- Parliamentarian
+- Historian
+- Bylaws Officer
+
+Strategic Advisor:
+
+- Advisor
+
+Committee Chairs remain Committee Chairs.
+
+Committee Chairs are NOT automatically Executive Officers.
+
+A member may hold more than one organizational attribute.
+
+Examples:
+
+Active Member + Administrator + President + Mentoring Committee Member
+
+Active Member + Vice President + Committee Member
+
+Active Member + Education Committee Chair
+
+Active Member + Treasurer + Economic Development & Empowerment Committee Member
+
+The application must derive permissions from these composable organizational attributes.
+
+Avoid an architecture based on giant chains of:
+
+if role === X
+else if role === Y
+
+Create a maintainable permissions/capabilities system.
+
+==================================================
+PHASE 2 — CORRECT THE COMMITTEE STRUCTURE
+==================================================
+
+Audit the existing committee records.
+
+Economic Development and Economic Empowerment are incorrectly represented as separate committees.
+
+They must be merged into one committee:
+
+Economic Development & Empowerment
+
+Preserve associated members, events, participation records, and historical data during migration where possible.
+
+Bylaws must NOT appear as a standard operational committee.
+
+Bylaws Officer is an Executive Support Officer position.
+
+Remove Bylaws from:
+
+- normal committee rankings
+- committee chair dashboards
+- operational committee assignments
+- committee leaderboards
+
+unless historical data requires a migration path.
+
+All committee names, chairs, member assignments, and statistics must come from the database.
+
+Remove hardcoded chair names.
+
+Testing found that changing a member from Committee Chair to Member updated the roster, but another section continued displaying the previous bot/demo user as chair.
+
+There must be one source of truth.
+
+If the database says Person A is chair, all relevant interfaces must show Person A.
+
+If no chair exists, display an appropriate empty state.
+
+==================================================
+PHASE 3 — ADMINISTRATIVE CRUD
+==================================================
+
+Administrators currently cannot delete members or events.
+
+Implement secure administrative CRUD.
+
+MEMBERS
+
+Administrators need the ability to:
+
+- create members if currently supported
+- edit members
+- update organizational assignments
+- update leadership positions
+- update committee assignments
+- delete members
+
+Member deletion must:
+
+- require confirmation
+- clearly identify the member being deleted
+- prevent accidental deletion
+- account for related database records
+- either safely cascade, archive, soft-delete, or block deletion with an explanation depending on the data relationship
+- never leave orphaned records
+
+Add an administrative method to remove demo/seed members.
+
+Do not implement a dangerous unprotected “delete entire database” action.
+
+Provide a controlled mechanism for identifying and removing demo/seed data.
+
+EVENTS
+
+Authorized administrators need the ability to:
+
+- create events
+- edit events
+- cancel events
+- delete events
+
+Deletion and cancellation should be distinct concepts.
+
+Historical events with attendance records should generally be preserved or archived rather than destructively deleted unless the architecture safely supports deletion.
+
+Use confirmation dialogs.
+
+==================================================
+PHASE 4 — NAVIGATION ARCHITECTURE
+==================================================
+
+Users are becoming trapped in application views.
+
+This is unacceptable.
+
+Implement a coherent navigation architecture.
+
+Every secondary/detail page must provide an obvious route back.
+
+Use one or more of:
+
+- Back button
+- breadcrumbs
+- persistent role-appropriate navigation
+
+depending on the page.
+
+The user must NEVER need to sign out simply to return to the home page or another authorized area.
+
+MEMBER PORTAL
+
+The current basic member portal lacks sufficient navigation.
+
+Members can view statistics, participation, events, and check-in functionality, but can become trapped in views.
+
+Create persistent member navigation appropriate to their permissions.
+
+At minimum, provide access to:
+
+- Member Home
+- My Participation
+- Events
+- Leaderboard, if authorized for general members
+- Profile
+- Sign Out
+
+If a member also has leadership capabilities, the interface must expose their authorized leadership workspace without requiring logout/login.
+
+ADMINISTRATOR NAVIGATION
+
+An administrator who switches into or views another authorized portal must have a clear way to return to the Admin portal.
+
+Do not require authentication reset.
+
+==================================================
+PHASE 5 — REFRESH AND STATE SYNCHRONIZATION
+==================================================
+
+Testing found stale state throughout the application.
+
+Examples:
+
+- changing a member’s role did not immediately update all views
+- changing a user from Bylaws-related permissions to Executive Board permissions took several seconds to appear
+- users may need to sign out and sign back in to see changes
+- committee chair data can remain stale
+
+Audit React Query cache invalidation.
+
+After mutations, invalidate or update all relevant queries.
+
+Examples may include:
+
+- current user
+- member roster
+- member details
+- committees
+- committee members
+- committee leadership
+- permissions
+- dashboards
+- events
+- participation
+- reports
+
+Do not simply call window.location.reload() after every mutation.
+
+Implement correct state synchronization.
+
+Also provide a manual Refresh action in an appropriate application location.
+
+The Refresh action should re-fetch authorized current data without logging the user out.
+
+==================================================
+PHASE 6 — QR CHECK-IN SYSTEM
+==================================================
+
+The QR and rotating-code event check-in system is currently broken.
+
+Observed problems:
+
+- valid displayed codes are rejected as incorrect
+- the rotating code is currently too long
+- the QR code scans as “No data found”
+- check-in must work reliably across devices
+
+Audit the complete check-in flow:
+
+- event creation
+- event activation
+- check-in session creation
+- rotating code generation
+- code storage
+- code validation
+- expiration
+- QR payload generation
+- QR scanning
+- attendance submission
+- duplicate attendance prevention
+- error messages
+
+ROTATING CODE REQUIREMENTS
+
+The current code appears to be approximately 9 or more characters.
+
+SHORTEN IT.
+
+Use a short human-readable rotating code.
+
+Recommended target:
+
+6 characters.
+
+Use uppercase letters and numbers while avoiding visually confusing characters where practical.
+
+Example character set could exclude:
+
+- O
+- 0
+- I
+- 1
+
+The code must be:
+
+- short enough to manually enter quickly
+- long enough for reasonable event check-in security
+- regenerated according to the existing rotation interval or a sensible interval
+- validated consistently by frontend and backend
+
+Do not allow the frontend and backend to use different code-generation or normalization rules.
+
+QR CODE REQUIREMENTS
+
+Generate a real QR payload.
+
+Do not render an empty or invalid QR value.
+
+The QR payload should contain sufficient information for C100 OS to identify the event/check-in session.
+
+Prefer an application deep link or HTTPS fallback strategy compatible with desktop and web environments.
+
+Validate the QR value before rendering.
+
+Implement a visible fallback if QR generation fails.
+
+Test the complete logical flow.
+
+==================================================
+PHASE 7 — EVENT VISIBILITY AND COMMITTEE AUTHORITY
+==================================================
+
+The event authorization model needs correction.
+
+COMMITTEE CHAIRS
+
+Committee Chairs should manage events relevant to their committee.
+
+They may create appropriate chapter-facing events when authorized.
+
+However, internal committee meetings must be restricted to their committee.
+
+Separate these concepts:
+
+EVENT VISIBILITY
+
+Who can see the event?
+
+ATTENDANCE ELIGIBILITY
+
+Who can check into the event?
+
+EVENT OWNERSHIP
+
+Who can edit/manage the event?
+
+Examples:
+
+Chapter Event:
+visible chapter-wide
+attendance chapter-wide
+
+Committee Event:
+may be visible chapter-wide depending on configuration
+attendance rules based on event purpose
+
+Internal Committee Meeting:
+visible only to the committee
+attendance only for committee members
+managed by the Committee Chair and authorized leadership
+
+Do not use one boolean field to represent all three concepts.
+
+==================================================
+PHASE 8 — AUTOMATIC EVENT POINTS
+==================================================
+
+Committee Chairs currently see manual point-value and multiplier fields.
+
+Remove these decisions from normal Committee Chair event creation.
+
+Point values and multipliers should be automatically derived from centrally configured event types.
+
+Create or use an event-type configuration architecture.
+
+Examples might include:
+
+- General Body Meeting
+- Executive Meeting
+- Committee Meeting
+- Community Service
+- Professional Development
+- Leadership Development
+- Social Event
+- Fundraising
+- Special Event
+
+Do not invent final point values if existing chapter rules already define them.
+
+If values are not currently defined, create administrator-configurable defaults rather than permanently hardcoding arbitrary business rules.
+
+Committee Chairs choose the event type.
+
+C100 OS determines the appropriate point configuration.
+
+Authorized administrators may manage event type scoring rules.
+
+==================================================
+PHASE 9 — CORRECT “MY COMMITTEE”
+==================================================
+
+The current My Committee view is conceptually wrong.
+
+Overall committee progress and rankings belong under Leaderboard.
+
+MY COMMITTEE FOR COMMITTEE CHAIRS
+
+A Committee Chair should see:
+
+- committee name
+- committee members
+- each member’s participation
+- attendance
+- points
+- engagement/nudge status
+- upcoming committee events
+- recent committee activity
+- committee goals or metrics if supported
+- members requiring follow-up
+
+The Chair should be able to click a member and inspect appropriate committee-relevant details.
+
+The Chair should NOT receive chapter-wide administrative access simply because they are a Committee Chair.
+
+LEADERBOARD
+
+Overall committee comparison belongs here.
+
+Leaderboard may show:
+
+- committee rankings
+- committee participation
+- committee points
+- trends
+- chapter-wide comparative metrics
+
+Respect existing privacy rules regarding public individual rankings.
+
+==================================================
+PHASE 10 — EXECUTIVE LEADERSHIP WORKSPACES
+==================================================
+
+“Executive Board” is too broad to function as the final permission level.
+
+Executive Officers share collective chapter responsibility but own different organizational outcomes.
+
+Build role-specific workspaces/capabilities.
+
+Do not necessarily create completely separate applications.
+
+Prefer shared components and capability-driven dashboards.
+
+------------------------------
+PRESIDENT
+------------------------------
+
+Primary outcome:
+
+A healthy, sustainable chapter.
+
+Provide tools for:
+
+- chapter-wide operational overview
+- committee health overview
+- Executive Officer outcome/status overview
+- pending approvals
+- escalations
+- unresolved action items
+- upcoming strategic deadlines
+- chapter calendar
+- financial summary provided by Treasurer data
+- member engagement summary provided by Chief of Staff/Membership data
+- committee performance provided by Vice President data
+- Executive Meeting preparation
+- strategic decision records
+- proposal review
+- Bylaws proposal routing
+- Director reports
+- Executive Support Officer reports
+- annual and semester planning
+- transition/succession planning
+
+The President should see cross-functional information without manually taking over every officer’s operational tools.
+
+------------------------------
+VICE PRESIDENT
+------------------------------
+
+Primary outcome:
+
+Healthy committees.
+
+Provide tools for:
+
+- committee health dashboard
+- Committee Chair directory
+- committee performance
+- committee participation trends
+- Chair check-ins
+- committee goals
+- struggling committee alerts
+- Chair development notes
+- committee event overview
+- cross-committee coordination
+- monthly committee reporting
+- leadership pipeline/succession indicators
+
+The Vice President supports and develops Committee Chairs rather than performing their jobs for them.
+
+------------------------------
+CHIEF OF STAFF
+------------------------------
+
+Primary outcome:
+
+Healthy communication, member engagement, and organizational accountability.
+
+Provide tools for:
+
+- member engagement overview
+- communication tracking
+- announcements
+- follow-up tracking
+- organizational action items
+- member engagement warnings
+- communication effectiveness indicators
+- chapter-wide accountability status
+- coordination with Membership Director
+- Executive action-item monitoring
+- information distribution status
+- member follow-up queues
+
+The Chief of Staff must not become merely an administrative assistant dashboard.
+
+The workspace should focus on coordination, engagement, communication, and accountability.
+
+------------------------------
+SECRETARY
+------------------------------
+
+Primary outcome:
+
+Organized documentation, executive coordination, meeting records, calendars, and institutional knowledge.
+
+Provide tools for:
+
+- meeting agenda creation
+- agenda templates
+- meeting minutes
+- action items
+- decision records
+- attendance records
+- chapter calendar
+- Executive calendar
+- searchable organizational records
+- document management
+- institutional knowledge archive
+- meeting history
+- transition documentation
+- recurring meeting scheduling
+- Executive Meeting preparation/distribution
+
+Support the handbook rule that every action item must have:
+
+- exactly one owner
+- a due date
+
+Support follow-up on open action items at future meetings.
+
+------------------------------
+TREASURER
+------------------------------
+
+Primary outcome:
+
+Financial sustainability.
+
+Provide tools for:
+
+- financial dashboard
+- account/balance overview
+- budget categories
+- budget vs actual
+- income tracking
+- expense tracking
+- dues status
+- reimbursement requests
+- approval workflows
+- receipt/document records
+- financial reports
+- transaction history
+- event financial tracking
+- fundraising financial tracking
+- financial projections
+- recurring obligations
+- audit trail
+- exportable financial reports
+
+Do not expose sensitive financial modification capabilities to unauthorized users.
+
+Implement clear authorization boundaries.
+
+------------------------------
+SERGEANT-AT-ARMS
+------------------------------
+
+Primary outcome:
+
+Professionalism, order, accountability, and integrity during official chapter functions.
+
+Provide tools for:
+
+- official function attendance overview
+- meeting/event conduct records where appropriate
+- accountability follow-up records
+- professionalism/decorum issue tracking
+- recurring behavioral pattern identification
+- coordination records with Parliamentarian
+- escalation to Executive Board when appropriate
+
+Do not turn this into a punitive surveillance system.
+
+The handbook defines accountability as leadership support rather than punishment.
+
+==================================================
+PHASE 11 — DIRECTOR WORKSPACES
+==================================================
+
+Directors are NOT Executive Officers.
+
+They oversee major operational functions and report directly to the President.
+
+------------------------------
+MEMBERSHIP DIRECTOR
+------------------------------
+
+Provide tools for:
+
+- membership lifecycle overview
+- roster health
+- onboarding
+- member status
+- retention
+- engagement trends
+- coordination with Chief of Staff
+- prospective/new member tracking if supported
+- leadership pipeline indicators
+- membership reporting
+
+------------------------------
+SOCIAL MEDIA DIRECTOR
+------------------------------
+
+Provide tools for:
+
+- content planning
+- content calendar
+- event promotion requests
+- chapter announcement coordination
+- campaign status
+- content approval workflow if required
+- media request tracking
+- communication coordination with appropriate officers
+
+Do not build external social media API integrations unless the existing architecture supports them and they are explicitly required.
+
+==================================================
+PHASE 12 — EXECUTIVE SUPPORT OFFICER WORKSPACES
+==================================================
+
+Executive Support Officers do not supervise members or committees.
+
+They report directly to the President and provide specialized support.
+
+------------------------------
+PARLIAMENTARIAN
+------------------------------
+
+Provide tools for:
+
+- constitutional reference
+- parliamentary procedure reference
+- meeting procedure guidance
+- governance issue records
+- procedural review requests
+- collaboration with Sergeant-at-Arms
+- proposal/process review
+
+The application supports judgment.
+
+It must not automatically make parliamentary rulings.
+
+------------------------------
+HISTORIAN
+------------------------------
+
+Provide tools for:
+
+- chapter activity archive
+- event history
+- photo/media records
+- accomplishment records
+- awards
+- milestone tracking
+- annual chapter history
+- searchable institutional history
+- transition records
+- historical reports
+
+------------------------------
+BYLAWS OFFICER
+------------------------------
+
+Rename any incorrect “Bylaws Chair” terminology to:
+
+Bylaws Officer
+
+Provide tools for:
+
+- searchable bylaws
+- section/chapter navigation
+- governance reference
+- proposal submission
+- proposed amendment records
+- proposal status
+- review workflow
+- routing proposals to the President and appropriate Executive process
+- historical amendment records
+
+A Bylaws proposal should NOT automatically call an Executive Board meeting.
+
+Instead:
+
+1. Proposal submitted.
+2. Appropriate leadership notified.
+3. President/authorized leadership reviews.
+4. Meeting or review process may be scheduled according to chapter procedure.
+
+Technology supports leadership decisions.
+
+It does not make them automatically.
+
+==================================================
+PHASE 13 — EXECUTIVE COLLABORATION AND ACTION ITEMS
+==================================================
+
+Support the handbook’s operational model.
+
+EXECUTIVE MEETINGS
+
+Support:
+
+- weekly recurring meetings
+- officer status submissions tied to outcome areas
+- agenda preparation
+- President agenda ownership
+- Secretary agenda distribution
+- minutes
+- decisions
+- action items
+- follow-up
+
+ACTION ITEMS
+
+Every action item must have:
+
+- one owner
+- due date
+- status
+- source meeting or decision
+- follow-up history
+
+Open action items from the previous Executive Meeting should be easily visible when preparing the next meeting.
+
+OFFICER COLLABORATION
+
+Support information flow for:
+
+- President ↔ Chief of Staff
+- Vice President ↔ Committee Chairs
+- Secretary ↔ President
+- Treasurer ↔ President
+- Membership Director ↔ Chief of Staff
+- President ↔ Directors
+- President ↔ Executive Support Officers
+- Parliamentarian ↔ Sergeant-at-Arms
+
+Do not create isolated data silos for each dashboard.
+
+Use shared underlying organizational data with role-appropriate interfaces.
+
+==================================================
+PHASE 14 — FACILITY USE AND OPERATIONAL FORM AUTOMATION
+==================================================
+
+A previously discussed feature is missing.
+
+C100 OS should reduce duplicate administrative data entry when creating events.
+
+Design an extensible operational document automation system.
+
+When an authorized user creates an event, collect reusable structured data such as:
+
+- event name
+- event type
+- date
+- start time
+- end time
+- location
+- requested facility
+- expected attendance
+- sponsoring committee
+- event owner
+- contact information
+- event description
+- setup requirements
+- equipment requirements
+- food/catering information if applicable
+- security requirements if applicable
+- accessibility requirements if applicable
+- additional notes
+
+Store this information as structured event data.
+
+Use that data to support generation of administrative documents such as:
+
+- facility use requests
+- event planning forms
+- approval documents
+- event summaries
+
+IMPORTANT:
+
+Do not hardcode a fake FVSU Facility Use Form.
+
+Build the document-generation architecture and UI in a way that an actual approved form/template can later be mapped into the system.
+
+If an actual form/template already exists in the repository, inspect and use it appropriately.
+
+The goal is:
+
+enter event information once, reuse it everywhere.
+
+==================================================
+PHASE 15 — REPORTING AND EXPORTS
+==================================================
+
+The Reports section currently lacks useful export functionality.
+
+Implement appropriate exports.
+
+At minimum evaluate support for:
+
+- PDF
+- CSV
+- Excel/XLSX
+
+Reports may include:
+
+- chapter participation
+- event attendance
+- member participation
+- committee performance
+- leadership reports
+- financial reports, with appropriate permissions
+- meeting/action-item reports
+
+Do not expose restricted data through exports.
+
+Apply the same authorization rules to exported data as the UI.
+
+Exports should:
+
+- have meaningful filenames
+- include report generation date
+- identify the report type
+- use the selected date range/filter
+- handle empty datasets gracefully
+
+==================================================
+PHASE 16 — DESKTOP AUTOMATIC UPDATE SYSTEM
+==================================================
+
+This is a high-priority requirement.
+
+Currently, desktop application updates require the administrator/user to:
+
+1. push code to GitHub
+2. run GitHub Actions
+3. manually visit GitHub Releases
+4. download the new installer
+5. reinstall the application
+
+Implement a secure Tauri automatic update architecture so installed C100 OS desktop clients can receive future application updates.
+
+CURRENT CONTEXT
+
+The repository already:
+
+- builds macOS DMG/app artifacts
+- builds Windows EXE/MSI artifacts
+- uses GitHub Actions
+- creates GitHub draft releases
+- contains a Tauri updater configuration
+
+However, previous inspection showed placeholder updater configuration values.
+
+Audit before changing.
+
+REQUIREMENTS
+
+Configure the Tauri updater correctly.
+
+Implement:
+
+- proper updater endpoint
+- correct GitHub repository release path
+- updater signing key architecture
+- public key configuration
+- release update metadata generation
+- latest.json or the appropriate Tauri v2 update manifest
+- signed updater artifacts
+- semantic versioning
+- GitHub Actions release integration
+
+APPLICATION UX
+
+The desktop app should support:
+
+- automatic update check on startup, or another sensible interval
+- manual “Check for Updates” button under System/Profile/About
+- current version display
+- available version display
+- release notes if available
+- Download/Install Update action
+- restart application after installation when appropriate
+- clear errors when update checks fail
+
+IMPORTANT SECURITY REQUIREMENTS
+
+Do not expose private updater signing keys in source code.
+
+Use GitHub Actions secrets appropriately.
+
+Do not destroy the currently working unsigned macOS build fallback.
+
+The current CI architecture supports:
+
+- unsigned macOS builds when Apple signing credentials are unavailable
+- signed macOS builds when Apple signing credentials are configured
+
+Preserve this behavior.
+
+The Tauri updater artifact signing system and Apple code-signing/notarization system are separate concerns.
+
+Do not conflate them.
+
+If automatic updates cannot securely work with a particular unsigned build scenario, document the limitation and implement the safest supported architecture rather than weakening update verification.
+
+VERSIONING
+
+Create a maintainable release process.
+
+Do not permanently publish every push to main as a production update unless that is intentionally selected.
+
+Prefer a workflow such as:
+
+- development changes committed normally
+- version explicitly incremented
+- release tag created
+- GitHub Actions builds release artifacts
+- updater manifest generated
+- release published
+- installed clients detect newer version
+
+If the current architecture can safely automate portions of this, implement the automation.
+
+DOCUMENTATION
+
+Update project documentation with exact instructions for:
+
+- generating updater signing keys
+- storing secrets
+- required GitHub repository secrets
+- creating a new release
+- version bumping
+- publishing updates
+- testing updates on macOS
+- testing updates on Windows
+- rollback/recovery considerations
+
+==================================================
+PHASE 17 — SYSTEM ADMINISTRATION
+==================================================
+
+Improve the System/Admin area.
+
+Provide appropriate tools for:
+
+- manual data refresh
+- event type/scoring configuration
+- member administration
+- committee administration
+- leadership assignments
+- demo data cleanup
+- application version display
+- update checking
+- system health where supported
+
+Do not expose infrastructure secrets.
+
+Do not create dangerous database operations without safeguards.
+
+==================================================
+PHASE 18 — DATABASE MIGRATIONS AND DATA SAFETY
+==================================================
+
+This application now has production data potential.
+
+Treat migrations carefully.
+
+Before changing schemas:
+
+- inspect existing data
+- identify demo data vs real data
+- preserve relationships
+- create migrations
+- avoid destructive resets
+
+Do not wipe the production database.
+
+Do not reseed production automatically.
+
+If data migration is required for:
+
+- roles
+- committees
+- leadership positions
+- event visibility
+- scoring configuration
+
+implement explicit migrations.
+
+==================================================
+PHASE 19 — AUTHORIZATION AND SECURITY REVIEW
+==================================================
+
+After implementing the organizational model, audit all API routes.
+
+Frontend-hidden buttons are NOT authorization.
+
+Verify backend authorization for:
+
+- member deletion
+- member editing
+- event deletion
+- event editing
+- financial tools
+- leadership tools
+- committee management
+- reports
+- exports
+- document generation
+- administrative configuration
+
+Create reusable permission checks where possible.
+
+==================================================
+PHASE 20 — TESTING
+==================================================
+
+Test the following personas:
+
+1. General Member
+
+2. Committee Chair
+
+3. President
+
+4. Vice President
+
+5. Chief of Staff
+
+6. Secretary
+
+7. Treasurer
+
+8. Sergeant-at-Arms
+
+9. Membership Director
+
+10. Social Media Director
+
+11. Parliamentarian
+
+12. Historian
+
+13. Bylaws Officer
+
+14. Administrator
+
+15. A user with multiple simultaneous organizational attributes
+
+For each persona test:
+
+- login
+- dashboard
+- navigation
+- back navigation
+- permissions
+- unauthorized access prevention
+- role-specific tools
+- state refresh
+- logout
+- desktop behavior
+- web behavior
+
+Also test:
+
+- member creation/edit/deletion
+- event creation/edit/cancellation/deletion
+- committee reassignment
+- leadership reassignment
+- stale data behavior
+- QR generation
+- rotating code entry
+- attendance
+- duplicate attendance prevention
+- report generation
+- exports
+- desktop update checks
+
+==================================================
+IMPLEMENTATION PRIORITY
+==================================================
+
+Do not attempt to randomly implement every requirement simultaneously.
+
+Use this order:
+
+PRIORITY 1 — FOUNDATION
+
+- audit
+- organizational data model
+- permissions architecture
+- committee correction
+- remove hardcoded leadership data
+- database migrations
+
+PRIORITY 2 — CRITICAL BUGS
+
+- navigation traps
+- stale state
+- QR check-in
+- rotating 6-character code
+- administrative member/event CRUD
+
+PRIORITY 3 — OPERATIONAL STRUCTURE
+
+- My Committee
+- Leaderboard correction
+- event visibility/eligibility/ownership
+- automatic scoring rules
+
+PRIORITY 4 — LEADERSHIP WORKSPACES
+
+- Executive Officers
+- Directors
+- Executive Support Officers
+- collaboration
+- action items
+
+PRIORITY 5 — ADMINISTRATIVE AUTOMATION
+
+- facility use/document architecture
+- reports
+- exports
+
+PRIORITY 6 — DESKTOP DISTRIBUTION
+
+- automatic updates
+- version management
+- release process
+- documentation
+
+==================================================
+FINAL REQUIREMENTS
+==================================================
+
+Preserve the existing visual identity unless a change is required for usability.
+
+Do not redesign the entire application unnecessarily.
+
+Do not remove working features.
+
+Do not create fake functionality or buttons with no implementation behind them.
+
+Do not hardcode people into leadership positions.
+
+Do not hardcode organizational data that belongs in the database.
+
+Do not use frontend-only authorization.
+
+Do not wipe production data.
+
+Do not break the current macOS and Windows GitHub Actions builds.
+
+Do not break desktop authentication.
+
+Do not break web authentication.
+
+Do not break the production API connection.
+
+Use shared components and reusable permission logic.
+
+Use database-driven organizational relationships.
+
+Use explicit migrations.
+
+Use correct React Query invalidation.
+
+Use secure updater signing.
+
+Use semantic versioning.
+
+After implementation:
+
+1. Run type checking.
+2. Run available tests.
+3. Build the web frontend.
+4. Build/check the Tauri application where the environment permits.
+5. Review database migrations.
+6. Review authorization.
+7. Summarize every changed file.
+8. Summarize all schema changes.
+9. Summarize all new permissions.
+10. Summarize all GitHub secrets/configuration I must manually add.
+11. Give me exact commands required to commit and push.
+12. Give me exact steps required to produce and publish the next desktop release.
+13. Clearly identify anything that could not be completed or tested.
+
+Begin with the audit and implementation plan. Then proceed according to the priority order.

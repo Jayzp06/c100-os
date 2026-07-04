@@ -15,6 +15,11 @@ export interface SessionData {
   refresh_token?: string;
   expires_at?: number;
   impersonating?: { viewAs: string; startedAt: string };
+  /**
+   * A member-chosen active experience among the shells they legitimately hold
+   * (distinct from Tech Chair `impersonating`, which simulates a role NOT held).
+   */
+  experienceOverride?: "operations_console" | "committee_portal" | "member_portal";
 }
 
 let oidcConfig: client.Configuration | null = null;

@@ -1,7 +1,10 @@
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetMyProfile,
   getGetMyProfileQueryKey,
+  useSwitchMyExperience,
+  useResetMyExperience,
   type Member,
 } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -59,6 +62,17 @@ type MeValue = {
   isMemberPortal: boolean;
   impersonating: ImpersonationState | null;
   profileError: { status?: number } | null;
+  /**
+   * All experience shells this member legitimately qualifies for. Length > 1
+   * means the multi-role "switch view" affordance should be shown.
+   */
+  availableExperiences: ExperienceType[];
+  /** Switch the active view to another experience this member legitimately holds. */
+  switchExperience: (experience: ExperienceType) => void;
+  isSwitchingExperience: boolean;
+  /** Reset the active view back to the member's default (highest-priority) experience. */
+  resetExperience: () => void;
+  isResettingExperience: boolean;
 };
 
 const MeContext = React.createContext<MeValue | null>(null);
@@ -99,6 +113,7 @@ function useMeValue(): MeValue {
         orgRoles?: string[];
         permissionGroups?: string[];
         impersonating?: ImpersonationState | null;
+        availableExperiences?: ExperienceType[];
       })
     | null;
 
@@ -110,6 +125,21 @@ function useMeValue(): MeValue {
 
   const permGroupSet = new Set(permissionGroups);
   const can = (slug: string): boolean => permGroupSet.has(slug);
+
+  const availableExperiences: ExperienceType[] =
+    memberExt?.availableExperiences ?? [];
+
+  const qc = useQueryClient();
+  const switchMutation = useSwitchMyExperience({
+    mutation: {
+      onSuccess: () => qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() }),
+    },
+  });
+  const resetMutation = useResetMyExperience({
+    mutation: {
+      onSuccess: () => qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() }),
+    },
+  });
 
   return {
     auth,
@@ -135,6 +165,12 @@ function useMeValue(): MeValue {
     isMemberPortal: experience === "member_portal",
     impersonating,
     profileError,
+    availableExperiences,
+    switchExperience: (exp: ExperienceType) =>
+      switchMutation.mutate({ data: { experience: exp as never } }),
+    isSwitchingExperience: switchMutation.isPending,
+    resetExperience: () => resetMutation.mutate(),
+    isResettingExperience: resetMutation.isPending,
   };
 }
 

@@ -185,6 +185,47 @@ export function deriveExperience(
   return "member_portal";
 }
 
+/**
+ * Compute the full set of experience shells a member legitimately qualifies for,
+ * based on the same signals as `deriveExperience`, but without short-circuiting
+ * to only the highest-priority one. Used to power a "switch view" affordance for
+ * members who hold more than one qualifying role (e.g. an exec board member who
+ * is also a committee chair) — distinct from Tech Chair impersonation, which
+ * simulates a role NOT held.
+ */
+export function computeAvailableExperiences(
+  ctx: RbacContext,
+  extra: {
+    hasOfficerTerm: boolean;
+    isTechChair: boolean;
+    hasCommitteeChair: boolean;
+  },
+): Array<"operations_console" | "committee_portal" | "member_portal"> {
+  const experiences = new Set<
+    "operations_console" | "committee_portal" | "member_portal"
+  >();
+
+  if (
+    isPlatformAdmin(ctx) ||
+    extra.isTechChair ||
+    ctx.highestTier === "executive_board" ||
+    ctx.highestTier === "appointed_officer" ||
+    extra.hasOfficerTerm
+  ) {
+    experiences.add("operations_console");
+  }
+
+  if (ctx.highestTier === "committee_leadership" || extra.hasCommitteeChair) {
+    experiences.add("committee_portal");
+  }
+
+  // Every member always qualifies for the member portal — it is the base
+  // experience everyone holds regardless of additional leadership roles.
+  experiences.add("member_portal");
+
+  return Array.from(experiences);
+}
+
 // ─── Middleware ────────────────────────────────────────────────────────────────
 
 /**

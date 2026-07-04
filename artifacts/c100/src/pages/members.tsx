@@ -50,6 +50,7 @@ import {
 import { Search, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListMembersQueryKey } from "@workspace/api-client-react";
+import { invalidateAggregates } from "@/lib/query-invalidation";
 
 type ParsedRow = { fullName: string; email: string; error?: string };
 
@@ -268,6 +269,7 @@ function MembersList({ isAdmin }: { isAdmin: boolean }) {
 
   function handleImported() {
     queryClient.invalidateQueries({ queryKey: getListMembersQueryKey() });
+    invalidateAggregates(queryClient);
   }
 
   return (

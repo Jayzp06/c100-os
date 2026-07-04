@@ -22,7 +22,7 @@ import {
   syntheticPermissionsFor,
   writeAuditLog,
 } from "../lib/c100";
-import { getSession, getSessionId } from "../lib/auth";
+import { getSession, getSessionId, updateSession } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -36,6 +36,7 @@ router.get(
 
     let perms = realPerms;
     let impersonating: { viewAs: string; startedAt: string } | null = null;
+    let activeExperience = realPerms.experience;
 
     if (realPerms.isTechChair) {
       const sid = getSessionId(req);
@@ -47,13 +48,29 @@ router.get(
             ...syntheticPermissionsFor(session.impersonating.viewAs),
             isTechChair: true,
           };
+          activeExperience = perms.experience;
+        }
+      }
+    }
+
+    // A member's own "switch view" choice among experiences they legitimately
+    // hold — separate from Tech Chair impersonation (which simulates a role
+    // NOT held). Ignored while impersonation is active.
+    if (!impersonating) {
+      const sid = getSessionId(req);
+      if (sid) {
+        const session = await getSession(sid);
+        const override = session?.experienceOverride;
+        if (override && realPerms.availableExperiences.includes(override)) {
+          activeExperience = override;
         }
       }
     }
 
     res.json({
       ...(dto as object),
-      experience: perms.experience,
+      experience: activeExperience,
+      availableExperiences: realPerms.availableExperiences,
       officerPositions: perms.officerPositions,
       committeeChairId: perms.committeeChairId,
       isTechChair: realPerms.isTechChair,
@@ -61,6 +78,89 @@ router.get(
       orgRoles: realPerms.rbac.orgRoles,
       permissionGroups: [...realPerms.rbac.permissionGroups],
       impersonating,
+    });
+  }),
+);
+
+router.post(
+  "/me/experience",
+  requireAuth(async (req, res) => {
+    const { experience } = req.body as { experience?: unknown };
+    const perms = await resolvePermissions(req.member);
+
+    if (
+      typeof experience !== "string" ||
+      !perms.availableExperiences.includes(experience as never)
+    ) {
+      res.status(400).json({
+        error: "You do not hold a role that grants that experience",
+      });
+      return;
+    }
+
+    const sid = getSessionId(req);
+    if (!sid) {
+      res.status(401).json({ error: "No session" });
+      return;
+    }
+    const session = await getSession(sid);
+    if (!session) {
+      res.status(401).json({ error: "Session not found" });
+      return;
+    }
+
+    session.experienceOverride = experience as typeof session.experienceOverride;
+    await updateSession(sid, session);
+
+    const dto = await buildMemberDto(req.member);
+    res.json({
+      ...(dto as object),
+      experience,
+      availableExperiences: perms.availableExperiences,
+      officerPositions: perms.officerPositions,
+      committeeChairId: perms.committeeChairId,
+      isTechChair: perms.isTechChair,
+      systemRoles: perms.rbac.systemRoles,
+      orgRoles: perms.rbac.orgRoles,
+      permissionGroups: [...perms.rbac.permissionGroups],
+      impersonating: null,
+    });
+  }),
+);
+
+router.delete(
+  "/me/experience",
+  requireAuth(async (req, res) => {
+    const sid = getSessionId(req);
+    if (!sid) {
+      res.status(401).json({ error: "No session" });
+      return;
+    }
+    const session = await getSession(sid);
+    if (!session) {
+      res.status(401).json({ error: "Session not found" });
+      return;
+    }
+
+    delete session.experienceOverride;
+    await updateSession(sid, session);
+
+    const [dto, perms] = await Promise.all([
+      buildMemberDto(req.member),
+      resolvePermissions(req.member),
+    ]);
+
+    res.json({
+      ...(dto as object),
+      experience: perms.experience,
+      availableExperiences: perms.availableExperiences,
+      officerPositions: perms.officerPositions,
+      committeeChairId: perms.committeeChairId,
+      isTechChair: perms.isTechChair,
+      systemRoles: perms.rbac.systemRoles,
+      orgRoles: perms.rbac.orgRoles,
+      permissionGroups: [...perms.rbac.permissionGroups],
+      impersonating: null,
     });
   }),
 );

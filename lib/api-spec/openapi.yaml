@@ -93,7 +93,6 @@ paths:
           required: false
           schema:
             type: string
-            format: uri
       responses:
         '302':
           description: Redirect after login.
@@ -190,6 +189,38 @@ paths:
       responses:
         '200':
           description: Profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+
+  /me/experience:
+    post:
+      tags: [Profile]
+      operationId: switchMyExperience
+      summary: Switch active view among experiences the member legitimately holds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwitchExperienceInput'
+      responses:
+        '200':
+          description: Active experience switched. Returns updated profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Member does not hold a role granting that experience.
+    delete:
+      tags: [Profile]
+      operationId: resetMyExperience
+      summary: Reset active view back to the member's default (highest-priority) experience
+      responses:
+        '200':
+          description: Experience override cleared. Returns default profile.
           content:
             application/json:
               schema:
@@ -316,6 +347,66 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Member'
+    delete:
+      tags: [Members]
+      operationId: deleteMember
+      summary: Soft-delete a member (admin only). Hidden from rosters; attendance and audit history are preserved.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Member soft-deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Already deleted, or cannot delete own account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /members/{id}/restore:
+    post:
+      tags: [Members]
+      operationId: restoreMember
+      summary: Restore a soft-deleted member (admin only).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Member restored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Member is not deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 
   /committees:
     get:
@@ -630,6 +721,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/AttendanceRecord'
 
+  /events/{id}/attendance/{attendanceId}:
+    delete:
+      tags: [Attendance]
+      operationId: deleteEventAttendance
+      summary: Remove a mis-scanned or incorrect attendance record (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: attendanceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Attendance record removed.
+        '404':
+          description: Attendance record not found for this event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
   /nudges:
     get:
       tags: [Nudges]
@@ -820,7 +937,6 @@ components:
           type: string
         email:
           type: [string, 'null']
-          format: email
         firstName:
           type: [string, 'null']
         lastName:
@@ -848,7 +964,6 @@ components:
         redirect_uri:
           type: string
           minLength: 1
-          format: uri
         state:
           type: string
           minLength: 1
@@ -943,6 +1058,10 @@ components:
           enum: [Active, Warning, AtRisk, Critical]
         accountActive:
           type: boolean
+        deletedAt:
+          type: [string, 'null']
+          format: date-time
+          description: Set when a member has been soft-deleted. Null for active members.
         lastLogin:
           type: [string, 'null']
           format: date-time
@@ -980,6 +1099,20 @@ components:
           nullable: true
           allOf:
             - $ref: '#/components/schemas/ImpersonationState'
+        availableExperiences:
+          type: array
+          items:
+            type: string
+            enum: [operations_console, committee_portal, member_portal]
+          description: All experience shells this member legitimately qualifies for, for the multi-role "switch view" affordance.
+
+    SwitchExperienceInput:
+      type: object
+      required: [experience]
+      properties:
+        experience:
+          type: string
+          enum: [operations_console, committee_portal, member_portal]
 
     UpdateProfileInput:
       type: object
@@ -1006,7 +1139,6 @@ components:
           minLength: 2
         email:
           type: string
-          format: email
         role:
           type: string
           enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin, TechnologyChair]

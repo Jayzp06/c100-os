@@ -5,9 +5,11 @@ import {
   UpdateMemberBody,
   UpdateMemberParams,
   BulkImportMembersBody,
+  DeleteMemberParams,
+  RestoreMemberParams,
 } from "@workspace/api-zod";
 import { db, membersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   LEADERSHIP_ROLES,
   TECH_OR_ADMIN,
@@ -31,8 +33,16 @@ router.get(
       ? await db
           .select()
           .from(membersTable)
-          .where(eq(membersTable.committeeId, parsed.data.committeeId))
-      : await db.select().from(membersTable);
+          .where(
+            and(
+              eq(membersTable.committeeId, parsed.data.committeeId),
+              isNull(membersTable.deletedAt),
+            ),
+          )
+      : await db
+          .select()
+          .from(membersTable)
+          .where(isNull(membersTable.deletedAt));
 
     const dtos = await Promise.all(rows.map((m) => buildMemberDto(m)));
     res.json(dtos);
@@ -180,6 +190,97 @@ router.patch(
         duesPaid: updated.duesPaid,
         accountActive: updated.accountActive,
       },
+      ipAddress: req.ip,
+    });
+
+    const dto = await buildMemberDto(updated);
+    res.json(dto);
+  }),
+);
+
+router.delete(
+  "/members/:id",
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
+    const params = DeleteMemberParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+
+    if (params.data.id === req.member.id) {
+      res.status(400).json({ error: "You cannot delete your own account" });
+      return;
+    }
+
+    const [before] = await db
+      .select()
+      .from(membersTable)
+      .where(eq(membersTable.id, params.data.id));
+    if (!before) {
+      res.status(404).json({ error: "Member not found" });
+      return;
+    }
+    if (before.deletedAt) {
+      res.status(400).json({ error: "Member is already deleted" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(membersTable)
+      .set({ deletedAt: new Date(), accountActive: false })
+      .where(eq(membersTable.id, params.data.id))
+      .returning();
+
+    await writeAuditLog({
+      actorId: req.member.id,
+      targetType: "member",
+      targetId: params.data.id,
+      action: "member_deleted",
+      before: { deletedAt: before.deletedAt, accountActive: before.accountActive },
+      after: { deletedAt: updated.deletedAt, accountActive: updated.accountActive },
+      ipAddress: req.ip,
+    });
+
+    const dto = await buildMemberDto(updated);
+    res.json(dto);
+  }),
+);
+
+router.post(
+  "/members/:id/restore",
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
+    const params = RestoreMemberParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+
+    const [before] = await db
+      .select()
+      .from(membersTable)
+      .where(eq(membersTable.id, params.data.id));
+    if (!before) {
+      res.status(404).json({ error: "Member not found" });
+      return;
+    }
+    if (!before.deletedAt) {
+      res.status(400).json({ error: "Member is not deleted" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(membersTable)
+      .set({ deletedAt: null })
+      .where(eq(membersTable.id, params.data.id))
+      .returning();
+
+    await writeAuditLog({
+      actorId: req.member.id,
+      targetType: "member",
+      targetId: params.data.id,
+      action: "member_restored",
+      before: { deletedAt: before.deletedAt },
+      after: { deletedAt: updated.deletedAt },
       ipAddress: req.ip,
     });
 

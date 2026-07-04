@@ -1,0 +1,14 @@
+{
+  "name": "@workspace/checkin-codes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}

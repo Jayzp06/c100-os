@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type MemberExperience = typeof MemberExperience[keyof typeof MemberExperience];
+export type SwitchExperienceInputExperience = typeof SwitchExperienceInputExperience[keyof typeof SwitchExperienceInputExperience];
 
 
-export const MemberExperience = {
+export const SwitchExperienceInputExperience = {
   operations_console: 'operations_console',
   committee_portal: 'committee_portal',
   member_portal: 'member_portal',

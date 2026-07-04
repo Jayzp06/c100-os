@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useLocation, useParams } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useParams, useSearch } from "wouter";
+import { normalizeCheckInCode } from "@workspace/checkin-codes";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetEvent,
@@ -9,14 +10,18 @@ import {
   useActivateEventQr,
   useDeactivateEventQr,
   useDeleteEvent,
+  useUpdateEvent,
   useManualAttendance,
+  useDeleteEventAttendance,
   useListMembers,
+  useListCommittees,
   getGetEventQueryKey,
   getListEventAttendanceQueryKey,
   getGetCurrentEventQrQueryKey,
   getListEventsQueryKey,
   getGetMyDashboardQueryKey,
 } from "@workspace/api-client-react";
+import { invalidateAggregates } from "@/lib/query-invalidation";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -186,7 +191,12 @@ function CheckInPanel({
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const search = useSearch();
   const [token, setToken] = useState("");
+  useEffect(() => {
+    const scanned = new URLSearchParams(search).get("code");
+    if (scanned) setToken(normalizeCheckInCode(scanned));
+  }, [search]);
   const checkIn = useCheckInToEvent({
     mutation: {
       onSuccess: () => {
@@ -194,7 +204,7 @@ function CheckInPanel({
         setToken("");
         qc.invalidateQueries({ queryKey: getGetEventQueryKey(id) });
         qc.invalidateQueries({ queryKey: getListEventAttendanceQueryKey(id) });
-        qc.invalidateQueries({ queryKey: getGetMyDashboardQueryKey() });
+        invalidateAggregates(qc);
       },
       onError: (err) => {
         const msg =
@@ -232,8 +242,9 @@ function CheckInPanel({
             <div className="flex gap-2">
               <Input
                 value={token}
-                onChange={(e) => setToken(e.target.value.trim())}
+                onChange={(e) => setToken(normalizeCheckInCode(e.target.value))}
                 placeholder="Enter code"
+                maxLength={6}
                 className="font-mono uppercase tracking-widest"
                 data-testid="input-checkin-token"
               />
@@ -253,16 +264,277 @@ function CheckInPanel({
   );
 }
 
+const EVENT_TYPES = [
+  "GeneralBodyMeeting",
+  "CommitteeMeeting",
+  "CommunityService",
+  "MentoringSession",
+  "Workshop",
+  "Fundraiser",
+  "Conference",
+  "Social",
+] as const;
+
+function EditEventForm({
+  id,
+  event,
+  onDone,
+}: {
+  id: number;
+  event: {
+    title: string;
+    description: string;
+    eventType: string;
+    committeeId?: number | null;
+    date: string;
+    startTime: string;
+    endTime: string;
+    location: string;
+    pointValue: number;
+    impactMultiplier: number;
+    checkInWindowMinutes: number;
+  };
+  onDone: () => void;
+}) {
+  const committees = useListCommittees();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [form, setForm] = useState({
+    title: event.title,
+    description: event.description,
+    eventType: event.eventType as (typeof EVENT_TYPES)[number],
+    committeeId: event.committeeId ? String(event.committeeId) : "none",
+    date: event.date,
+    startTime: event.startTime,
+    endTime: event.endTime,
+    location: event.location,
+    pointValue: String(event.pointValue ?? ""),
+    impactMultiplier: String(event.impactMultiplier ?? ""),
+    checkInWindowMinutes: String(event.checkInWindowMinutes ?? ""),
+  });
+
+  function update<K extends keyof typeof form>(
+    key: K,
+    value: (typeof form)[K],
+  ) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  const save = useUpdateEvent({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Event updated." });
+        qc.invalidateQueries({ queryKey: getGetEventQueryKey(id) });
+        qc.invalidateQueries({ queryKey: getListEventsQueryKey() });
+        qc.invalidateQueries({ queryKey: getListEventAttendanceQueryKey(id) });
+        invalidateAggregates(qc);
+        onDone();
+      },
+      onError: () => {
+        toast({ title: "Could not update event.", variant: "destructive" });
+      },
+    },
+  });
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    save.mutate({
+      id,
+      data: {
+        title: form.title,
+        description: form.description,
+        eventType: form.eventType,
+        committeeId:
+          form.committeeId === "none" ? null : Number(form.committeeId),
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        location: form.location,
+        pointValue: form.pointValue ? Number(form.pointValue) : undefined,
+        impactMultiplier: form.impactMultiplier
+          ? Number(form.impactMultiplier)
+          : undefined,
+        checkInWindowMinutes: form.checkInWindowMinutes
+          ? Number(form.checkInWindowMinutes)
+          : undefined,
+      },
+    });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-3 rounded-md border bg-[hsl(var(--muted)/0.4)] p-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="edit-title">Title</Label>
+          <Input
+            id="edit-title"
+            value={form.title}
+            onChange={(e) => update("title", e.target.value)}
+            data-testid="input-edit-title"
+          />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="edit-description">Description</Label>
+          <Textarea
+            id="edit-description"
+            rows={3}
+            value={form.description}
+            onChange={(e) => update("description", e.target.value)}
+            data-testid="input-edit-description"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Event type</Label>
+          <Select
+            value={form.eventType}
+            onValueChange={(v) =>
+              update("eventType", v as (typeof EVENT_TYPES)[number])
+            }
+          >
+            <SelectTrigger data-testid="select-edit-eventtype">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EVENT_TYPES.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Committee</Label>
+          <Select
+            value={form.committeeId}
+            onValueChange={(v) => update("committeeId", v)}
+          >
+            <SelectTrigger data-testid="select-edit-committee">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Chapter-wide</SelectItem>
+              {(committees.data ?? []).map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-date">Date</Label>
+          <Input
+            id="edit-date"
+            type="date"
+            value={form.date}
+            onChange={(e) => update("date", e.target.value)}
+            data-testid="input-edit-date"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-location">Location</Label>
+          <Input
+            id="edit-location"
+            value={form.location}
+            onChange={(e) => update("location", e.target.value)}
+            data-testid="input-edit-location"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-start">Start time</Label>
+          <Input
+            id="edit-start"
+            type="time"
+            value={form.startTime}
+            onChange={(e) => update("startTime", e.target.value)}
+            data-testid="input-edit-start"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-end">End time</Label>
+          <Input
+            id="edit-end"
+            type="time"
+            value={form.endTime}
+            onChange={(e) => update("endTime", e.target.value)}
+            data-testid="input-edit-end"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-pts">Point value</Label>
+          <Input
+            id="edit-pts"
+            type="number"
+            min="0"
+            value={form.pointValue}
+            onChange={(e) => update("pointValue", e.target.value)}
+            data-testid="input-edit-points"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-mult">Impact multiplier</Label>
+          <Input
+            id="edit-mult"
+            type="number"
+            step="0.01"
+            min="0.5"
+            max="3"
+            value={form.impactMultiplier}
+            onChange={(e) => update("impactMultiplier", e.target.value)}
+            data-testid="input-edit-multiplier"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-window">Check-in window (minutes)</Label>
+          <Input
+            id="edit-window"
+            type="number"
+            min="5"
+            max="240"
+            value={form.checkInWindowMinutes}
+            onChange={(e) => update("checkInWindowMinutes", e.target.value)}
+            data-testid="input-edit-window"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Button type="submit" disabled={save.isPending} data-testid="button-save-event">
+          {save.isPending ? "Saving…" : "Save changes"}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function ChairControls({
   id,
   event,
 }: {
   id: number;
-  event: { qrActive: boolean; status: string };
+  event: {
+    qrActive: boolean;
+    status: string;
+    title: string;
+    description: string;
+    eventType: string;
+    committeeId?: number | null;
+    date: string;
+    startTime: string;
+    endTime: string;
+    location: string;
+    pointValue: number;
+    impactMultiplier: number;
+    checkInWindowMinutes: number;
+  };
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [editing, setEditing] = useState(false);
 
   const invalidateEvent = () => {
     qc.invalidateQueries({ queryKey: getGetEventQueryKey(id) });
@@ -291,15 +563,51 @@ function ChairControls({
       onSuccess: () => {
         toast({ title: "Event cancelled." });
         qc.invalidateQueries({ queryKey: getListEventsQueryKey() });
+        invalidateAggregates(qc);
         setLocation("/events");
       },
     },
   });
+  const reactivate = useUpdateEvent({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Event reactivated." });
+        invalidateEvent();
+        qc.invalidateQueries({ queryKey: getListEventsQueryKey() });
+        invalidateAggregates(qc);
+      },
+    },
+  });
+
+  if (editing) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif">Edit event</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EditEventForm
+            id={id}
+            event={event}
+            onDone={() => setEditing(false)}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="font-serif">Chair controls</CardTitle>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setEditing(true)}
+          data-testid="button-edit-event"
+        >
+          Edit details
+        </Button>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
@@ -321,28 +629,42 @@ function ChairControls({
               <QrCode className="mr-1 h-4 w-4" /> Start check-in
             </Button>
           )}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" data-testid="button-cancel-event">
-                <Trash2 className="mr-1 h-4 w-4" /> Cancel event
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel this event?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Members will see this event marked as cancelled. Existing
-                  attendance records remain.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep it</AlertDialogCancel>
-                <AlertDialogAction onClick={() => remove.mutate({ id })}>
-                  Cancel event
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {event.status === "Cancelled" ? (
+            <Button
+              variant="outline"
+              onClick={() =>
+                reactivate.mutate({ id, data: { status: "Upcoming" } })
+              }
+              disabled={reactivate.isPending}
+              data-testid="button-reactivate-event"
+            >
+              {reactivate.isPending ? "Reactivating…" : "Reactivate event"}
+            </Button>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" data-testid="button-cancel-event">
+                  <Trash2 className="mr-1 h-4 w-4" /> Cancel event
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel this event?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Members will see this event marked as cancelled. Existing
+                    attendance records remain, and it can be reactivated later
+                    from this page.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep it</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => remove.mutate({ id })}>
+                    Cancel event
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           Need to add someone who couldn&apos;t scan? Use manual attendance below.
@@ -353,6 +675,7 @@ function ChairControls({
 }
 
 function AttendanceSection({ id }: { id: number }) {
+  const me = useMe();
   const attendance = useListEventAttendance(id);
   const members = useListMembers();
   const qc = useQueryClient();
@@ -370,9 +693,28 @@ function AttendanceSection({ id }: { id: number }) {
         setReason("");
         qc.invalidateQueries({ queryKey: getListEventAttendanceQueryKey(id) });
         qc.invalidateQueries({ queryKey: getGetEventQueryKey(id) });
+        invalidateAggregates(qc);
       },
       onError: () => {
         toast({ title: "Could not record attendance.", variant: "destructive" });
+      },
+    },
+  });
+
+  const removeAttendance = useDeleteEventAttendance({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Attendance record removed." });
+        qc.invalidateQueries({ queryKey: getListEventAttendanceQueryKey(id) });
+        qc.invalidateQueries({ queryKey: getGetEventQueryKey(id) });
+        qc.invalidateQueries({ queryKey: getGetMyDashboardQueryKey() });
+        invalidateAggregates(qc);
+      },
+      onError: () => {
+        toast({
+          title: "Could not remove attendance record.",
+          variant: "destructive",
+        });
       },
     },
   });
@@ -453,6 +795,7 @@ function AttendanceSection({ id }: { id: number }) {
                   <TableHead>Check-in</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead className="text-right">Points</TableHead>
+                  {me.isAdmin ? <TableHead className="w-10" /> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -480,6 +823,49 @@ function AttendanceSection({ id }: { id: number }) {
                     <TableCell className="text-right font-medium">
                       {a.pointsAwarded}
                     </TableCell>
+                    {me.isAdmin ? (
+                      <TableCell className="text-right">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              data-testid={`button-remove-attendance-${a.id}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Remove this attendance record?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {a.userName}&apos;s check-in and{" "}
+                                {a.pointsAwarded} awarded points for this event
+                                will be removed. Use this to correct a
+                                mis-scan or duplicate entry.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep it</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() =>
+                                  removeAttendance.mutate({
+                                    id,
+                                    attendanceId: a.id,
+                                  })
+                                }
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>

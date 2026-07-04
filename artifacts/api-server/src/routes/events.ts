@@ -14,6 +14,7 @@ import {
   ListEventAttendanceParams,
   ManualAttendanceBody,
   ManualAttendanceParams,
+  DeleteEventAttendanceParams,
 } from "@workspace/api-zod";
 import {
   db,
@@ -420,6 +421,31 @@ router.post(
       })
       .returning();
     res.status(201).json(attendanceToDto(att!, member.fullName, event.title));
+  }),
+);
+
+router.delete(
+  "/events/:id/attendance/:attendanceId",
+  requireRole("Admin")(async (req, res) => {
+    const params = DeleteEventAttendanceParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [deleted] = await db
+      .delete(attendanceTable)
+      .where(
+        and(
+          eq(attendanceTable.id, params.data.attendanceId),
+          eq(attendanceTable.eventId, params.data.id),
+        ),
+      )
+      .returning();
+    if (!deleted) {
+      res.status(404).json({ error: "Attendance record not found" });
+      return;
+    }
+    res.status(204).end();
   }),
 );
 

@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetMember,
   useUpdateMember,
+  useDeleteMember,
+  useRestoreMember,
   useListCommittees,
   getGetMemberQueryKey,
   getListMembersQueryKey,
@@ -21,6 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ErrorBlock, LoadingBlock } from "@/components/page-states";
 import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
@@ -30,8 +43,9 @@ import {
   Pill,
   RoleBadge,
 } from "@/components/badges";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldAlert, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { invalidateAggregates } from "@/lib/query-invalidation";
 
 const ROLES = [
   "Member",
@@ -82,9 +96,40 @@ function MemberDetail({ id }: { id: number }) {
         toast({ title: "Member updated." });
         qc.invalidateQueries({ queryKey: getGetMemberQueryKey(id) });
         qc.invalidateQueries({ queryKey: getListMembersQueryKey() });
+        invalidateAggregates(qc);
       },
       onError: () => {
         toast({ title: "Update failed.", variant: "destructive" });
+      },
+    },
+  });
+  const deleteMember = useDeleteMember({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Member deleted.", description: "Hidden from the roster. Attendance history is preserved." });
+        qc.invalidateQueries({ queryKey: getGetMemberQueryKey(id) });
+        qc.invalidateQueries({ queryKey: getListMembersQueryKey() });
+        invalidateAggregates(qc);
+      },
+      onError: (err: unknown) => {
+        const message =
+          err && typeof err === "object" && "error" in (err as any)
+            ? String((err as any).error)
+            : "Delete failed.";
+        toast({ title: message, variant: "destructive" });
+      },
+    },
+  });
+  const restoreMember = useRestoreMember({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Member restored." });
+        qc.invalidateQueries({ queryKey: getGetMemberQueryKey(id) });
+        qc.invalidateQueries({ queryKey: getListMembersQueryKey() });
+        invalidateAggregates(qc);
+      },
+      onError: () => {
+        toast({ title: "Restore failed.", variant: "destructive" });
       },
     },
   });
@@ -128,6 +173,8 @@ function MemberDetail({ id }: { id: number }) {
   }
 
   const m = member.data;
+  const canManageMembers = me.isAdmin || me.isTechChair;
+  const isDeleted = !!m.deletedAt;
 
   function save() {
     update.mutate({
@@ -210,16 +257,50 @@ function MemberDetail({ id }: { id: number }) {
             <Row
               label="Account"
               value={
-                <Pill tone={m.accountActive ? "success" : "danger"}>
-                  {m.accountActive ? "Active" : "Disabled"}
-                </Pill>
+                isDeleted ? (
+                  <Pill tone="danger">Deleted</Pill>
+                ) : (
+                  <Pill tone={m.accountActive ? "success" : "danger"}>
+                    {m.accountActive ? "Active" : "Disabled"}
+                  </Pill>
+                )
               }
             />
           </CardContent>
         </Card>
       </div>
 
-      {me.isAdmin ? (
+      {isDeleted ? (
+        <Card className="mt-6 border-destructive/40">
+          <CardHeader>
+            <CardTitle className="font-serif flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-4 w-4" />
+              This member has been deleted
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {m.fullName} was removed from the roster on{" "}
+              {formatDate(m.deletedAt)}. Attendance and audit history are
+              preserved. Restore the account to bring it back to the active
+              roster.
+            </p>
+            {canManageMembers ? (
+              <Button
+                variant="outline"
+                onClick={() => restoreMember.mutate({ id })}
+                disabled={restoreMember.isPending}
+                data-testid="button-restore-member"
+              >
+                <RotateCcw className="mr-1.5 h-4 w-4" />
+                {restoreMember.isPending ? "Restoring…" : "Restore member"}
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canManageMembers && !isDeleted ? (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="font-serif">Admin controls</CardTitle>
@@ -326,6 +407,69 @@ function MemberDetail({ id }: { id: number }) {
               >
                 {update.isPending ? "Saving…" : "Save changes"}
               </Button>
+            </div>
+
+            <div className="mt-4 rounded-md border border-destructive/40 p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-destructive">
+                  Danger zone
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Deactivating blocks sign-in but keeps the member on the
+                  roster. Deleting removes them from the roster entirely;
+                  attendance and audit history are preserved and can be
+                  restored later.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    update.mutate({
+                      id,
+                      data: { accountActive: !m.accountActive },
+                    })
+                  }
+                  disabled={update.isPending}
+                  data-testid="button-toggle-active"
+                >
+                  {m.accountActive ? "Deactivate account" : "Reactivate account"}
+                </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      disabled={deleteMember.isPending}
+                      data-testid="button-delete-member"
+                    >
+                      Delete member
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {m.fullName}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes {m.fullName} from the chapter roster and
+                        member lists. Their attendance and audit history are
+                        preserved, and an admin can restore the account later
+                        from this page. This action cannot be undone from the
+                        roster view.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => deleteMember.mutate({ id })}
+                        data-testid="button-confirm-delete-member"
+                      >
+                        Delete member
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { type Request, type Response, type NextFunction } from "express";
 import {
   db,
@@ -22,9 +21,11 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   resolveRbacContext,
   deriveExperience,
+  computeAvailableExperiences,
   hasSystemRole,
   type RbacContext,
 } from "./rbac";
+import { generateCheckInCode, isValidCheckInCode } from "@workspace/checkin-codes/server";
 
 export const FALLBACK_SEMESTER = "Spring 2026";
 // Internal fallback only — do not import this constant in routes.
@@ -301,6 +302,8 @@ const EXECUTIVE_POSITIONS = [
 
 export type ResolvedPermissions = {
   experience: ExperienceType;
+  /** All experience shells this member legitimately qualifies for (see B4 switcher). */
+  availableExperiences: ExperienceType[];
   officerPositions: string[];
   committeeChairId: number | null;
   isTechChair: boolean;
@@ -331,6 +334,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
     case "CommitteeChair":
       return {
         experience: "committee_portal",
+        availableExperiences: ["committee_portal", "member_portal"],
         officerPositions: [],
         committeeChairId: 1,
         isTechChair: true,
@@ -339,6 +343,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
     case "BylawsChair":
       return {
         experience: "committee_portal",
+        availableExperiences: ["committee_portal", "member_portal"],
         officerPositions: [],
         committeeChairId: null,
         isTechChair: true,
@@ -347,6 +352,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
     case "ExecutiveBoard":
       return {
         experience: "operations_console",
+        availableExperiences: ["operations_console", "member_portal"],
         officerPositions: ["vice_president"],
         committeeChairId: null,
         isTechChair: true,
@@ -355,6 +361,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
     case "Admin":
       return {
         experience: "operations_console",
+        availableExperiences: ["operations_console", "member_portal"],
         officerPositions: ["president"],
         committeeChairId: null,
         isTechChair: true,
@@ -363,6 +370,7 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
     default:
       return {
         experience: "member_portal",
+        availableExperiences: ["member_portal"],
         officerPositions: [],
         committeeChairId: null,
         isTechChair: true,
@@ -420,8 +428,20 @@ export async function resolvePermissions(
     isTechChair,
     hasCommitteeChair: !!committeeChairId,
   });
+  const availableExperiences = computeAvailableExperiences(rbac, {
+    hasOfficerTerm,
+    isTechChair,
+    hasCommitteeChair: !!committeeChairId,
+  });
 
-  return { experience, officerPositions, committeeChairId, isTechChair, rbac };
+  return {
+    experience,
+    availableExperiences,
+    officerPositions,
+    committeeChairId,
+    isTechChair,
+    rbac,
+  };
 }
 
 export async function writeAuditLog(entry: {
@@ -570,6 +590,7 @@ export async function buildMemberDto(member: MemberRow): Promise<unknown> {
     streakCount: member.streakCount,
     nudgeStatus: member.nudgeStatus,
     accountActive: member.accountActive,
+    deletedAt: member.deletedAt ? member.deletedAt.toISOString() : null,
     lastLogin: member.lastLogin ? member.lastLogin.toISOString() : null,
     eventsAttended: attended,
     eventsEligible: eligible,
@@ -629,31 +650,24 @@ export function attendanceToDto(
   };
 }
 
+function qrSecret(): string {
+  return process.env.SESSION_SECRET ?? "c100";
+}
+
 export function rotateQrToken(eventId: number): {
   token: string;
   expiresAt: Date;
 } {
-  const window = Math.floor(Date.now() / (QR_ROTATE_SECONDS * 1000));
-  const token = crypto
-    .createHash("sha256")
-    .update(`${eventId}.${window}.${process.env.SESSION_SECRET ?? "c100"}`)
-    .digest("hex")
-    .slice(0, 16);
-  const expiresAt = new Date((window + 1) * QR_ROTATE_SECONDS * 1000);
-  return { token, expiresAt };
+  const { code, expiresAt } = generateCheckInCode(
+    eventId,
+    qrSecret(),
+    QR_ROTATE_SECONDS,
+  );
+  return { token: code, expiresAt };
 }
 
 export function isValidQrToken(eventId: number, token: string): boolean {
-  const window = Math.floor(Date.now() / (QR_ROTATE_SECONDS * 1000));
-  for (const w of [window, window - 1]) {
-    const expected = crypto
-      .createHash("sha256")
-      .update(`${eventId}.${w}.${process.env.SESSION_SECRET ?? "c100"}`)
-      .digest("hex")
-      .slice(0, 16);
-    if (token === expected) return true;
-  }
-  return false;
+  return isValidCheckInCode(eventId, token, qrSecret(), QR_ROTATE_SECONDS);
 }
 
 export function computeNudgeTier(

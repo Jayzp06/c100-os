@@ -30,14 +30,19 @@ import type {
   CheckInResult,
   Committee,
   CommitteeLeaderboardEntry,
+  CommitteeReport,
   CreateEventInput,
   CreateMemberInput,
   EligibilityRecord,
   ErrorEnvelope,
   Event,
   EventDetail,
+  EventReport,
   EventTypeConfig,
   EventTypeConfigUpdate,
+  GetAdminOverviewParams,
+  GetConferenceEligibilityParams,
+  GetScholarshipEligibilityParams,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   ListEventsParams,
@@ -47,6 +52,7 @@ import type {
   ManualAttendanceInput,
   Member,
   MemberDashboard,
+  MemberReport,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
   MyCommittee,
@@ -3021,20 +3027,27 @@ export const useRunNudgeEvaluation = <TError = ErrorType<unknown>,
       return useMutation(getRunNudgeEvaluationMutationOptions(options));
     }
 
-export const getGetScholarshipEligibilityUrl = () => {
+export const getGetScholarshipEligibilityUrl = (params?: GetScholarshipEligibilityParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/reports/scholarship-eligibility`
+  return stringifiedParams.length > 0 ? `/api/reports/scholarship-eligibility?${stringifiedParams}` : `/api/reports/scholarship-eligibility`
 }
 
 /**
  * @summary List members with scholarship eligibility flags
  */
-export const getScholarshipEligibility = async ( options?: RequestInit): Promise<EligibilityRecord[]> => {
+export const getScholarshipEligibility = async (params?: GetScholarshipEligibilityParams, options?: RequestInit): Promise<EligibilityRecord[]> => {
 
-  return customFetch<EligibilityRecord[]>(getGetScholarshipEligibilityUrl(),
+  return customFetch<EligibilityRecord[]>(getGetScholarshipEligibilityUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3047,23 +3060,23 @@ export const getScholarshipEligibility = async ( options?: RequestInit): Promise
 
 
 
-export const getGetScholarshipEligibilityQueryKey = () => {
+export const getGetScholarshipEligibilityQueryKey = (params?: GetScholarshipEligibilityParams,) => {
     return [
-    `/api/reports/scholarship-eligibility`
+    `/api/reports/scholarship-eligibility`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetScholarshipEligibilityQueryOptions = <TData = Awaited<ReturnType<typeof getScholarshipEligibility>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScholarshipEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetScholarshipEligibilityQueryOptions = <TData = Awaited<ReturnType<typeof getScholarshipEligibility>>, TError = ErrorType<unknown>>(params?: GetScholarshipEligibilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScholarshipEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetScholarshipEligibilityQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetScholarshipEligibilityQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getScholarshipEligibility>>> = ({ signal }) => getScholarshipEligibility({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getScholarshipEligibility>>> = ({ signal }) => getScholarshipEligibility(params, { signal, ...requestOptions });
 
 
 
@@ -3081,11 +3094,11 @@ export type GetScholarshipEligibilityQueryError = ErrorType<unknown>
  */
 
 export function useGetScholarshipEligibility<TData = Awaited<ReturnType<typeof getScholarshipEligibility>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScholarshipEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetScholarshipEligibilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScholarshipEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetScholarshipEligibilityQueryOptions(options)
+  const queryOptions = getGetScholarshipEligibilityQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3098,20 +3111,27 @@ export function useGetScholarshipEligibility<TData = Awaited<ReturnType<typeof g
 
 
 
-export const getGetConferenceEligibilityUrl = () => {
+export const getGetConferenceEligibilityUrl = (params?: GetConferenceEligibilityParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/reports/conference-eligibility`
+  return stringifiedParams.length > 0 ? `/api/reports/conference-eligibility?${stringifiedParams}` : `/api/reports/conference-eligibility`
 }
 
 /**
  * @summary Ranked list of members for conference selection
  */
-export const getConferenceEligibility = async ( options?: RequestInit): Promise<EligibilityRecord[]> => {
+export const getConferenceEligibility = async (params?: GetConferenceEligibilityParams, options?: RequestInit): Promise<EligibilityRecord[]> => {
 
-  return customFetch<EligibilityRecord[]>(getGetConferenceEligibilityUrl(),
+  return customFetch<EligibilityRecord[]>(getGetConferenceEligibilityUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3124,23 +3144,23 @@ export const getConferenceEligibility = async ( options?: RequestInit): Promise<
 
 
 
-export const getGetConferenceEligibilityQueryKey = () => {
+export const getGetConferenceEligibilityQueryKey = (params?: GetConferenceEligibilityParams,) => {
     return [
-    `/api/reports/conference-eligibility`
+    `/api/reports/conference-eligibility`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetConferenceEligibilityQueryOptions = <TData = Awaited<ReturnType<typeof getConferenceEligibility>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConferenceEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetConferenceEligibilityQueryOptions = <TData = Awaited<ReturnType<typeof getConferenceEligibility>>, TError = ErrorType<unknown>>(params?: GetConferenceEligibilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConferenceEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConferenceEligibilityQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetConferenceEligibilityQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConferenceEligibility>>> = ({ signal }) => getConferenceEligibility({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConferenceEligibility>>> = ({ signal }) => getConferenceEligibility(params, { signal, ...requestOptions });
 
 
 
@@ -3158,11 +3178,11 @@ export type GetConferenceEligibilityQueryError = ErrorType<unknown>
  */
 
 export function useGetConferenceEligibility<TData = Awaited<ReturnType<typeof getConferenceEligibility>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConferenceEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetConferenceEligibilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConferenceEligibility>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetConferenceEligibilityQueryOptions(options)
+  const queryOptions = getGetConferenceEligibilityQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3175,20 +3195,27 @@ export function useGetConferenceEligibility<TData = Awaited<ReturnType<typeof ge
 
 
 
-export const getGetAdminOverviewUrl = () => {
+export const getGetAdminOverviewUrl = (params?: GetAdminOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/reports/admin-overview`
+  return stringifiedParams.length > 0 ? `/api/reports/admin-overview?${stringifiedParams}` : `/api/reports/admin-overview`
 }
 
 /**
  * @summary Chapter health overview for Executive Board / Admin
  */
-export const getAdminOverview = async ( options?: RequestInit): Promise<AdminOverview> => {
+export const getAdminOverview = async (params?: GetAdminOverviewParams, options?: RequestInit): Promise<AdminOverview> => {
 
-  return customFetch<AdminOverview>(getGetAdminOverviewUrl(),
+  return customFetch<AdminOverview>(getGetAdminOverviewUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3201,23 +3228,23 @@ export const getAdminOverview = async ( options?: RequestInit): Promise<AdminOve
 
 
 
-export const getGetAdminOverviewQueryKey = () => {
+export const getGetAdminOverviewQueryKey = (params?: GetAdminOverviewParams,) => {
     return [
-    `/api/reports/admin-overview`
+    `/api/reports/admin-overview`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetAdminOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getAdminOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetAdminOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getAdminOverview>>, TError = ErrorType<unknown>>(params?: GetAdminOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetAdminOverviewQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminOverviewQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminOverview>>> = ({ signal }) => getAdminOverview({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminOverview>>> = ({ signal }) => getAdminOverview(params, { signal, ...requestOptions });
 
 
 
@@ -3235,11 +3262,245 @@ export type GetAdminOverviewQueryError = ErrorType<unknown>
  */
 
 export function useGetAdminOverview<TData = Awaited<ReturnType<typeof getAdminOverview>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetAdminOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetAdminOverviewQueryOptions(options)
+  const queryOptions = getGetAdminOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCommitteeReportUrl = (id: number,) => {
+
+
+
+
+  return `/api/reports/committee/${id}`
+}
+
+/**
+ * Available to chapter-wide leadership roles, or the committee's own chair. Never exposes another committee's individual member data.
+ * @summary Committee-level report (roster + participation + events)
+ */
+export const getCommitteeReport = async (id: number, options?: RequestInit): Promise<CommitteeReport> => {
+
+  return customFetch<CommitteeReport>(getGetCommitteeReportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCommitteeReportQueryKey = (id: number,) => {
+    return [
+    `/api/reports/committee/${id}`
+    ] as const;
+    }
+
+
+export const getGetCommitteeReportQueryOptions = <TData = Awaited<ReturnType<typeof getCommitteeReport>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommitteeReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCommitteeReportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommitteeReport>>> = ({ signal }) => getCommitteeReport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCommitteeReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCommitteeReportQueryResult = NonNullable<Awaited<ReturnType<typeof getCommitteeReport>>>
+export type GetCommitteeReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Committee-level report (roster + participation + events)
+ */
+
+export function useGetCommitteeReport<TData = Awaited<ReturnType<typeof getCommitteeReport>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCommitteeReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCommitteeReportQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEventReportUrl = (id: number,) => {
+
+
+
+
+  return `/api/reports/event/${id}`
+}
+
+/**
+ * Available to chapter-wide leadership roles, or the chair of the event's own committee.
+ * @summary Event-level report (details + attendance roll)
+ */
+export const getEventReport = async (id: number, options?: RequestInit): Promise<EventReport> => {
+
+  return customFetch<EventReport>(getGetEventReportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEventReportQueryKey = (id: number,) => {
+    return [
+    `/api/reports/event/${id}`
+    ] as const;
+    }
+
+
+export const getGetEventReportQueryOptions = <TData = Awaited<ReturnType<typeof getEventReport>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEventReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEventReportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEventReport>>> = ({ signal }) => getEventReport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEventReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEventReportQueryResult = NonNullable<Awaited<ReturnType<typeof getEventReport>>>
+export type GetEventReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Event-level report (details + attendance roll)
+ */
+
+export function useGetEventReport<TData = Awaited<ReturnType<typeof getEventReport>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEventReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEventReportQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMemberReportUrl = (id: number,) => {
+
+
+
+
+  return `/api/reports/member/${id}`
+}
+
+/**
+ * Available to chapter-wide leadership roles, the member's own committee chair, or the member themself.
+ * @summary Member-level report (profile + eligibility + attendance history)
+ */
+export const getMemberReport = async (id: number, options?: RequestInit): Promise<MemberReport> => {
+
+  return customFetch<MemberReport>(getGetMemberReportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberReportQueryKey = (id: number,) => {
+    return [
+    `/api/reports/member/${id}`
+    ] as const;
+    }
+
+
+export const getGetMemberReportQueryOptions = <TData = Awaited<ReturnType<typeof getMemberReport>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMemberReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberReportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberReport>>> = ({ signal }) => getMemberReport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMemberReportQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberReport>>>
+export type GetMemberReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Member-level report (profile + eligibility + attendance history)
+ */
+
+export function useGetMemberReport<TData = Awaited<ReturnType<typeof getMemberReport>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMemberReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMemberReportQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

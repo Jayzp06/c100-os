@@ -54,6 +54,7 @@ import {
   Pill,
   eventTypeLabel,
 } from "@/components/badges";
+import { ReportExportMenu } from "@/components/report-export";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -132,6 +133,9 @@ function EventDetail({ id }: { id: number }) {
             <EventStatusBadge status={e.status} />
             <Pill tone="gold">{e.pointValue} pts</Pill>
             {e.qrActive ? <Pill tone="success">QR Live</Pill> : null}
+            {me.isExecOrAdmin || me.committeeChairId === e.committeeId ? (
+              <ReportExportMenu endpoint={`/api/reports/event/${id}`} />
+            ) : null}
           </div>
         }
       />

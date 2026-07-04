@@ -10,6 +10,7 @@ import { ErrorBlock, LoadingBlock } from "@/components/page-states";
 import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
 import { Pill } from "@/components/badges";
+import { ReportExportMenu } from "@/components/report-export";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
 export default function CommitteeDetailPage() {
@@ -64,9 +65,14 @@ function CommitteeDetail({ id }: { id: number }) {
         title={c.name}
         description={c.description}
         actions={
-          c.committeeRank != null ? (
-            <Pill tone="gold">Rank #{c.committeeRank}</Pill>
-          ) : null
+          <div className="flex items-center gap-2">
+            {c.committeeRank != null ? (
+              <Pill tone="gold">Rank #{c.committeeRank}</Pill>
+            ) : null}
+            {me.isExecOrAdmin || me.committeeChairId === id ? (
+              <ReportExportMenu endpoint={`/api/reports/committee/${id}`} />
+            ) : null}
+          </div>
         }
       />
 

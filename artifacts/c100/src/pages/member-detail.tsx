@@ -43,6 +43,7 @@ import {
   Pill,
   RoleBadge,
 } from "@/components/badges";
+import { ReportExportMenu } from "@/components/report-export";
 import { ArrowLeft, ShieldAlert, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { invalidateAggregates } from "@/lib/query-invalidation";
@@ -214,6 +215,9 @@ function MemberDetail({ id }: { id: number }) {
             <RoleBadge role={m.role} />
             <MembershipBadge status={m.membershipStatus} />
             <NudgeBadge status={m.nudgeStatus} />
+            {me.isExecOrAdmin || me.committeeChairId === m.committeeId ? (
+              <ReportExportMenu endpoint={`/api/reports/member/${id}`} />
+            ) : null}
           </div>
         }
       />

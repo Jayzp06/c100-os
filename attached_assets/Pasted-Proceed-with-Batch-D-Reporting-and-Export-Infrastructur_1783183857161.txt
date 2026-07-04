@@ -1,0 +1,77 @@
+Proceed with Batch D: Reporting and Export Infrastructure.
+
+Build Batch D on top of the completed Batch A–C architecture and preserve the new RBAC, organizational role, committee privacy, event scoring, member administration, and historical-data protections.
+
+First audit all existing report pages, report endpoints, eligibility calculations, dashboard metrics, participation data, attendance data, member records, committee records, event records, and officer permissions before implementing changes. Reuse existing calculations and endpoints where correct rather than duplicating business logic.
+
+Implement a comprehensive reporting and export system for C100 OS.
+
+Existing reports:
+
+Complete and improve the existing Admin Overview, Scholarship Eligibility, and Conference Eligibility reports. Verify that all calculations use current authoritative data and the new RBAC/organizational architecture where applicable.
+
+Export formats:
+
+Add properly formatted CSV, XLSX, and PDF export functionality for all applicable reports. Exported files must contain real current database data, not mock or placeholder data.
+
+PDF exports should be professionally formatted and suitable for presentation to chapter leadership, advisors, university administrators, or 100 Black Men leadership. Include appropriate report title, chapter identification, generation date, reporting period when applicable, summary information, and clearly formatted report data.
+
+XLSX exports should use useful worksheet names, readable column headers, appropriate data types, and separate worksheets when a report logically contains multiple datasets.
+
+CSV exports should contain clean, portable data suitable for additional analysis.
+
+Role-based reporting:
+
+Admin, Technology Chair, and authorized Executive Board members should have access to chapter-level reports according to RBAC permissions.
+
+Committee Chairs should be able to generate and export reports for their own committee but must not gain access to private individual-level data from other committees.
+
+All Executive Board positions must be able to export reports relevant to the information they are authorized to view.
+
+Regular members must not gain access to administrative or private chapter reporting data.
+
+Add committee-level reports including committee participation, attendance, event activity, aggregate performance, and member-level information only when the requesting user is authorized to view that committee’s roster.
+
+Add event-level reports including event details, attendance, check-in records, participation statistics, point values, and relevant operational information.
+
+Add member-level reports for authorized leadership showing participation history, attendance, points, committee assignment, organizational roles, eligibility status, and other existing relevant data.
+
+Add chapter-level reports including membership status, chapter participation, committee performance, event activity, scholarship eligibility, conference eligibility, and other useful aggregate information supported by current database data.
+
+Reporting interface:
+
+Create a coherent Reports interface that allows authorized users to select the report type, applicable date range or reporting period, committee/event/member filters when relevant, and export format.
+
+Provide clear loading, empty, success, and error states.
+
+Do not expose report options that the current user is not authorized to access.
+
+Ensure exports generated from filtered reports contain the same filtered dataset shown in the application.
+
+Architecture:
+
+Create reusable reporting and export infrastructure rather than implementing completely separate duplicate export logic for every report.
+
+Centralize authorization checks, report generation, formatting, and export behavior where appropriate.
+
+Preserve historical accuracy. Reports involving past events, attendance, scoring, organizational assignments, or eligibility must not silently rewrite historical data based on current settings.
+
+Ensure the reporting architecture is extensible so the future Treasurer, Secretary, President, Vice President, officer, financial, governance, meeting-minutes, facility-use, and document-generation systems can use the same export infrastructure.
+
+Verification:
+
+Run the full monorepo typecheck and all relevant tests.
+
+Restart the web and API services and inspect logs for errors.
+
+Verify authorization boundaries for Admin, Executive Board, Technology Chair, Committee Chair, and regular Member roles.
+
+Verify at least representative CSV, XLSX, and PDF generation paths.
+
+Confirm exported data matches the underlying report data and active filters.
+
+Do not use mock data, placeholder export files, or UI-only implementations.
+
+After completing Batch D, provide a detailed implementation report describing exactly what was built, what reports and export formats are available, what authorization rules were implemented, what was tested, any limitations or architectural concerns discovered, and any decisions requiring my approval.
+
+Pause after Batch D. Do not begin Batch E or subsequent officer workspace implementation until I review the results.

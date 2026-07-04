@@ -843,9 +843,11 @@ paths:
       tags: [Reports]
       operationId: getScholarshipEligibility
       summary: List members with scholarship eligibility flags
+      parameters:
+        - $ref: '#/components/parameters/ReportFormat'
       responses:
         '200':
-          description: Eligibility list.
+          description: Eligibility list. When `format` is set, streams a CSV/XLSX/PDF file instead.
           content:
             application/json:
               schema:
@@ -858,9 +860,11 @@ paths:
       tags: [Reports]
       operationId: getConferenceEligibility
       summary: Ranked list of members for conference selection
+      parameters:
+        - $ref: '#/components/parameters/ReportFormat'
       responses:
         '200':
-          description: Ranked eligibility list.
+          description: Ranked eligibility list. When `format` is set, streams a CSV/XLSX/PDF file instead.
           content:
             application/json:
               schema:
@@ -873,13 +877,105 @@ paths:
       tags: [Reports]
       operationId: getAdminOverview
       summary: Chapter health overview for Executive Board / Admin
+      parameters:
+        - $ref: '#/components/parameters/ReportFormat'
       responses:
         '200':
-          description: Overview metrics.
+          description: Overview metrics. When `format` is set, streams a CSV/XLSX/PDF file instead.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminOverview'
+
+  /reports/committee/{id}:
+    get:
+      tags: [Reports]
+      operationId: getCommitteeReport
+      summary: Committee-level report (roster + participation + events)
+      description: >
+        Available to chapter-wide leadership roles, or the committee's own
+        chair. Never exposes another committee's individual member data.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: >
+            Committee report. Accepts optional `semester` and `format`
+            (csv/xlsx/pdf) query strings not modeled here to avoid an
+            Orval path+query param naming collision; when `format` is set,
+            streams a downloadable file instead of JSON.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitteeReport'
+        '403':
+          description: Forbidden — not chapter-wide leadership or this committee's chair.
+        '404':
+          description: Committee not found.
+
+  /reports/event/{id}:
+    get:
+      tags: [Reports]
+      operationId: getEventReport
+      summary: Event-level report (details + attendance roll)
+      description: >
+        Available to chapter-wide leadership roles, or the chair of the
+        event's own committee.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: >
+            Event report. Accepts an optional `format` (csv/xlsx/pdf) query
+            string not modeled here to avoid an Orval path+query param
+            naming collision; when set, streams a downloadable file instead
+            of JSON.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventReport'
+        '403':
+          description: Forbidden.
+        '404':
+          description: Event not found.
+
+  /reports/member/{id}:
+    get:
+      tags: [Reports]
+      operationId: getMemberReport
+      summary: Member-level report (profile + eligibility + attendance history)
+      description: >
+        Available to chapter-wide leadership roles, the member's own
+        committee chair, or the member themself.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: >
+            Member report. Accepts an optional `format` (csv/xlsx/pdf) query
+            string not modeled here to avoid an Orval path+query param
+            naming collision; when set, streams a downloadable file instead
+            of JSON.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberReport'
+        '403':
+          description: Forbidden.
+        '404':
+          description: Member not found.
 
   /org/settings:
     get:
@@ -1029,6 +1125,24 @@ components:
       in: cookie
       required: false
       description: Browser session cookie.
+      schema:
+        type: string
+    ReportFormat:
+      name: format
+      in: query
+      required: false
+      description: >
+        When provided, the response is a downloadable file
+        (`text/csv`, `.xlsx`, or `.pdf`) containing the same filtered data
+        instead of a JSON body.
+      schema:
+        type: string
+        enum: [csv, xlsx, pdf]
+    ReportSemester:
+      name: semester
+      in: query
+      required: false
+      description: Restrict the report to a specific semester. Defaults to the active semester.
       schema:
         type: string
 
@@ -1834,6 +1948,80 @@ components:
           items:
             $ref: '#/components/schemas/CommitteeLeaderboardEntry'
         recentActivity:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceRecord'
+
+    CommitteeReport:
+      type: object
+      required:
+        - committeeId
+        - name
+        - chairName
+        - semester
+        - memberCount
+        - totalEventsHosted
+        - totalImpactPoints
+        - aggregateParticipationPct
+        - members
+        - events
+      properties:
+        committeeId:
+          type: integer
+        name:
+          type: string
+        chairName:
+          type: [string, 'null']
+        semester:
+          type: string
+        memberCount:
+          type: integer
+        totalEventsHosted:
+          type: integer
+        totalImpactPoints:
+          type: integer
+        aggregateParticipationPct:
+          type: number
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+
+    EventReport:
+      type: object
+      required:
+        - event
+        - attendance
+        - totalAttendees
+        - totalPointsAwarded
+      properties:
+        event:
+          $ref: '#/components/schemas/Event'
+        attendance:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceRecord'
+        totalAttendees:
+          type: integer
+        totalPointsAwarded:
+          type: integer
+
+    MemberReport:
+      type: object
+      required:
+        - member
+        - eligibility
+        - attendance
+      properties:
+        member:
+          $ref: '#/components/schemas/Member'
+        eligibility:
+          $ref: '#/components/schemas/EligibilityRecord'
+        attendance:
           type: array
           items:
             $ref: '#/components/schemas/AttendanceRecord'

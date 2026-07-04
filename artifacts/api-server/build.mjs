@@ -100,6 +100,12 @@ async function buildAll() {
       "puppeteer",
       "puppeteer-core",
       "electron",
+      // pdfkit + its font stack (fontkit/brotli/png-js) rely on dynamic
+      // `require()` calls for font data that esbuild cannot bundle correctly.
+      "pdfkit",
+      "fontkit",
+      "brotli",
+      "png-js",
     ],
     sourcemap: "linked",
     plugins: [

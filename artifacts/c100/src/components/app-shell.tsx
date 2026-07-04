@@ -160,6 +160,7 @@ type NavContext = {
   isLeader: boolean;
   isExecOrAdmin: boolean;
   isTechChair: boolean;
+  isChair: boolean;
 };
 
 type NavItem = {
@@ -195,7 +196,7 @@ const NAV: NavItem[] = [
     href: "/reports",
     label: "Reports",
     icon: ClipboardCheck,
-    show: ({ isExecOrAdmin }) => isExecOrAdmin,
+    show: ({ isExecOrAdmin, isChair }) => isExecOrAdmin || isChair,
   },
   {
     href: "/tech",
@@ -345,6 +346,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     isLeader: me.isLeader,
     isExecOrAdmin: me.isExecOrAdmin,
     isTechChair: me.isTechChair,
+    isChair: me.isChair,
   };
   const items = NAV.filter((n) => n.show(ctx));
 

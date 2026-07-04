@@ -614,6 +614,33 @@ export interface AdminOverview {
   recentActivity: AttendanceRecord[];
 }
 
+export interface CommitteeReport {
+  committeeId: number;
+  name: string;
+  /** @nullable */
+  chairName: string | null;
+  semester: string;
+  memberCount: number;
+  totalEventsHosted: number;
+  totalImpactPoints: number;
+  aggregateParticipationPct: number;
+  members: Member[];
+  events: Event[];
+}
+
+export interface EventReport {
+  event: Event;
+  attendance: AttendanceRecord[];
+  totalAttendees: number;
+  totalPointsAwarded: number;
+}
+
+export interface MemberReport {
+  member: Member;
+  eligibility: EligibilityRecord;
+  attendance: AttendanceRecord[];
+}
+
 export interface MemberDashboard {
   member: Member;
   upcomingEvents: Event[];
@@ -695,6 +722,20 @@ export interface StartImpersonationInput {
  */
 export type AuthorizationSessionHeaderParameter = string;
 
+export type ReportFormatParameter = typeof ReportFormatParameter[keyof typeof ReportFormatParameter];
+
+
+export const ReportFormatParameter = {
+  csv: 'csv',
+  xlsx: 'xlsx',
+  pdf: 'pdf',
+} as const;
+
+/**
+ * Restrict the report to a specific semester. Defaults to the active semester.
+ */
+export type ReportSemesterParameter = string;
+
 export type BeginBrowserLoginParams = {
 returnTo?: string;
 };
@@ -727,5 +768,26 @@ export const ListEventsStatus = {
 export type ListNudgesParams = {
 userId?: number;
 tier?: string;
+};
+
+export type GetScholarshipEligibilityParams = {
+/**
+ * When provided, the response is a downloadable file (`text/csv`, `.xlsx`, or `.pdf`) containing the same filtered data instead of a JSON body.
+ */
+format?: ReportFormatParameter;
+};
+
+export type GetConferenceEligibilityParams = {
+/**
+ * When provided, the response is a downloadable file (`text/csv`, `.xlsx`, or `.pdf`) containing the same filtered data instead of a JSON body.
+ */
+format?: ReportFormatParameter;
+};
+
+export type GetAdminOverviewParams = {
+/**
+ * When provided, the response is a downloadable file (`text/csv`, `.xlsx`, or `.pdf`) containing the same filtered data instead of a JSON body.
+ */
+format?: ReportFormatParameter;
 };
 

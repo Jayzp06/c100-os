@@ -413,19 +413,10 @@ export async function resolvePermissions(
   const hasOfficerTerm = officerPositions.some((p) =>
     EXECUTIVE_POSITIONS.includes(p),
   );
-  const isLegacyExec =
-    member.role === "ExecutiveBoard" || member.role === "Admin";
-  const isLegacyChair =
-    member.role === "CommitteeChair" || member.role === "BylawsChair";
-  // isTechChair: legacy role column OR new system role
-  const isTechChair =
-    member.role === "TechnologyChair" ||
-    hasSystemRole(rbac, "technology_chair", "platform_admin");
+  const isTechChair = hasSystemRole(rbac, "technology_chair", "platform_admin");
 
   const experience = deriveExperience(rbac, {
     hasOfficerTerm,
-    isLegacyExec,
-    isLegacyChair,
     isTechChair,
     hasCommitteeChair: !!committeeChairId,
   });

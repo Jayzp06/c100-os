@@ -88,6 +88,16 @@ export const EXPERIENCE_TYPE_VALUES = [
 ] as const;
 export type ExperienceType = (typeof EXPERIENCE_TYPE_VALUES)[number];
 
+export const EVENT_VISIBILITY_VALUES = [
+  "Chapter",
+  "Committee",
+  "Private",
+] as const;
+export type EventVisibility = (typeof EVENT_VISIBILITY_VALUES)[number];
+
+export const EVENT_ELIGIBILITY_VALUES = ["Chapter", "Committee"] as const;
+export type EventEligibility = (typeof EVENT_ELIGIBILITY_VALUES)[number];
+
 export const committeesTable = pgTable("committees", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 120 }).notNull().unique(),
@@ -96,6 +106,9 @@ export const committeesTable = pgTable("committees", {
     .notNull()
     .default(""),
   chairUserId: integer("chair_user_id"),
+  // Inactive committees (e.g. retired/merged) are hidden from active rosters
+  // and leaderboards but their historical events/attendance are preserved.
+  active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -137,6 +150,12 @@ export const membersTable = pgTable(
     accountActive: boolean("account_active").notNull().default(true),
     lastLogin: timestamp("last_login", { withTimezone: true }),
     profileImageUrl: varchar("profile_image_url", { length: 500 }),
+    // Soft-delete: member is hidden from active rosters/counts but attendance,
+    // audit-log, and historical references are preserved. Never hard-deleted.
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    // Marks rows created by the seed script so an admin "clean up demo data"
+    // action can never accidentally target real chapter members.
+    isDemoSeed: boolean("is_demo_seed").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -161,6 +180,20 @@ export const eventsTable = pgTable(
     createdBy: integer("created_by")
       .notNull()
       .references(() => membersTable.id, { onDelete: "set null" }),
+    // Ownership is distinct from "who created the row" — ownership can be
+    // reassigned (e.g. a chair hands an event off) without losing audit trail.
+    ownerId: integer("owner_id").references(() => membersTable.id, {
+      onDelete: "set null",
+    }),
+    // Who can SEE this event in listings (separate from who it counts for).
+    visibility: varchar("visibility", { length: 16 })
+      .notNull()
+      .default("Chapter"),
+    // Whose attendance/points this event counts toward (separate from visibility).
+    attendanceEligibility: varchar("attendance_eligibility", { length: 16 })
+      .notNull()
+      .default("Chapter"),
+    isDemoSeed: boolean("is_demo_seed").notNull().default(false),
     date: date("date").notNull(),
     startTime: varchar("start_time", { length: 8 }).notNull(),
     endTime: varchar("end_time", { length: 8 }).notNull(),
@@ -400,6 +433,66 @@ export const orgSettingsTable = pgTable("org_settings", {
     .notNull()
     .defaultNow(),
 });
+
+// ─── Event Type Scoring Configuration ────────────────────────────────────────
+// Admin-configurable point/impact values per event type. Committee Chairs pick
+// only the event type; the point value and impact multiplier are derived here
+// automatically, replacing the previously hardcoded POINT_VALUES/IMPACT_MULTIPLIER
+// maps. Seeded once from those maps so existing chapter rules are preserved.
+
+export const eventTypeConfigTable = pgTable("event_type_config", {
+  id: serial("id").primaryKey(),
+  eventType: varchar("event_type", { length: 32 }).notNull().unique(),
+  pointValue: integer("point_value").notNull().default(10),
+  impactMultiplier: numeric("impact_multiplier", { precision: 4, scale: 2 })
+    .notNull()
+    .default("1.00"),
+  updatedBy: integer("updated_by").references(() => membersTable.id, {
+    onDelete: "set null",
+  }),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type EventTypeConfig = typeof eventTypeConfigTable.$inferSelect;
+
+// ─── Event Operational Details (facility-use / planning form data) ──────────
+// Collected once at event creation so the same structured data can be reused
+// to generate facility-use requests, planning forms, and approval documents
+// without re-entering it (Phase 14). 1:1 with an event.
+
+export const eventOperationalDetailsTable = pgTable(
+  "event_operational_details",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id")
+      .notNull()
+      .unique()
+      .references(() => eventsTable.id, { onDelete: "cascade" }),
+    expectedAttendance: integer("expected_attendance"),
+    requestedFacility: varchar("requested_facility", { length: 200 }),
+    contactName: varchar("contact_name", { length: 200 }),
+    contactInfo: varchar("contact_info", { length: 200 }),
+    setupRequirements: text("setup_requirements"),
+    equipmentRequirements: text("equipment_requirements"),
+    cateringInfo: text("catering_info"),
+    securityRequirements: text("security_requirements"),
+    accessibilityRequirements: text("accessibility_requirements"),
+    additionalNotes: text("additional_notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+);
+
+export type EventOperationalDetails =
+  typeof eventOperationalDetailsTable.$inferSelect;
 
 export type Committee = typeof committeesTable.$inferSelect;
 export type Member = typeof membersTable.$inferSelect;

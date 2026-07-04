@@ -159,30 +159,28 @@ export function isPlatformAdmin(ctx: RbacContext): boolean {
  * Priority (highest first):
  *   1. System role: platform_admin or technology_chair → operations_console
  *   2. Org role tier: executive_board or appointed_officer → operations_console
- *   3. Org role tier: committee_leadership → committee_portal
- *   4. Legacy officer terms (passed in from resolvePermissions) → operations_console
- *   5. Legacy committee chair assignment → committee_portal
+ *   3. Active officer_terms row for an executive position → operations_console
+ *   4. Org role tier: committee_leadership → committee_portal
+ *   5. Active committee_assignments "chair" row (or committees.chairUserId) → committee_portal
  *   6. Default → member_portal
  */
 export function deriveExperience(
   ctx: RbacContext,
-  legacy: {
+  extra: {
     hasOfficerTerm: boolean;
-    isLegacyExec: boolean;
-    isLegacyChair: boolean;
     isTechChair: boolean;
     hasCommitteeChair: boolean;
   },
 ): "operations_console" | "committee_portal" | "member_portal" {
-  if (isPlatformAdmin(ctx) || legacy.isTechChair) return "operations_console";
+  if (isPlatformAdmin(ctx) || extra.isTechChair) return "operations_console";
 
   const tier = ctx.highestTier;
   if (tier === "executive_board" || tier === "appointed_officer")
     return "operations_console";
-  if (legacy.hasOfficerTerm || legacy.isLegacyExec) return "operations_console";
+  if (extra.hasOfficerTerm) return "operations_console";
 
   if (tier === "committee_leadership") return "committee_portal";
-  if (legacy.hasCommitteeChair || legacy.isLegacyChair) return "committee_portal";
+  if (extra.hasCommitteeChair) return "committee_portal";
 
   return "member_portal";
 }

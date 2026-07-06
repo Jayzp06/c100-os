@@ -1898,6 +1898,7 @@ export const GetSystemInfoResponse = zod.object({
   "chapterName": zod.string(),
   "description": zod.string(),
   "version": zod.string(),
+  "releaseChannel": zod.string().describe('Human-readable release label (e.g. \"Release Candidate 1\") shown in the UI. Kept separate from `version` because installer version strings (Windows MSI in particular) cannot contain semver prerelease suffixes like \"-rc1\".'),
   "buildNumber": zod.string(),
   "buildTimestamp": zod.string(),
   "environment": zod.string(),

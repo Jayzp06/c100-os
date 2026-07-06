@@ -49,6 +49,7 @@ export default function AboutPage() {
                 <InfoRow label="Application" value={info.appName} />
                 <InfoRow label="Chapter" value={info.chapterName} />
                 <InfoRow label="Server version" value={info.version} />
+                <InfoRow label="Release channel" value={info.releaseChannel} />
                 <InfoRow label="Build" value={info.buildNumber} />
                 <InfoRow label="Environment" value={info.environment} />
                 <InfoRow

@@ -11,6 +11,8 @@ export interface SystemInfo {
   chapterName: string;
   description: string;
   version: string;
+  /** Human-readable release label (e.g. "Release Candidate 1") shown in the UI. Kept separate from `version` because installer version strings (Windows MSI in particular) cannot contain semver prerelease suffixes like "-rc1". */
+  releaseChannel: string;
   buildNumber: string;
   buildTimestamp: string;
   environment: string;

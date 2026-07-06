@@ -5,7 +5,15 @@ import { getOrgSettings, requireAuth } from "../lib/c100";
 
 const router: IRouter = Router();
 
-const BUILD_VERSION = process.env.C100_VERSION ?? "0.9.0-rc1";
+// Installer/build version. Kept as a plain, prerelease-free semver string
+// (no "-rc1" suffix) because Windows MSI's ProductVersion field only
+// accepts numeric major.minor.build[.revision] — a semver prerelease
+// identifier makes `tauri build` fail on Windows. The human-readable
+// release label (e.g. "Release Candidate 1") lives separately in
+// RELEASE_CHANNEL below and is safe to change per release without
+// touching the installer version.
+const BUILD_VERSION = process.env.C100_VERSION ?? "0.9.0";
+const RELEASE_CHANNEL = process.env.C100_RELEASE_CHANNEL ?? "Release Candidate 1";
 const BUILD_NUMBER = process.env.C100_BUILD_NUMBER ?? "dev";
 const BUILD_TIMESTAMP = process.env.C100_BUILD_TIMESTAMP ?? new Date().toISOString();
 
@@ -19,6 +27,7 @@ router.get(
       description:
         "Mobile-responsive performance and accountability platform for Collegiate 100 chapter operations: attendance, participation, committees, and eligibility reporting.",
       version: BUILD_VERSION,
+      releaseChannel: RELEASE_CHANNEL,
       buildNumber: BUILD_NUMBER,
       buildTimestamp: BUILD_TIMESTAMP,
       environment: process.env.NODE_ENV ?? "development",

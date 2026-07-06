@@ -1236,6 +1236,13 @@ components:
           type: string
         version:
           type: string
+        releaseChannel:
+          type: string
+          description: >-
+            Human-readable release label (e.g. "Release Candidate 1")
+            shown in the UI. Kept separate from `version` because
+            installer version strings (Windows MSI in particular) cannot
+            contain semver prerelease suffixes like "-rc1".
         buildNumber:
           type: string
         buildTimestamp:
@@ -1253,6 +1260,7 @@ components:
         - chapterName
         - description
         - version
+        - releaseChannel
         - buildNumber
         - buildTimestamp
         - environment

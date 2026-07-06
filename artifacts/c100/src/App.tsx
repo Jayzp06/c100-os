@@ -24,6 +24,19 @@ import EventQrPage from "@/pages/event-qr";
 import NudgesPage from "@/pages/nudges";
 import ReportsPage from "@/pages/reports";
 import TechConsolePage from "@/pages/tech-console";
+import AboutPage from "@/pages/about";
+import ReleaseNotesPage from "@/pages/release-notes";
+import UpdatesPage from "@/pages/updates";
+import DiagnosticsPage from "@/pages/diagnostics";
+import ExecutiveSuiteHubPage from "@/pages/exec/hub";
+import PresidentWorkspacePage from "@/pages/exec/president";
+import VicePresidentWorkspacePage from "@/pages/exec/vice-president";
+import SecretaryWorkspacePage from "@/pages/exec/secretary";
+import TreasurerWorkspacePage from "@/pages/exec/treasurer";
+import HistorianWorkspacePage from "@/pages/exec/historian";
+import SergeantAtArmsWorkspacePage from "@/pages/exec/sergeant-at-arms";
+import ParliamentarianWorkspacePage from "@/pages/exec/parliamentarian";
+import TechnologyWorkspacePage from "@/pages/exec/technology";
 
 // ---------------------------------------------------------------------------
 // Desktop initialisation — must run before any component mounts so that
@@ -86,6 +99,19 @@ function Router() {
       <Route path="/nudges" component={NudgesPage} />
       <Route path="/reports" component={ReportsPage} />
       <Route path="/tech" component={TechConsolePage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/release-notes" component={ReleaseNotesPage} />
+      <Route path="/updates" component={UpdatesPage} />
+      <Route path="/diagnostics" component={DiagnosticsPage} />
+      <Route path="/exec" component={ExecutiveSuiteHubPage} />
+      <Route path="/exec/president" component={PresidentWorkspacePage} />
+      <Route path="/exec/vice-president" component={VicePresidentWorkspacePage} />
+      <Route path="/exec/secretary" component={SecretaryWorkspacePage} />
+      <Route path="/exec/treasurer" component={TreasurerWorkspacePage} />
+      <Route path="/exec/historian" component={HistorianWorkspacePage} />
+      <Route path="/exec/sergeant-at-arms" component={SergeantAtArmsWorkspacePage} />
+      <Route path="/exec/parliamentarian" component={ParliamentarianWorkspacePage} />
+      <Route path="/exec/technology" component={TechnologyWorkspacePage} />
       <Route component={NotFound} />
     </Switch>
   );

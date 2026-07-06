@@ -20,6 +20,8 @@ import {
   X,
   ArrowLeftRight,
   RefreshCw,
+  Briefcase,
+  Info,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -161,6 +163,7 @@ type NavContext = {
   isExecOrAdmin: boolean;
   isTechChair: boolean;
   isChair: boolean;
+  hasExecWorkspace: boolean;
 };
 
 type NavItem = {
@@ -199,10 +202,22 @@ const NAV: NavItem[] = [
     show: ({ isExecOrAdmin, isChair }) => isExecOrAdmin || isChair,
   },
   {
+    href: "/exec",
+    label: "Executive Suite",
+    icon: Briefcase,
+    show: ({ hasExecWorkspace }) => hasExecWorkspace,
+  },
+  {
     href: "/tech",
     label: "System",
     icon: Settings2,
     show: ({ isTechChair }) => isTechChair,
+  },
+  {
+    href: "/about",
+    label: "About",
+    icon: Info,
+    show: () => true,
   },
   {
     href: "/profile",
@@ -347,6 +362,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     isExecOrAdmin: me.isExecOrAdmin,
     isTechChair: me.isTechChair,
     isChair: me.isChair,
+    hasExecWorkspace: me.isAdmin || me.isTechChair || me.orgRoles.length > 0,
   };
   const items = NAV.filter((n) => n.show(ctx));
 

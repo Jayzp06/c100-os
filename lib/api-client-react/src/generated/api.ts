@@ -63,6 +63,9 @@ import type {
   QrToken,
   StartImpersonationInput,
   SwitchExperienceInput,
+  SystemDiagnostics,
+  SystemInfo,
+  SystemRelease,
   UpdateEventInput,
   UpdateMemberInput,
   UpdateProfileInput
@@ -3953,4 +3956,235 @@ export const useEndImpersonation = <TError = ErrorType<void>,
       > => {
       return useMutation(getEndImpersonationMutationOptions(options));
     }
+
+export const getGetSystemInfoUrl = () => {
+
+
+
+
+  return `/api/system/info`
+}
+
+/**
+ * @summary Application/build identity info (for About page)
+ */
+export const getSystemInfo = async ( options?: RequestInit): Promise<SystemInfo> => {
+
+  return customFetch<SystemInfo>(getGetSystemInfoUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSystemInfoQueryKey = () => {
+    return [
+    `/api/system/info`
+    ] as const;
+    }
+
+
+export const getGetSystemInfoQueryOptions = <TData = Awaited<ReturnType<typeof getSystemInfo>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSystemInfoQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSystemInfo>>> = ({ signal }) => getSystemInfo({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSystemInfo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSystemInfoQueryResult = NonNullable<Awaited<ReturnType<typeof getSystemInfo>>>
+export type GetSystemInfoQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Application/build identity info (for About page)
+ */
+
+export function useGetSystemInfo<TData = Awaited<ReturnType<typeof getSystemInfo>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSystemInfoQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSystemReleasesUrl = () => {
+
+
+
+
+  return `/api/system/releases`
+}
+
+/**
+ * @summary Desktop release history (for Release Notes viewer)
+ */
+export const listSystemReleases = async ( options?: RequestInit): Promise<SystemRelease[]> => {
+
+  return customFetch<SystemRelease[]>(getListSystemReleasesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSystemReleasesQueryKey = () => {
+    return [
+    `/api/system/releases`
+    ] as const;
+    }
+
+
+export const getListSystemReleasesQueryOptions = <TData = Awaited<ReturnType<typeof listSystemReleases>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSystemReleases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSystemReleasesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSystemReleases>>> = ({ signal }) => listSystemReleases({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSystemReleases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSystemReleasesQueryResult = NonNullable<Awaited<ReturnType<typeof listSystemReleases>>>
+export type ListSystemReleasesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Desktop release history (for Release Notes viewer)
+ */
+
+export function useListSystemReleases<TData = Awaited<ReturnType<typeof listSystemReleases>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSystemReleases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSystemReleasesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSystemDiagnosticsUrl = () => {
+
+
+
+
+  return `/api/system/diagnostics`
+}
+
+/**
+ * @summary Live system diagnostics (DB, auth, API) for the Diagnostics page
+ */
+export const getSystemDiagnostics = async ( options?: RequestInit): Promise<SystemDiagnostics> => {
+
+  return customFetch<SystemDiagnostics>(getGetSystemDiagnosticsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSystemDiagnosticsQueryKey = () => {
+    return [
+    `/api/system/diagnostics`
+    ] as const;
+    }
+
+
+export const getGetSystemDiagnosticsQueryOptions = <TData = Awaited<ReturnType<typeof getSystemDiagnostics>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemDiagnostics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSystemDiagnosticsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSystemDiagnostics>>> = ({ signal }) => getSystemDiagnostics({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSystemDiagnostics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSystemDiagnosticsQueryResult = NonNullable<Awaited<ReturnType<typeof getSystemDiagnostics>>>
+export type GetSystemDiagnosticsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Live system diagnostics (DB, auth, API) for the Diagnostics page
+ */
+
+export function useGetSystemDiagnostics<TData = Awaited<ReturnType<typeof getSystemDiagnostics>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSystemDiagnostics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSystemDiagnosticsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

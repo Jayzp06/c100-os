@@ -1,0 +1,326 @@
+Batch E — Executive Platform Preview & Desktop Completion
+
+Continue building from the completed Batch A–D architecture. Preserve all existing RBAC, committee privacy, attendance, member scoring, reporting, exports, desktop authentication, desktop updater architecture, historical data protections, APIs, database schema, and business logic.
+
+This batch is intended to prepare the platform for executive demonstration while minimizing implementation risk. Prioritize architectural completeness, polished user experience, and reuse of existing functionality over adding large amounts of new business logic.
+
+Do not introduce breaking changes.
+
+Do not duplicate services.
+
+Reuse all existing APIs, reports, exports, and calculations wherever possible.
+
+Primary Objective
+
+Complete the desktop experience and create a polished Executive Board platform that demonstrates the long-term vision of the application while remaining stable for presentation.
+
+Focus on architecture, navigation, dashboards, and integration rather than implementing every future workflow.
+
+Part 1 — Desktop Platform Completion
+
+Complete the desktop application experience.
+
+Implement:
+
+About Page
+
+Display:
+
+application name
+chapter branding
+application description
+current version
+build number
+build timestamp
+environment
+operating system
+architecture
+copyright
+support information
+Release Information
+
+Create a Release Notes viewer capable of displaying:
+
+current release
+previous releases
+improvements
+bug fixes
+known issues
+Update Experience
+
+Complete the Tauri updater interface.
+
+Implement:
+
+Check for Updates
+update available dialog
+download progress
+installation progress
+restart application prompt
+success confirmation
+Update Error Handling
+
+Gracefully handle:
+
+no internet
+updater unavailable
+download failure
+checksum mismatch
+installation failure
+already up-to-date
+
+Display friendly messages.
+
+Never expose raw exceptions to users.
+
+Diagnostics
+
+Create a Diagnostics page displaying:
+
+Application
+
+version
+build
+release channel
+
+System
+
+operating system
+CPU
+memory
+architecture
+
+Database
+
+status
+migration version
+
+Authentication
+
+current user
+current role
+permissions
+
+API
+
+server connectivity
+latency
+endpoint health
+
+Updater
+
+updater status
+last update check
+
+Provide a Copy Diagnostics button.
+
+Part 2 — Executive Board Platform
+
+Create a dedicated Executive Board area accessible only through the existing RBAC system.
+
+Create workspace navigation for:
+
+President
+Vice President
+Secretary
+Treasurer
+Historian
+Sergeant-at-Arms
+Parliamentarian / Bylaws Officer
+Technology Chair
+
+Use a shared Executive layout throughout.
+
+Executive Layout
+
+Create reusable architecture including:
+
+executive sidebar
+breadcrumbs
+notification area
+quick actions
+announcements
+responsive layout
+desktop optimization
+loading states
+empty states
+
+Reuse components wherever possible.
+
+President Workspace
+
+Create a polished executive dashboard showing:
+
+chapter health
+membership overview
+committee summaries
+attendance summary
+scholarship readiness
+conference readiness
+upcoming events
+pending approvals
+quick links to reports
+
+All statistics should reuse existing reporting APIs.
+
+Vice President Workspace
+
+Display:
+
+committee overview
+committee comparisons
+committee participation
+chair summaries
+committee health
+
+Reuse existing committee reporting.
+
+Secretary Workspace
+
+Create dashboard architecture for:
+
+meeting calendar
+agendas
+minutes archive
+action items
+officer reminders
+
+Where backend functionality has not yet been implemented, display professional "Coming Soon" modules rather than placeholder errors.
+
+Treasurer Workspace
+
+Create a professional financial dashboard layout.
+
+Display:
+
+budget overview
+reimbursements
+balances
+financial reports
+
+Use placeholder cards for future functionality.
+
+Do not implement accounting logic during this batch.
+
+Historian Workspace
+
+Create architecture for:
+
+event timeline
+media archive
+chapter gallery
+historical highlights
+Sergeant-at-Arms Workspace
+
+Display:
+
+attendance oversight
+meeting participation
+conduct summaries
+
+Reuse attendance reporting.
+
+Parliamentarian Workspace
+
+Prepare:
+
+bylaws reference
+amendments
+governance history
+
+These may remain informational during this batch.
+
+Technology Workspace
+
+Create an administrative dashboard displaying:
+
+application status
+API status
+desktop status
+update status
+audit logs
+current version
+system health
+
+Reuse existing diagnostics where possible.
+
+Shared Requirements
+
+Do not duplicate:
+
+reports
+exports
+attendance calculations
+scoring logic
+committee calculations
+eligibility calculations
+APIs
+services
+
+Instead, consume the existing infrastructure completed in previous batches.
+
+Future Module Preparation
+
+Design the architecture so future batches can plug in:
+
+Facility Use Forms
+travel requests
+reimbursements
+financial workflows
+meeting generation
+document generation
+executive approvals
+automated emails
+
+Do not implement these features in this batch.
+
+Prepare extensible architecture only.
+
+Stability Requirements
+
+Prioritize application stability over feature quantity.
+
+Avoid risky refactors.
+
+Preserve existing workflows.
+
+Maintain desktop compatibility.
+
+Maintain accessibility.
+
+Ensure responsive layouts continue functioning.
+
+Verification
+
+Before completion:
+
+Run full TypeScript typecheck.
+Run linting.
+Restart all services.
+Verify desktop startup.
+Verify updater.
+Verify diagnostics.
+Verify RBAC for every executive role.
+Verify reports.
+Verify exports.
+Verify navigation.
+Verify existing member workflows remain operational.
+
+Fix any regressions before considering the batch complete.
+
+Deliverables
+
+Provide a final implementation report including:
+
+files modified
+new pages created
+components added
+APIs reused
+permissions implemented
+desktop enhancements completed
+diagnostics completed
+executive workspaces completed
+known issues
+recommendations before the next batch
+
+Pause after completion and await approval before implementing financial workflows, automation, governance systems, or document generation.

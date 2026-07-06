@@ -30,6 +30,8 @@ tags:
     description: Organisation-level configuration (identity, branding, thresholds)
   - name: EventTypeConfig
     description: Admin-configurable auto-scoring rules per event type
+  - name: System
+    description: Application identity, release notes, and diagnostics
 paths:
   /healthz:
     get:
@@ -1111,6 +1113,47 @@ paths:
         '403':
           description: Forbidden — TechnologyChair role required.
 
+  /system/info:
+    get:
+      tags: [System]
+      operationId: getSystemInfo
+      summary: Application/build identity info (for About page)
+      responses:
+        '200':
+          description: Application identity and build info.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfo'
+
+  /system/releases:
+    get:
+      tags: [System]
+      operationId: listSystemReleases
+      summary: Desktop release history (for Release Notes viewer)
+      responses:
+        '200':
+          description: Releases, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SystemRelease'
+
+  /system/diagnostics:
+    get:
+      tags: [System]
+      operationId: getSystemDiagnostics
+      summary: Live system diagnostics (DB, auth, API) for the Diagnostics page
+      responses:
+        '200':
+          description: Diagnostics snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemDiagnostics'
+
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -1154,6 +1197,91 @@ components:
           type: string
       required:
         - status
+
+    SystemInfo:
+      type: object
+      properties:
+        appName:
+          type: string
+        chapterName:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        buildNumber:
+          type: string
+        buildTimestamp:
+          type: string
+        environment:
+          type: string
+        serverTime:
+          type: string
+        copyright:
+          type: string
+        supportEmail:
+          type: string
+      required:
+        - appName
+        - chapterName
+        - description
+        - version
+        - buildNumber
+        - buildTimestamp
+        - environment
+        - serverTime
+        - copyright
+        - supportEmail
+
+    SystemRelease:
+      type: object
+      properties:
+        version:
+          type: string
+        channel:
+          type: string
+        releaseNotes:
+          type: string
+          nullable: true
+        pubDate:
+          type: string
+      required:
+        - version
+        - channel
+        - releaseNotes
+        - pubDate
+
+    SystemDiagnostics:
+      type: object
+      properties:
+        database:
+          type: object
+          properties:
+            connected:
+              type: boolean
+            latencyMs:
+              type: number
+            migrationVersion:
+              type: string
+              nullable: true
+          required: [connected, latencyMs, migrationVersion]
+        api:
+          type: object
+          properties:
+            status:
+              type: string
+            latencyMs:
+              type: number
+          required: [status, latencyMs]
+        environment:
+          type: string
+        serverTime:
+          type: string
+      required:
+        - database
+        - api
+        - environment
+        - serverTime
 
     AuthUser:
       type: object

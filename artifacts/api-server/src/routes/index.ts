@@ -11,10 +11,12 @@ import reportsRouter from "./reports";
 import orgRouter from "./org";
 import techRouter from "./tech";
 import eventTypeConfigRouter from "./event-type-config";
+import systemRouter from "./system";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(systemRouter);
 router.use(authRouter);
 router.use(bootstrapRouter);
 router.use(orgRouter);

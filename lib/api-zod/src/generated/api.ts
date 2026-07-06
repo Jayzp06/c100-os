@@ -1878,3 +1878,50 @@ export const EndImpersonationResponse = zod.object({
 })
 
 
+/**
+ * @summary Application/build identity info (for About page)
+ */
+export const GetSystemInfoResponse = zod.object({
+  "appName": zod.string(),
+  "chapterName": zod.string(),
+  "description": zod.string(),
+  "version": zod.string(),
+  "buildNumber": zod.string(),
+  "buildTimestamp": zod.string(),
+  "environment": zod.string(),
+  "serverTime": zod.string(),
+  "copyright": zod.string(),
+  "supportEmail": zod.string()
+})
+
+
+/**
+ * @summary Desktop release history (for Release Notes viewer)
+ */
+export const ListSystemReleasesResponseItem = zod.object({
+  "version": zod.string(),
+  "channel": zod.string(),
+  "releaseNotes": zod.string().nullable(),
+  "pubDate": zod.string()
+})
+export const ListSystemReleasesResponse = zod.array(ListSystemReleasesResponseItem)
+
+
+/**
+ * @summary Live system diagnostics (DB, auth, API) for the Diagnostics page
+ */
+export const GetSystemDiagnosticsResponse = zod.object({
+  "database": zod.object({
+  "connected": zod.boolean(),
+  "latencyMs": zod.number(),
+  "migrationVersion": zod.string().nullable()
+}),
+  "api": zod.object({
+  "status": zod.string(),
+  "latencyMs": zod.number()
+}),
+  "environment": zod.string(),
+  "serverTime": zod.string()
+})
+
+

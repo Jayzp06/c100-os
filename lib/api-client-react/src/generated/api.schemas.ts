@@ -9,6 +9,44 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface SystemInfo {
+  appName: string;
+  chapterName: string;
+  description: string;
+  version: string;
+  buildNumber: string;
+  buildTimestamp: string;
+  environment: string;
+  serverTime: string;
+  copyright: string;
+  supportEmail: string;
+}
+
+export interface SystemRelease {
+  version: string;
+  channel: string;
+  releaseNotes: string | null;
+  pubDate: string;
+}
+
+export type SystemDiagnosticsDatabase = {
+  connected: boolean;
+  latencyMs: number;
+  migrationVersion: string | null;
+};
+
+export type SystemDiagnosticsApi = {
+  status: string;
+  latencyMs: number;
+};
+
+export interface SystemDiagnostics {
+  database: SystemDiagnosticsDatabase;
+  api: SystemDiagnosticsApi;
+  environment: string;
+  serverTime: string;
+}
+
 export interface AuthUser {
   id: string;
   /** @nullable */

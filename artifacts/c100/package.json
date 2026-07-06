@@ -79,6 +79,10 @@
   "dependencies": {
     "@tanstack/query-sync-storage-persister": "^5.101.2",
     "@tanstack/react-query-persist-client": "^5.101.2",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-os": "^2.3.2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "@workspace/checkin-codes": "workspace:*",
     "@workspace/replit-auth-web": "workspace:*",
     "qrcode.react": "^4.2.0"

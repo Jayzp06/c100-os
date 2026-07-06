@@ -13,6 +13,10 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         // Deep-link — handles c100ops:// protocol for QR check-in and shared links
         .plugin(tauri_plugin_deep_link::init())
+        // OS info — surfaced on the About and Diagnostics pages
+        .plugin(tauri_plugin_os::init())
+        // Process control — used to relaunch the app after an update installs
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             // Open DevTools automatically in debug builds only
             #[cfg(debug_assertions)]

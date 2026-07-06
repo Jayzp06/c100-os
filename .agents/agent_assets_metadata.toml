@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "n7FGMMlnx5QhZamw9Bybg"
+uri = "file://QA_REPORT.md"
+type = "text"
+title = "C100 QA Validation Report — v0.9.0-rc1"

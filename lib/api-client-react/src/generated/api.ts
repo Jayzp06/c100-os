@@ -2362,6 +2362,77 @@ export const useDeleteEvent = <TError = ErrorType<unknown>,
       return useMutation(getDeleteEventMutationOptions(options));
     }
 
+export const getPermanentlyDeleteEventUrl = (id: number,) => {
+
+
+
+
+  return `/api/events/${id}/permanent`
+}
+
+/**
+ * @summary Permanently delete an event with no attendance history (technology chair or admin)
+ */
+export const permanentlyDeleteEvent = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getPermanentlyDeleteEventUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getPermanentlyDeleteEventMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof permanentlyDeleteEvent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof permanentlyDeleteEvent>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['permanentlyDeleteEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof permanentlyDeleteEvent>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  permanentlyDeleteEvent(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PermanentlyDeleteEventMutationResult = NonNullable<Awaited<ReturnType<typeof permanentlyDeleteEvent>>>
+
+    export type PermanentlyDeleteEventMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Permanently delete an event with no attendance history (technology chair or admin)
+ */
+export const usePermanentlyDeleteEvent = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof permanentlyDeleteEvent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof permanentlyDeleteEvent>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPermanentlyDeleteEventMutationOptions(options));
+    }
+
 export const getActivateEventQrUrl = (id: number,) => {
 
 

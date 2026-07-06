@@ -1,0 +1,236 @@
+The platform is now in Release Candidate status (v0.9.0-rc1).
+
+Do not build any new modules, dashboards, workflows, automations, financial systems, governance systems, or database redesigns.
+
+The objective of this batch is to finalize the administrator experience, improve usability, and polish the Executive Board demonstration while minimizing code changes and preserving platform stability.
+
+This is a refinement pass, not a feature expansion.
+
+Part 1 — Modernize Member Permissions
+
+Replace the current single-select Role dropdown with a modern multi-tag permission system.
+
+A member may legitimately hold multiple permissions simultaneously.
+
+Examples include:
+
+Member
+Committee Chair
+Technology Chair
+Parliamentarian
+Historian
+Bylaws Officer
+Executive Officer
+President
+Vice President
+Secretary
+Treasurer
+Administrator
+Platform Administrator
+
+Display these as removable tags/chips rather than a dropdown.
+
+Example:
+
+Permissions
+
+[Member] ×
+[Committee Chair] ×
+[Technology Chair] ×
+
+Users should be able to:
+
+Add permissions
+Remove permissions
+Save changes
+
+Maintain full backward compatibility with the existing RBAC implementation.
+
+Do not break existing permissions.
+
+Separate Permissions from Organizational Assignment
+
+Committee assignment is not a permission.
+
+Keep Committee as its own field.
+
+Example:
+
+Committee
+
+▼ Mentoring
+
+This remains independent from permission tags.
+
+Executive Officer Cleanup
+
+Do not use generic "ExecutiveBoard" as a selectable permission.
+
+Instead:
+
+Executive Board membership should be derived automatically from executive officer permissions.
+
+For example:
+
+President
+
+Vice President
+
+Secretary
+
+Treasurer
+
+Chief of Staff (future)
+
+Sergeant-at-Arms (future)
+
+Technology Chair
+
+etc.
+
+The system should understand that these positions collectively represent Executive leadership rather than requiring a generic ExecutiveBoard role.
+
+Do not redesign RBAC.
+
+Only improve the administrative UI and permission assignment model.
+
+Part 2 — Event Lifecycle Completion
+
+Complete administrator event management.
+
+Administrators should be able to:
+
+Create
+View
+Edit
+Archive (preferred)
+Restore archived events
+Delete events
+
+If historical attendance, points, reports, or audit records make hard deletion unsafe, implement Soft Delete / Archive instead of permanent deletion.
+
+Display an appropriate confirmation dialog before destructive actions.
+
+Do not allow accidental deletion.
+
+Part 3 — Executive Demo Polish
+
+Polish the application for presentation.
+
+Do not redesign layouts.
+
+Improve consistency.
+
+Review:
+
+spacing
+typography
+card alignment
+section headings
+icons
+badge consistency
+button sizing
+loading states
+empty states
+success messages
+confirmation dialogs
+warning dialogs
+
+Replace unfinished wording such as:
+
+TODO
+Placeholder
+Lorem Ipsum
+
+with professional production-ready messaging.
+
+For any unfinished functionality, use intentional messaging such as:
+
+"Available in a future platform update."
+
+rather than generic placeholders.
+
+Navigation Review
+
+Verify navigation consistency.
+
+Ensure:
+
+every page has a clear back path
+breadcrumbs are correct
+active navigation highlighting is correct
+dashboard cards navigate correctly
+no dead links exist
+Administrative Review
+
+Review all administrator pages.
+
+Ensure terminology is consistent.
+
+Use the same wording throughout the platform.
+
+Examples:
+
+Member
+
+Committee
+
+Permission
+
+Executive Officer
+
+Administrator
+
+Technology Chair
+
+Avoid inconsistent naming.
+
+UI Consistency
+
+Review every Executive workspace.
+
+Ensure:
+
+matching page headers
+consistent spacing
+consistent badge styles
+consistent status indicators
+consistent card layouts
+
+The application should feel like a single cohesive platform.
+
+Stability Requirements
+
+Do not refactor working systems.
+
+Do not introduce new dependencies unless absolutely necessary.
+
+Do not modify database schema unless required for the permission-tag implementation.
+
+Reuse existing components whenever possible.
+
+Prioritize stability over visual changes.
+
+Verification
+
+After implementation:
+
+Run full typecheck
+Run production build
+Verify permission assignment
+Verify event deletion/archive
+Verify navigation
+Verify RBAC remains intact
+Verify exports still function
+Verify reports still function
+Verify desktop compatibility
+Deliverables
+
+Provide:
+
+Files modified
+Components updated
+Permission model improvements
+Event management improvements
+UI polish completed
+Remaining known issues

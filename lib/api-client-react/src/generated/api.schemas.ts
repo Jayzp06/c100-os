@@ -290,6 +290,25 @@ export const UpdateMemberInputMembershipStatus = {
   Inactive: 'Inactive',
 } as const;
 
+export type UpdateMemberInputOrgRoleSlugsItem = typeof UpdateMemberInputOrgRoleSlugsItem[keyof typeof UpdateMemberInputOrgRoleSlugsItem];
+
+
+export const UpdateMemberInputOrgRoleSlugsItem = {
+  president: 'president',
+  vice_president: 'vice_president',
+  secretary: 'secretary',
+  treasurer: 'treasurer',
+  parliamentarian: 'parliamentarian',
+  historian: 'historian',
+} as const;
+
+export type UpdateMemberInputSystemRoleSlugsItem = typeof UpdateMemberInputSystemRoleSlugsItem[keyof typeof UpdateMemberInputSystemRoleSlugsItem];
+
+
+export const UpdateMemberInputSystemRoleSlugsItem = {
+  platform_admin: 'platform_admin',
+} as const;
+
 export interface UpdateMemberInput {
   role?: UpdateMemberInputRole;
   /** @nullable */
@@ -298,6 +317,10 @@ export interface UpdateMemberInput {
   duesPaid?: boolean;
   accountActive?: boolean;
   fullName?: string;
+  /** Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged. */
+  orgRoleSlugs?: UpdateMemberInputOrgRoleSlugsItem[];
+  /** Replaces the member's additional platform-level permission tags. Omit this field to leave them unchanged. */
+  systemRoleSlugs?: UpdateMemberInputSystemRoleSlugsItem[];
 }
 
 export interface Committee {

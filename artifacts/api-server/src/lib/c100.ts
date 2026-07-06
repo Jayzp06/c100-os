@@ -631,7 +631,7 @@ export async function computeStreakCount(memberId: number): Promise<number> {
 }
 
 export async function buildMemberDto(member: MemberRow): Promise<unknown> {
-  const [{ totalPoints, impactPoints }, { eligible, attended }, committee] =
+  const [{ totalPoints, impactPoints }, { eligible, attended }, committee, rbac] =
     await Promise.all([
       memberPointsAndImpact(member.id),
       eventsEligibleForMember(member.id),
@@ -642,6 +642,7 @@ export async function buildMemberDto(member: MemberRow): Promise<unknown> {
             .where(eq(committeesTable.id, member.committeeId))
             .then((r) => r[0])
         : Promise.resolve(undefined),
+      resolveRbacContext(member.id),
     ]);
 
   const participationPct =
@@ -673,6 +674,11 @@ export async function buildMemberDto(member: MemberRow): Promise<unknown> {
     eventsAttended: attended,
     eventsEligible: eligible,
     profileImageUrl: member.profileImageUrl,
+    // Additive permission tags (see rbac.ts ASSIGNABLE_ORG_ROLE_SLUGS /
+    // ASSIGNABLE_SYSTEM_ROLE_SLUGS). Distinct from — and layered on top of —
+    // the legacy `role` column above.
+    orgRoles: rbac.orgRoles,
+    systemRoles: rbac.systemRoles,
   };
 }
 

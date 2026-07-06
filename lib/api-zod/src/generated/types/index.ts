@@ -84,5 +84,7 @@ export * from './updateEventInputEventType';
 export * from './updateEventInputStatus';
 export * from './updateMemberInput';
 export * from './updateMemberInputMembershipStatus';
+export * from './updateMemberInputOrgRoleSlugsItem';
 export * from './updateMemberInputRole';
+export * from './updateMemberInputSystemRoleSlugsItem';
 export * from './updateProfileInput';

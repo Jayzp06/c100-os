@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdateMemberInputMembershipStatus } from './updateMemberInputMembershipStatus';
+import type { UpdateMemberInputOrgRoleSlugsItem } from './updateMemberInputOrgRoleSlugsItem';
 import type { UpdateMemberInputRole } from './updateMemberInputRole';
+import type { UpdateMemberInputSystemRoleSlugsItem } from './updateMemberInputSystemRoleSlugsItem';
 
 export interface UpdateMemberInput {
   role?: UpdateMemberInputRole;
@@ -16,4 +18,8 @@ export interface UpdateMemberInput {
   duesPaid?: boolean;
   accountActive?: boolean;
   fullName?: string;
+  /** Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged. */
+  orgRoleSlugs?: UpdateMemberInputOrgRoleSlugsItem[];
+  /** Replaces the member's additional platform-level permission tags. Omit this field to leave them unchanged. */
+  systemRoleSlugs?: UpdateMemberInputSystemRoleSlugsItem[];
 }

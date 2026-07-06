@@ -6,6 +6,7 @@ import {
   UpdateEventBody,
   UpdateEventParams,
   DeleteEventParams,
+  PermanentlyDeleteEventParams,
   ActivateEventQrParams,
   DeactivateEventQrParams,
   GetCurrentEventQrParams,
@@ -38,6 +39,7 @@ import {
   requireAuth,
   requireRole,
   rotateQrToken,
+  writeAuditLog,
 } from "../lib/c100";
 
 const router: IRouter = Router();
@@ -229,6 +231,43 @@ router.delete(
       .update(eventsTable)
       .set({ status: "Cancelled", qrActive: false })
       .where(eq(eventsTable.id, params.data.id));
+    res.status(204).end();
+  }),
+);
+
+router.delete(
+  "/events/:id/permanent",
+  requireRole(...TECH_OR_ADMIN)(async (req, res) => {
+    const params = PermanentlyDeleteEventParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [event] = await db
+      .select()
+      .from(eventsTable)
+      .where(eq(eventsTable.id, params.data.id));
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+    const count = await attendeeCount(params.data.id);
+    if (count > 0) {
+      res.status(409).json({
+        error:
+          "This event has attendance history and cannot be permanently deleted. Cancel it instead to preserve records.",
+      });
+      return;
+    }
+    await db.delete(eventsTable).where(eq(eventsTable.id, params.data.id));
+    await writeAuditLog({
+      actorId: req.member.id,
+      targetType: "event",
+      targetId: params.data.id,
+      action: "event_permanently_deleted",
+      before: { title: event.title, eventType: event.eventType },
+      ipAddress: req.ip,
+    });
     res.status(204).end();
   }),
 );

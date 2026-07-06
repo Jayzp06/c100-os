@@ -22,7 +22,7 @@ import {
   permissionGroupsTable,
   type Member as MemberRow,
 } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { AuthedHandler } from "./c100";
 
 // ─── Core resolution ────────────────────────────────────────────────────────────
@@ -224,6 +224,120 @@ export function computeAvailableExperiences(
   experiences.add("member_portal");
 
   return Array.from(experiences);
+}
+
+// ─── Permission-tag assignment (member-detail admin UI) ───────────────────────
+//
+// These two whitelists are the only org/system roles an admin can grant or
+// revoke through the multi-tag permission UI (PATCH /members/:id). They are
+// intentionally additive to the legacy `members.role` column — assigning or
+// removing them never touches `role` and never rewrites any existing
+// `requireRole`/LEADERSHIP_ROLES/EXEC_OR_ADMIN/TECH_OR_ADMIN gate. Executive
+// Board access is derived automatically from these org-role tiers by
+// `deriveExperience` — there is deliberately no generic "Executive Board" tag
+// here; granting president/vice_president/secretary/treasurer already
+// promotes the member to the Operations Console shell.
+export const ASSIGNABLE_ORG_ROLE_SLUGS = [
+  "president",
+  "vice_president",
+  "secretary",
+  "treasurer",
+  "parliamentarian",
+  "historian",
+] as const;
+
+export const ASSIGNABLE_SYSTEM_ROLE_SLUGS = ["platform_admin"] as const;
+
+export type AssignableOrgRoleSlug = (typeof ASSIGNABLE_ORG_ROLE_SLUGS)[number];
+export type AssignableSystemRoleSlug =
+  (typeof ASSIGNABLE_SYSTEM_ROLE_SLUGS)[number];
+
+/**
+ * Replaces a member's assignments among the whitelisted org-role tags only.
+ * Any org role a member holds outside this whitelist (e.g. committee
+ * leadership roles, general_member) is left untouched.
+ */
+export async function setMemberOrgRoleTags(
+  memberId: number,
+  slugs: string[],
+  grantedBy: number | null,
+): Promise<void> {
+  const desired = Array.from(
+    new Set(slugs.filter((s) => (ASSIGNABLE_ORG_ROLE_SLUGS as readonly string[]).includes(s))),
+  );
+
+  const whitelistRoles = await db
+    .select({ id: orgRolesTable.id, slug: orgRolesTable.slug })
+    .from(orgRolesTable)
+    .where(inArray(orgRolesTable.slug, ASSIGNABLE_ORG_ROLE_SLUGS as unknown as string[]));
+
+  const idBySlug = new Map(whitelistRoles.map((r) => [r.slug, r.id]));
+  const whitelistIds = whitelistRoles.map((r) => r.id);
+
+  if (whitelistIds.length > 0) {
+    await db
+      .delete(memberOrgRolesTable)
+      .where(
+        and(
+          eq(memberOrgRolesTable.memberId, memberId),
+          inArray(memberOrgRolesTable.orgRoleId, whitelistIds),
+        ),
+      );
+  }
+
+  const toInsert = desired
+    .map((slug) => idBySlug.get(slug))
+    .filter((id): id is number => id != null)
+    .map((orgRoleId) => ({ memberId, orgRoleId, grantedBy }));
+
+  if (toInsert.length > 0) {
+    await db.insert(memberOrgRolesTable).values(toInsert);
+  }
+}
+
+/**
+ * Replaces a member's assignments among the whitelisted system-role tags only
+ * (currently just platform_admin — technology_chair remains driven by the
+ * legacy `members.role` column, see .agents/memory/tech-chair-role.md).
+ */
+export async function setMemberSystemRoleTags(
+  memberId: number,
+  slugs: string[],
+  grantedBy: number | null,
+): Promise<void> {
+  const desired = Array.from(
+    new Set(
+      slugs.filter((s) => (ASSIGNABLE_SYSTEM_ROLE_SLUGS as readonly string[]).includes(s)),
+    ),
+  );
+
+  const whitelistRoles = await db
+    .select({ id: systemRolesTable.id, slug: systemRolesTable.slug })
+    .from(systemRolesTable)
+    .where(inArray(systemRolesTable.slug, ASSIGNABLE_SYSTEM_ROLE_SLUGS as unknown as string[]));
+
+  const idBySlug = new Map(whitelistRoles.map((r) => [r.slug, r.id]));
+  const whitelistIds = whitelistRoles.map((r) => r.id);
+
+  if (whitelistIds.length > 0) {
+    await db
+      .delete(memberSystemRolesTable)
+      .where(
+        and(
+          eq(memberSystemRolesTable.memberId, memberId),
+          inArray(memberSystemRolesTable.systemRoleId, whitelistIds),
+        ),
+      );
+  }
+
+  const toInsert = desired
+    .map((slug) => idBySlug.get(slug))
+    .filter((id): id is number => id != null)
+    .map((systemRoleId) => ({ memberId, systemRoleId, grantedBy }));
+
+  if (toInsert.length > 0) {
+    await db.insert(memberSystemRolesTable).values(toInsert);
+  }
 }
 
 // ─── Middleware ────────────────────────────────────────────────────────────────

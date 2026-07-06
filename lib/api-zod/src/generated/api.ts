@@ -619,7 +619,9 @@ export const UpdateMemberBody = zod.object({
   "membershipStatus": zod.enum(['Active', 'Probationary', 'Suspended', 'Inactive']).optional(),
   "duesPaid": zod.boolean().optional(),
   "accountActive": zod.boolean().optional(),
-  "fullName": zod.string().optional()
+  "fullName": zod.string().optional(),
+  "orgRoleSlugs": zod.array(zod.enum(['president', 'vice_president', 'secretary', 'treasurer', 'parliamentarian', 'historian'])).optional().describe('Replaces the member\'s additional officer-position permission tags. Omit this field to leave them unchanged.'),
+  "systemRoleSlugs": zod.array(zod.enum(['platform_admin'])).optional().describe('Replaces the member\'s additional platform-level permission tags. Omit this field to leave them unchanged.')
 })
 
 export const UpdateMemberResponse = zod.object({
@@ -1143,6 +1145,16 @@ export const DeleteEventParams = zod.object({
 })
 
 export const DeleteEventResponse = zod.void()
+
+
+/**
+ * @summary Permanently delete an event with no attendance history (technology chair or admin)
+ */
+export const PermanentlyDeleteEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PermanentlyDeleteEventResponse = zod.void()
 
 
 /**

@@ -643,6 +643,33 @@ paths:
         '204':
           description: Cancelled.
 
+  /events/{id}/permanent:
+    delete:
+      tags: [Events]
+      operationId: permanentlyDeleteEvent
+      summary: Permanently delete an event with no attendance history (technology chair or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Permanently deleted.
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Event has attendance history and cannot be permanently deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
   /events/{id}/qr/activate:
     post:
       tags: [Events]
@@ -1551,6 +1578,18 @@ components:
           type: boolean
         fullName:
           type: string
+        orgRoleSlugs:
+          type: array
+          items:
+            type: string
+            enum: [president, vice_president, secretary, treasurer, parliamentarian, historian]
+          description: Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged.
+        systemRoleSlugs:
+          type: array
+          items:
+            type: string
+            enum: [platform_admin]
+          description: Replaces the member's additional platform-level permission tags. Omit this field to leave them unchanged.
 
     Committee:
       type: object

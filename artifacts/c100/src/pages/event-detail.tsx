@@ -10,6 +10,7 @@ import {
   useActivateEventQr,
   useDeactivateEventQr,
   useDeleteEvent,
+  usePermanentlyDeleteEvent,
   useUpdateEvent,
   useManualAttendance,
   useDeleteEventAttendance,
@@ -157,7 +158,9 @@ function EventDetail({ id }: { id: number }) {
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CheckInPanel id={id} event={e} isLeader={isLeader} />
-        {isLeader ? <ChairControls id={id} event={e} /> : null}
+        {isLeader ? (
+          <ChairControls id={id} event={e} totalAttendees={e.totalAttendees} />
+        ) : null}
       </div>
 
       {isLeader ? <AttendanceSection id={id} /> : null}
@@ -517,6 +520,7 @@ function EditEventForm({
 function ChairControls({
   id,
   event,
+  totalAttendees,
 }: {
   id: number;
   event: {
@@ -534,7 +538,9 @@ function ChairControls({
     impactMultiplier: number;
     checkInWindowMinutes: number;
   };
+  totalAttendees: number;
 }) {
+  const me = useMe();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -569,6 +575,23 @@ function ChairControls({
         qc.invalidateQueries({ queryKey: getListEventsQueryKey() });
         invalidateAggregates(qc);
         setLocation("/events");
+      },
+    },
+  });
+  const permanentlyDelete = usePermanentlyDeleteEvent({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Event permanently deleted." });
+        qc.invalidateQueries({ queryKey: getListEventsQueryKey() });
+        invalidateAggregates(qc);
+        setLocation("/events");
+      },
+      onError: (err: unknown) => {
+        const message =
+          err && typeof err === "object" && "error" in (err as any)
+            ? String((err as any).error)
+            : "Permanent delete failed.";
+        toast({ title: message, variant: "destructive" });
       },
     },
   });
@@ -673,6 +696,57 @@ function ChairControls({
         <p className="text-xs text-muted-foreground">
           Need to add someone who couldn&apos;t scan? Use manual attendance below.
         </p>
+
+        {me.isAdmin || me.isTechChair ? (
+          <div className="mt-2 rounded-md border border-destructive/40 p-4 space-y-2">
+            <p className="text-sm font-semibold text-destructive">
+              Danger zone
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Permanently deleting removes this event entirely and cannot be
+              undone. Only available for events with no attendance history —
+              cancel the event instead to preserve records.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={totalAttendees > 0 || permanentlyDelete.isPending}
+                  title={
+                    totalAttendees > 0
+                      ? "Events with attendance history cannot be permanently deleted."
+                      : undefined
+                  }
+                  data-testid="button-delete-event-permanent"
+                >
+                  <Trash2 className="mr-1 h-4 w-4" /> Delete permanently
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Permanently delete &quot;{event.title}&quot;?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This removes the event entirely, including its check-in
+                    configuration. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep it</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => permanentlyDelete.mutate({ id })}
+                    data-testid="button-confirm-delete-event-permanent"
+                  >
+                    Delete permanently
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

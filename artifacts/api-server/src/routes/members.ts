@@ -18,6 +18,7 @@ import {
   requireRole,
   writeAuditLog,
 } from "../lib/c100";
+import { setMemberOrgRoleTags, setMemberSystemRoleTags } from "../lib/rbac";
 import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
@@ -225,14 +226,36 @@ router.patch(
     if (body.data.fullName !== undefined)
       update["fullName"] = body.data.fullName;
 
-    const [updated] = await db
-      .update(membersTable)
-      .set(update)
-      .where(eq(membersTable.id, params.data.id))
-      .returning();
-    if (!updated) {
-      res.status(404).json({ error: "Member not found" });
-      return;
+    let updated = before;
+    if (Object.keys(update).length > 0) {
+      const rows = await db
+        .update(membersTable)
+        .set(update)
+        .where(eq(membersTable.id, params.data.id))
+        .returning();
+      if (!rows[0]) {
+        res.status(404).json({ error: "Member not found" });
+        return;
+      }
+      updated = rows[0];
+    }
+
+    // Additive permission tags — layered on top of the legacy `role` column
+    // above, never redefining it. See rbac.ts ASSIGNABLE_ORG_ROLE_SLUGS /
+    // ASSIGNABLE_SYSTEM_ROLE_SLUGS for the exact whitelist.
+    if (body.data.orgRoleSlugs !== undefined) {
+      await setMemberOrgRoleTags(
+        params.data.id,
+        body.data.orgRoleSlugs,
+        req.member.id,
+      );
+    }
+    if (body.data.systemRoleSlugs !== undefined) {
+      await setMemberSystemRoleTags(
+        params.data.id,
+        body.data.systemRoleSlugs,
+        req.member.id,
+      );
     }
 
     await writeAuditLog({

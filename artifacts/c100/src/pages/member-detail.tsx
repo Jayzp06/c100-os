@@ -16,6 +16,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -44,7 +50,7 @@ import {
   RoleBadge,
 } from "@/components/badges";
 import { ReportExportMenu } from "@/components/report-export";
-import { ArrowLeft, ShieldAlert, RotateCcw } from "lucide-react";
+import { ArrowLeft, ShieldAlert, RotateCcw, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { invalidateAggregates } from "@/lib/query-invalidation";
 
@@ -56,6 +62,21 @@ const ROLES = [
   "Admin",
 ];
 const STATUSES = ["Active", "Probationary", "Suspended", "Inactive"];
+
+const ORG_ROLE_TAGS: { slug: string; label: string }[] = [
+  { slug: "president", label: "President" },
+  { slug: "vice_president", label: "VP" },
+  { slug: "secretary", label: "Secretary" },
+  { slug: "treasurer", label: "Treasurer" },
+  { slug: "parliamentarian", label: "Parliamentarian" },
+  { slug: "historian", label: "Historian" },
+];
+const SYSTEM_ROLE_TAGS: { slug: string; label: string }[] = [
+  { slug: "platform_admin", label: "Platform Administrator" },
+];
+const PERMISSION_TAG_LABELS: Record<string, string> = Object.fromEntries(
+  [...ORG_ROLE_TAGS, ...SYSTEM_ROLE_TAGS].map((t) => [t.slug, t.label]),
+);
 
 export default function MemberDetailPage() {
   const params = useParams<{ id: string }>();
@@ -142,6 +163,8 @@ function MemberDetail({ id }: { id: number }) {
     duesPaid: false,
     accountActive: true,
   });
+  const [orgRoleSlugs, setOrgRoleSlugs] = useState<string[]>([]);
+  const [systemRoleSlugs, setSystemRoleSlugs] = useState<string[]>([]);
 
   useEffect(() => {
     if (member.data) {
@@ -155,6 +178,16 @@ function MemberDetail({ id }: { id: number }) {
         duesPaid: member.data.duesPaid,
         accountActive: member.data.accountActive,
       });
+      setOrgRoleSlugs(
+        (member.data.orgRoles ?? []).filter((slug) =>
+          ORG_ROLE_TAGS.some((t) => t.slug === slug),
+        ),
+      );
+      setSystemRoleSlugs(
+        (member.data.systemRoles ?? []).filter((slug) =>
+          SYSTEM_ROLE_TAGS.some((t) => t.slug === slug),
+        ),
+      );
     }
   }, [member.data]);
 
@@ -195,8 +228,28 @@ function MemberDetail({ id }: { id: number }) {
           | "Inactive",
         duesPaid: form.duesPaid,
         accountActive: form.accountActive,
+        orgRoleSlugs: orgRoleSlugs as (
+          | "president"
+          | "vice_president"
+          | "secretary"
+          | "treasurer"
+          | "parliamentarian"
+          | "historian"
+        )[],
+        systemRoleSlugs: systemRoleSlugs as "platform_admin"[],
       },
     });
+  }
+
+  function toggleOrgRole(slug: string, checked: boolean) {
+    setOrgRoleSlugs((prev) =>
+      checked ? [...prev, slug] : prev.filter((s) => s !== slug),
+    );
+  }
+  function toggleSystemRole(slug: string, checked: boolean) {
+    setSystemRoleSlugs((prev) =>
+      checked ? [...prev, slug] : prev.filter((s) => s !== slug),
+    );
   }
 
   return (
@@ -328,6 +381,93 @@ function MemberDetail({ id }: { id: number }) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Permission tags</Label>
+                <p className="text-xs text-muted-foreground">
+                  Officer positions and platform access, layered on top of the
+                  primary role above. Executive board status is derived
+                  automatically from officer-position tags.
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[...orgRoleSlugs, ...systemRoleSlugs].map((slug) => (
+                    <Pill key={slug} tone="gold" className="pr-1">
+                      {PERMISSION_TAG_LABELS[slug] ?? slug}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${PERMISSION_TAG_LABELS[slug] ?? slug}`}
+                        className="ml-1 rounded-full hover:bg-black/10"
+                        onClick={() =>
+                          ORG_ROLE_TAGS.some((t) => t.slug === slug)
+                            ? toggleOrgRole(slug, false)
+                            : toggleSystemRole(slug, false)
+                        }
+                        data-testid={`button-remove-tag-${slug}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Pill>
+                  ))}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7"
+                        data-testid="button-add-permission-tag"
+                      >
+                        <Plus className="mr-1 h-3.5 w-3.5" />
+                        Add tag
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 space-y-3" align="start">
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Officer positions
+                        </p>
+                        <div className="space-y-1.5">
+                          {ORG_ROLE_TAGS.map((t) => (
+                            <label
+                              key={t.slug}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <Checkbox
+                                checked={orgRoleSlugs.includes(t.slug)}
+                                onCheckedChange={(v) =>
+                                  toggleOrgRole(t.slug, v === true)
+                                }
+                                data-testid={`checkbox-org-role-${t.slug}`}
+                              />
+                              {t.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Platform access
+                        </p>
+                        <div className="space-y-1.5">
+                          {SYSTEM_ROLE_TAGS.map((t) => (
+                            <label
+                              key={t.slug}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <Checkbox
+                                checked={systemRoleSlugs.includes(t.slug)}
+                                onCheckedChange={(v) =>
+                                  toggleSystemRole(t.slug, v === true)
+                                }
+                                data-testid={`checkbox-system-role-${t.slug}`}
+                              />
+                              {t.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Committee</Label>

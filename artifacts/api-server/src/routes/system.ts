@@ -5,7 +5,7 @@ import { getOrgSettings, requireAuth } from "../lib/c100";
 
 const router: IRouter = Router();
 
-const BUILD_VERSION = process.env.C100_VERSION ?? "0.1.0";
+const BUILD_VERSION = process.env.C100_VERSION ?? "0.9.0-rc1";
 const BUILD_NUMBER = process.env.C100_BUILD_NUMBER ?? "dev";
 const BUILD_TIMESTAMP = process.env.C100_BUILD_TIMESTAMP ?? new Date().toISOString();
 

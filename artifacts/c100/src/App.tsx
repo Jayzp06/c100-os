@@ -5,6 +5,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MeProvider } from "@/lib/me";
+import { AppErrorBoundary } from "@/components/error-boundary";
 import { initDesktop, listenForDesktopAuthCallback, IS_TAURI } from "@/lib/desktop-auth";
 import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
@@ -136,10 +137,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <MeProvider>
-            <DesktopAuthListener />
-            <Router />
-          </MeProvider>
+          <AppErrorBoundary>
+            <MeProvider>
+              <DesktopAuthListener />
+              <Router />
+            </MeProvider>
+          </AppErrorBoundary>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

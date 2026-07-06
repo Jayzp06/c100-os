@@ -1,0 +1,124 @@
+The packaged desktop application launches successfully on macOS.
+
+Desktop-specific functionality (Tauri runtime, OS detection, architecture detection, etc.) works correctly.
+
+However, server-backed functionality does not.
+
+Current symptoms:
+
+About page displays: "Could not reach the server to load version info."
+Software Updates displays: "Could not check for updates."
+The application itself launches normally and desktop APIs function correctly.
+
+Assume the desktop application itself is healthy.
+
+Your objective is ONLY to diagnose why the packaged application cannot communicate with the backend.
+
+Do NOT
+Do not redesign architecture.
+Do not refactor unrelated code.
+Do not change UI.
+Do not rewrite authentication.
+Do not modify working functionality.
+Do not guess.
+
+Only identify the root cause.
+
+Investigate
+
+Determine exactly what happens when the packaged desktop application requests:
+
+/api/system/info
+/api/system/releases
+updater endpoints
+
+Inspect:
+
+API base URL resolution
+Production environment variables
+Tauri configuration
+GitHub Actions environment
+Runtime environment detection
+Authentication/session configuration
+Network requests
+Production API endpoint configuration
+Updater endpoint configuration
+Release manifest configuration
+Verify
+
+Determine whether the failure is caused by:
+
+incorrect API URL
+unreachable production server
+missing GitHub Secret
+missing environment variable
+missing Tauri configuration
+authentication failure
+authorization failure
+CORS
+TLS/HTTPS
+updater configuration
+release manifest
+GitHub Release configuration
+DNS
+network timeout
+anything else
+If Secrets are required
+
+Do NOT attempt to create them.
+
+Instead report:
+
+Secret name
+Where it should exist
+Replit Secret
+GitHub Repository Secret
+GitHub Environment Secret
+Tauri environment variable
+Why it is required
+Expected value description (not the actual secret)
+
+Example:
+
+Missing GitHub Repository Secret
+
+API_BASE_URL
+
+Expected:
+
+https://api.example.com
+
+Purpose:
+
+Used by packaged desktop builds to locate the production API.
+Deliverables
+
+Produce a report containing:
+
+Root Cause
+
+Exactly why the packaged application cannot reach the backend.
+
+Evidence
+
+Include the relevant configuration, request, endpoint, or code path that proves the diagnosis.
+
+Required Fix
+
+Describe the minimum change required.
+
+If no code changes are necessary, explicitly state that only a deployment or secret configuration change is required.
+
+Secrets
+
+List every required GitHub Secret or environment variable that is missing or incorrectly configured.
+
+Confidence
+
+State your confidence level in the diagnosis.
+
+Do not implement any fixes.
+
+Only diagnose the issue and produce a report.
+
+Stop after the report. Do not modify any code.

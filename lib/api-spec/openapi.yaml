@@ -867,6 +867,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/NudgeRunResult'
 
+  /nudges/{id}/read:
+    patch:
+      tags: [Nudges]
+      operationId: markNudgeRead
+      summary: Mark a single nudge as read (current member only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Nudge marked read.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+        '403':
+          description: Not your nudge.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Nudge not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /nudges/read-all:
+    post:
+      tags: [Nudges]
+      operationId: markAllNudgesRead
+      summary: Mark all nudges for the current member as read
+      responses:
+        '200':
+          description: All nudges marked read.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+
   /reports/scholarship-eligibility:
     get:
       tags: [Reports]
@@ -1590,7 +1642,7 @@ components:
           type: array
           items:
             type: string
-            enum: [president, vice_president, secretary, treasurer, parliamentarian, historian]
+            enum: [president, vice_president, secretary, treasurer, parliamentarian, historian, committee_chair, bylaws_chair]
           description: Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged.
         systemRoleSlugs:
           type: array

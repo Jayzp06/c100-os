@@ -96,6 +96,22 @@ router.post(
       return;
     }
     const d = parsed.data;
+
+    // Validate: end time must be after start time
+    if (d.startTime && d.endTime && d.endTime <= d.startTime) {
+      res.status(400).json({ error: "End time must be after start time." });
+      return;
+    }
+    // Validate: event date+startTime must not be in the past
+    if (d.date && d.startTime) {
+      const dateStr = d.date instanceof Date ? d.date.toISOString().slice(0, 10) : String(d.date);
+      const eventStart = new Date(`${dateStr}T${d.startTime}`);
+      if (!isNaN(eventStart.getTime()) && eventStart < new Date()) {
+        res.status(400).json({ error: "Event start time cannot be in the past." });
+        return;
+      }
+    }
+
     // Scoring is auto-determined from event_type_config (C100 OS v0.2): chairs
     // pick only the event type. Manual pointValue/impactMultiplier overrides
     // are accepted only from Admin/TechnologyChair for edge-case corrections.
@@ -182,6 +198,23 @@ router.patch(
       return;
     }
     const d = body.data;
+
+    // Validate: end time must be after start time (when both are being updated)
+    if (d.startTime && d.endTime && d.endTime <= d.startTime) {
+      res.status(400).json({ error: "End time must be after start time." });
+      return;
+    }
+    // Validate: date+startTime must not be in the past (when date is being changed)
+    if (d.date) {
+      const dateStr = d.date instanceof Date ? d.date.toISOString().slice(0, 10) : String(d.date);
+      const timeStr = d.startTime ?? "00:00";
+      const eventStart = new Date(`${dateStr}T${timeStr}`);
+      if (!isNaN(eventStart.getTime()) && eventStart < new Date()) {
+        res.status(400).json({ error: "Event start time cannot be in the past." });
+        return;
+      }
+    }
+
     // Scoring overrides (pointValue/impactMultiplier) are Admin/TechnologyChair
     // only — regular chairs edit everything else about an event but cannot
     // hand-tune its point value; that's derived from event_type_config.
@@ -392,7 +425,9 @@ router.post(
         ),
       );
     if (existing.length > 0) {
-      res.status(400).json({ error: "Already checked in" });
+      res
+        .status(400)
+        .json({ error: "already_checked_in", message: "You are already checked in for this event." });
       return;
     }
     const points = Math.round(

@@ -1,0 +1,274 @@
+# C100 OS — Bug Fixes and Multi-Role Permission Repair
+
+Work only on the issues listed below. Do not redesign the application, replace the existing architecture, or refactor unrelated working features.
+
+The application is currently version 0.9.0 Release Candidate 1. It has a production web deployment, packaged Tauri desktop applications, DB-driven permission tags, Executive Board workspaces, and multi-experience switching.
+
+Before making changes, inspect the existing database schema, API routes, authorization middleware, member-management UI, portal-switching logic, export implementation, and updater configuration. Preserve working functionality.
+
+## 1. Repair the role and permission model
+
+### Current problem
+
+The member administration page still has a single-select legacy “Role” dropdown containing:
+
+- Member
+- CommitteeChair
+- BylawsChair
+- ExecutiveBoard
+- Admin
+
+A separate permission-tag menu contains checkboxes for officer positions and Platform Administrator.
+
+This is confusing and functionally incorrect because members may hold several positions simultaneously. Examples include:
+
+- President and Committee Chair
+- Treasurer and Committee Chair
+- Executive officer and Bylaws Chair
+- Committee Chair and Platform Administrator
+- Executive officer and Platform Administrator
+
+The application already has `org_role_slugs` and `system_role_slugs`, plus multi-role experience switching. These granular tags should be the authoritative access model.
+
+### Required behavior
+
+Replace the single-role mental model with a checkbox-based, additive role and permission system.
+
+Organizational positions must support selecting multiple values:
+
+- President
+- Vice President
+- Secretary
+- Treasurer
+- Parliamentarian
+- Historian
+- Committee Chair
+- Bylaws Chair
+
+System access must be separately assignable:
+
+- Platform Administrator
+
+Every active user remains a chapter member automatically. “Member” should not need to be selected as an exclusive role.
+
+A member must be allowed to hold any reasonable combination of organizational positions and system access. Do not use radio buttons or a single-select control for assignments that can overlap.
+
+Executive Board access must be derived from executive officer tags, not from selecting a separate exclusive `ExecutiveBoard` legacy role. Executive officer tags are:
+
+- President
+- Vice President
+- Secretary
+- Treasurer
+- Parliamentarian
+- Historian
+
+Platform Administrator must remain independent from organizational office. Granting admin access must not erase or replace the person’s officer or committee assignments.
+
+Committee Chair and Bylaws Chair must also be capable of overlapping with Executive Board positions and Platform Administrator access.
+
+### Legacy compatibility
+
+Inspect every place that still reads the old enum role.
+
+- Do not delete legacy data blindly.
+- Backfill or map existing legacy roles to the appropriate granular tags.
+- Do not allow the legacy role value and permission tags to contradict each other.
+- Use `org_role_slugs` and `system_role_slugs` as the source of truth for authorization and workspace access.
+- If the legacy field must remain temporarily for compatibility, clearly isolate it as a compatibility field and prevent it from overwriting the granular selections.
+- Do not remove any existing member’s access during migration.
+
+### Authorization requirements
+
+Permissions must be enforced by the server, not only by hiding frontend navigation.
+
+For a user holding multiple roles, calculate the union of all permitted capabilities. The user should see every workspace they are entitled to access and should be able to switch between those experiences.
+
+Verify access for at least these combinations:
+
+1. Member only
+2. Committee Chair only
+3. President only
+4. President plus Committee Chair
+5. Treasurer plus Platform Administrator
+6. Bylaws Chair plus Committee Chair
+7. President plus Bylaws Chair plus Platform Administrator
+8. Platform Administrator without an Executive Board position
+
+Checkbox selections must save correctly, survive page refresh, and appear correctly when the member record is reopened.
+
+Do not allow a user to gain permissions merely by manipulating frontend state or API request data.
+
+## 2. Add member navigation
+
+Member accounts currently have no side navigation and can only reach Dashboard tabs for Nudges, Events, and Leaderboard.
+
+Add a clear member navigation experience that provides access to every member-authorized area. At minimum, include:
+
+- Dashboard
+- Nudges
+- Events
+- Leaderboard
+- Profile or Account, if that page already exists
+- Experience switcher when the member holds additional roles
+
+Do not expose administrative or Executive Board routes to ordinary members.
+
+Make the navigation responsive for desktop and smaller screens.
+
+## 3. Add nudge read/unread functionality
+
+Members currently cannot mark nudges as read.
+
+Implement per-user nudge status:
+
+- Unread nudges must be visually distinguishable.
+- Members can mark an individual nudge as read.
+- Include “Mark all as read” if it fits the existing interface.
+- Reading a nudge must not mark it as read for other members.
+- Status must persist in the database and survive refresh, sign-out, and sign-in.
+- Display a useful unread count where appropriate.
+
+Add the necessary database migration and API authorization safely.
+
+## 4. Prevent events from being created in the past
+
+Reject event creation when:
+
+- The start date/time is earlier than the current time.
+- The end date/time is earlier than the current time.
+- The end date/time is not later than the start date/time.
+
+Enforce this on both the frontend and server. Do not rely on the browser alone.
+
+Use the organization/application timezone consistently and return a specific validation message explaining what must be corrected.
+
+Existing historical events must remain viewable and must not be damaged by this validation change.
+
+## 5. Correct duplicate check-in handling
+
+When a member who is already checked in submits the correct current code again, the application incorrectly says:
+
+“Check in failed. Code didn’t match. Try the latest code.”
+
+Change the logic so the server distinguishes between:
+
+- Invalid or expired code
+- Valid code but member already checked in
+- Valid code and successful check-in
+- Event not open for check-in
+- Unauthorized user or event
+
+For a duplicate check-in, display:
+
+“You are already checked in for this event.”
+
+Do not create duplicate attendance records. Preserve any database uniqueness protection and make the operation safe if two requests arrive close together.
+
+## 6. Repair CSV, Excel, and PDF exports
+
+All three Export Overview options currently return 404:
+
+- CSV
+- Excel
+- PDF
+
+Trace the frontend download URLs to their server routes. Determine whether the problem is caused by:
+
+- Incorrect route paths
+- Routes not registered in production
+- Stale API paths
+- Missing report identifiers
+- Authentication/session handling
+- Incorrect HTTP methods
+- Desktop-versus-web base URL resolution
+- Missing production dependencies
+- Response/download handling
+
+Repair all three formats.
+
+Requirements:
+
+- CSV downloads as a valid `.csv`.
+- Excel downloads as a genuine `.xlsx`, not a CSV renamed to `.xlsx`.
+- PDF downloads as a readable `.pdf`.
+- Each file contains the selected report’s real data.
+- Filenames include the report name and export date.
+- Empty reports produce a valid file or a clear “No data available” message.
+- Authorization must match permission to view the underlying report.
+- Errors must show a useful message instead of navigating to a 404 page.
+- Downloads must work in both the production web application and packaged Tauri desktop application.
+
+Preserve the existing `pdfkit` bundling/externalization fix.
+
+## 7. Repair the update checker and its messages
+
+The production server was refreshed and desktop connectivity was restored, so do not assume this is still an API-secret or server-connectivity issue.
+
+Inspect the actual updater result and distinguish between:
+
+- Already running the latest version
+- Update available
+- No published release or manifest
+- Unable to contact update server
+- Invalid updater signature
+- Invalid or incompatible manifest
+- Other updater error
+
+If the installed version and published version are both `0.9.0`, display:
+
+“You’re running the latest version.”
+
+Do not show “Could not check for updates” when the updater successfully checked and simply found no newer version.
+
+Confirm that the updater points to a published, non-draft tagged release and a reachable `latest.json`. Keep installer versions numeric for Windows MSI compatibility. Continue displaying “Release Candidate 1” separately through `releaseChannel`.
+
+Do not expose secrets or signing keys in logs, responses, or frontend code.
+
+## 8. Add appropriate text-field validation
+
+Audit user-editable text inputs and add field-specific validation on both the frontend and server.
+
+Examples:
+
+- Trim accidental leading and trailing whitespace.
+- Enforce reasonable minimum and maximum lengths.
+- Validate email, URL, phone, date, and identifier formats where applicable.
+- Reject control characters and clearly unsafe content.
+- Prevent blank values where a field is required.
+- Preserve normal names containing spaces, apostrophes, hyphens, and accented characters.
+- Do not apply one overly restrictive rule to every field.
+- Return clear field-level error messages.
+- Do not silently truncate user input.
+- Preserve server-side parameterization and output escaping.
+
+## Verification
+
+After implementation:
+
+1. Run database migrations safely.
+2. Run type checking, linting, and automated tests.
+3. Add regression tests for each repaired issue.
+4. Test production web behavior.
+5. Test packaged desktop behavior where applicable.
+6. Test ordinary member, committee, Executive Board, and Platform Administrator accounts.
+7. Confirm no existing role assignments or attendance records were lost.
+8. Confirm users with overlapping roles can access the union of their authorized workspaces.
+9. Confirm users cannot access workspaces outside their assigned permissions.
+10. Confirm all three export files open successfully.
+11. Confirm duplicate check-in produces the correct message.
+12. Confirm the updater distinguishes “latest version” from an actual failure.
+
+## Required final report
+
+When finished, provide:
+
+- Root cause for each issue
+- Files and database migrations changed
+- Explanation of the corrected role model
+- Legacy-role migration or compatibility behavior
+- Tests performed and results
+- Web and desktop verification results
+- Any remaining manual deployment, GitHub Release, or signing steps
+- Any unresolved issue, with the exact error
+
+Do not claim an issue is fixed unless it was tested. Do not add unrelated features.

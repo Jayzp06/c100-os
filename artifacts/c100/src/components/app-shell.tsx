@@ -596,11 +596,8 @@ export function MemberPortalShell({
   const MEMBER_TABS = [
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/events", label: "Events", icon: CalendarDays },
-    {
-      href: "/my-committee",
-      label: "Committee",
-      icon: Layers3,
-    },
+    { href: "/nudges", label: "Nudges", icon: Bell },
+    { href: "/leaderboard", label: "Leaders", icon: Trophy },
     { href: "/profile", label: "Profile", icon: UserCircle2 },
   ];
 
@@ -633,7 +630,7 @@ export function MemberPortalShell({
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-[hsl(var(--card))]/95 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--card))]/80 sm:hidden">
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-5 h-16">
           {MEMBER_TABS.map((tab) => {
             const active =
               tab.href === "/"

@@ -102,6 +102,17 @@ function NewEventForm() {
       toast({ title: "Title, description, and location are required.", variant: "destructive" });
       return;
     }
+    if (form.startTime && form.endTime && form.endTime <= form.startTime) {
+      toast({ title: "End time must be after start time.", variant: "destructive" });
+      return;
+    }
+    if (form.date && form.startTime) {
+      const eventStart = new Date(`${form.date}T${form.startTime}`);
+      if (!isNaN(eventStart.getTime()) && eventStart < new Date()) {
+        toast({ title: "Event start time cannot be in the past.", variant: "destructive" });
+        return;
+      }
+    }
     const payload = {
       title: form.title,
       description: form.description,

@@ -54,13 +54,6 @@ import { ArrowLeft, ShieldAlert, RotateCcw, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { invalidateAggregates } from "@/lib/query-invalidation";
 
-const ROLES = [
-  "Member",
-  "CommitteeChair",
-  "BylawsChair",
-  "ExecutiveBoard",
-  "Admin",
-];
 const STATUSES = ["Active", "Probationary", "Suspended", "Inactive"];
 
 const ORG_ROLE_TAGS: { slug: string; label: string }[] = [
@@ -70,6 +63,8 @@ const ORG_ROLE_TAGS: { slug: string; label: string }[] = [
   { slug: "treasurer", label: "Treasurer" },
   { slug: "parliamentarian", label: "Parliamentarian" },
   { slug: "historian", label: "Historian" },
+  { slug: "committee_chair", label: "Committee Chair" },
+  { slug: "bylaws_chair", label: "Bylaws Chair" },
 ];
 const SYSTEM_ROLE_TAGS: { slug: string; label: string }[] = [
   { slug: "platform_admin", label: "Platform Administrator" },
@@ -157,7 +152,6 @@ function MemberDetail({ id }: { id: number }) {
   });
 
   const [form, setForm] = useState({
-    role: "Member",
     committeeId: "none",
     membershipStatus: "Active",
     duesPaid: false,
@@ -169,7 +163,6 @@ function MemberDetail({ id }: { id: number }) {
   useEffect(() => {
     if (member.data) {
       setForm({
-        role: member.data.role,
         committeeId:
           member.data.committeeId != null
             ? String(member.data.committeeId)
@@ -214,12 +207,6 @@ function MemberDetail({ id }: { id: number }) {
     update.mutate({
       id,
       data: {
-        role: form.role as
-          | "Member"
-          | "CommitteeChair"
-          | "BylawsChair"
-          | "ExecutiveBoard"
-          | "Admin",
         committeeId: form.committeeId === "none" ? null : Number(form.committeeId),
         membershipStatus: form.membershipStatus as
           | "Active"
@@ -235,6 +222,8 @@ function MemberDetail({ id }: { id: number }) {
           | "treasurer"
           | "parliamentarian"
           | "historian"
+          | "committee_chair"
+          | "bylaws_chair"
         )[],
         systemRoleSlugs: systemRoleSlugs as "platform_admin"[],
       },
@@ -364,30 +353,11 @@ function MemberDetail({ id }: { id: number }) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Role</Label>
-                <Select
-                  value={form.role}
-                  onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}
-                >
-                  <SelectTrigger data-testid="select-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Permission tags</Label>
                 <p className="text-xs text-muted-foreground">
-                  Officer positions and platform access, layered on top of the
-                  primary role above. Executive board status is derived
-                  automatically from officer-position tags.
+                  Officer positions and platform access. Executive board access
+                  is derived automatically from exec-officer tags.
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {[...orgRoleSlugs, ...systemRoleSlugs].map((slug) => (

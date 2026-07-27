@@ -94,6 +94,8 @@ const ORG_ROLES = [
   { slug: "health_wellness_chair",        name: "Health & Wellness Chair",       tier: "committee_leadership", sortOrder: 34 },
   { slug: "community_service_chair",      name: "Community Service Chair",       tier: "committee_leadership", sortOrder: 35 },
   { slug: "special_events_chair",         name: "Special Events Chair",          tier: "committee_leadership", sortOrder: 36 },
+  { slug: "committee_chair",              name: "Committee Chair",               tier: "committee_leadership", sortOrder: 37 },
+  { slug: "bylaws_chair",                 name: "Bylaws Chair",                  tier: "committee_leadership", sortOrder: 38 },
   // General
   { slug: "committee_member",       name: "Committee Member",                    tier: "committee_member",     sortOrder: 40 },
   { slug: "general_member",         name: "General Member",                      tier: "general_member",       sortOrder: 50 },
@@ -249,6 +251,9 @@ const ORG_ROLE_PERMS: Record<string, string[]> = {
   health_wellness_chair:        ["manage_committees", "manage_events", "manage_attendance"],
   community_service_chair:      ["manage_committees", "manage_events", "manage_attendance"],
   special_events_chair:         ["manage_committees", "manage_events", "manage_attendance"],
+  // Committee Leadership (generic)
+  committee_chair: ["manage_committees", "manage_events", "manage_attendance"],
+  bylaws_chair:    ["manage_documents", "view_reports"],
   // General
   committee_member: [],
   general_member:   [],

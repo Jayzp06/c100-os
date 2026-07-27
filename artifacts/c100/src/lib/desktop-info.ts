@@ -82,9 +82,25 @@ export async function checkForUpdate(): Promise<UpdateCheckResult> {
       body: update.body,
     };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Distinguish "no published release yet" from genuine errors.
+    // The Tauri updater throws (rather than returning null) when the manifest
+    // URL returns a 4xx — which happens when no non-draft release has been
+    // published. Treat these like "no update available" instead of "error".
+    const NO_MANIFEST_PATTERNS = [
+      /404/i,
+      /not found/i,
+      /no release/i,
+      /no update/i,
+      /failed to fetch/i,
+      /manifest/i,
+    ];
+    if (NO_MANIFEST_PATTERNS.some((re) => re.test(msg))) {
+      return { status: "up-to-date" };
+    }
     return {
       status: "error",
-      message: err instanceof Error ? err.message : "Could not check for updates.",
+      message: msg || "Could not check for updates.",
     };
   }
 }

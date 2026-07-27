@@ -50,6 +50,8 @@ import type {
   ListNudgesParams,
   LogoutSuccess,
   ManualAttendanceInput,
+  MarkAllNudgesRead200,
+  MarkNudgeRead200,
   Member,
   MemberDashboard,
   MemberReport,
@@ -3099,6 +3101,148 @@ export const useRunNudgeEvaluation = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRunNudgeEvaluationMutationOptions(options));
+    }
+
+export const getMarkNudgeReadUrl = (id: number,) => {
+
+
+
+
+  return `/api/nudges/${id}/read`
+}
+
+/**
+ * @summary Mark a single nudge as read (current member only)
+ */
+export const markNudgeRead = async (id: number, options?: RequestInit): Promise<MarkNudgeRead200> => {
+
+  return customFetch<MarkNudgeRead200>(getMarkNudgeReadUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkNudgeReadMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNudgeRead>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markNudgeRead>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['markNudgeRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markNudgeRead>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  markNudgeRead(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkNudgeReadMutationResult = NonNullable<Awaited<ReturnType<typeof markNudgeRead>>>
+
+    export type MarkNudgeReadMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Mark a single nudge as read (current member only)
+ */
+export const useMarkNudgeRead = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markNudgeRead>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markNudgeRead>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getMarkNudgeReadMutationOptions(options));
+    }
+
+export const getMarkAllNudgesReadUrl = () => {
+
+
+
+
+  return `/api/nudges/read-all`
+}
+
+/**
+ * @summary Mark all nudges for the current member as read
+ */
+export const markAllNudgesRead = async ( options?: RequestInit): Promise<MarkAllNudgesRead200> => {
+
+  return customFetch<MarkAllNudgesRead200>(getMarkAllNudgesReadUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkAllNudgesReadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markAllNudgesRead>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markAllNudgesRead>>, TError,void, TContext> => {
+
+const mutationKey = ['markAllNudgesRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markAllNudgesRead>>, void> = () => {
+
+
+          return  markAllNudgesRead(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkAllNudgesReadMutationResult = NonNullable<Awaited<ReturnType<typeof markAllNudgesRead>>>
+
+    export type MarkAllNudgesReadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark all nudges for the current member as read
+ */
+export const useMarkAllNudgesRead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markAllNudgesRead>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markAllNudgesRead>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getMarkAllNudgesReadMutationOptions(options));
     }
 
 export const getGetScholarshipEligibilityUrl = (params?: GetScholarshipEligibilityParams,) => {

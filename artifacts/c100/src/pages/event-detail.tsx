@@ -214,9 +214,12 @@ function CheckInPanel({
         invalidateAggregates(qc);
       },
       onError: (err) => {
+        const errData = err as { error?: string; code?: string; message?: string };
+        const code = errData?.code ?? errData?.error;
         const msg =
-          (err as { data?: { error?: { message?: string } } })?.data?.error
-            ?.message ?? "Code didn't match. Try the latest code.";
+          code === "already_checked_in"
+            ? "You are already checked in for this event."
+            : errData?.message ?? errData?.error ?? "Code didn't match. Try the latest code.";
         toast({ title: "Check-in failed", description: msg, variant: "destructive" });
       },
     },

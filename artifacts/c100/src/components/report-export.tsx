@@ -6,12 +6,50 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { IS_TAURI, DESKTOP_API_URL } from "@/lib/desktop-auth";
+
+const DESKTOP_TOKEN_KEY = "c100-desktop-token";
+
+/**
+ * Downloads a report file in the Tauri desktop app by fetching it with the
+ * stored Bearer token and triggering a blob download — plain `<a href>` links
+ * don't carry auth headers or resolve against the production API in Tauri.
+ */
+async function downloadInTauri(url: string, format: string) {
+  const token = localStorage.getItem(DESKTOP_TOKEN_KEY);
+  const fullUrl = `${DESKTOP_API_URL}${url}`;
+  try {
+    const resp = await fetch(fullUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!resp.ok) {
+      console.error(`[C100 Export] Download failed: ${resp.status} ${resp.statusText}`);
+      return;
+    }
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    const disp = resp.headers.get("Content-Disposition") ?? "";
+    const match = disp.match(/filename[^;=\n]*=(["']?)([^"'\n;]+)\1/);
+    a.download = match?.[2] ?? `report.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch (err) {
+    console.error("[C100 Export] Download error:", err);
+  }
+}
 
 /**
  * Reusable export menu for any report endpoint that supports
  * `?format=csv|xlsx|pdf` (see artifacts/api-server/src/lib/export.ts).
- * Uses plain anchor tags so the browser handles the download natively
- * from the server's `Content-Disposition: attachment` header.
+ *
+ * On the web the browser handles downloads natively via the server's
+ * `Content-Disposition: attachment` header. In the Tauri desktop app, plain
+ * anchor tags won't carry the Bearer token and resolve against the wrong
+ * origin, so we fetch manually and create a blob download URL.
  */
 export function ReportExportMenu({
   endpoint,
@@ -25,6 +63,18 @@ export function ReportExportMenu({
     return `${endpoint}${sep}format=${format}`;
   };
 
+  const handleDownload = (format: "csv" | "xlsx" | "pdf") => {
+    if (IS_TAURI) {
+      downloadInTauri(withFormat(format), format);
+    } else {
+      // Web: anchor navigation — session cookie is sent automatically and the
+      // server streams the file with Content-Disposition: attachment.
+      const a = document.createElement("a");
+      a.href = withFormat(format);
+      a.click();
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -34,23 +84,26 @@ export function ReportExportMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <a href={withFormat("csv")} data-testid="link-export-csv">
-            <Table2 className="mr-2 h-4 w-4" />
-            CSV
-          </a>
+        <DropdownMenuItem
+          onClick={() => handleDownload("csv")}
+          data-testid="link-export-csv"
+        >
+          <Table2 className="mr-2 h-4 w-4" />
+          CSV
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={withFormat("xlsx")} data-testid="link-export-xlsx">
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Excel (.xlsx)
-          </a>
+        <DropdownMenuItem
+          onClick={() => handleDownload("xlsx")}
+          data-testid="link-export-xlsx"
+        >
+          <FileSpreadsheet className="mr-2 h-4 w-4" />
+          Excel (.xlsx)
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href={withFormat("pdf")} data-testid="link-export-pdf">
-            <FileText className="mr-2 h-4 w-4" />
-            PDF
-          </a>
+        <DropdownMenuItem
+          onClick={() => handleDownload("pdf")}
+          data-testid="link-export-pdf"
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          PDF
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

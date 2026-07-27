@@ -244,6 +244,8 @@ export const ASSIGNABLE_ORG_ROLE_SLUGS = [
   "treasurer",
   "parliamentarian",
   "historian",
+  "committee_chair",
+  "bylaws_chair",
 ] as const;
 
 export const ASSIGNABLE_SYSTEM_ROLE_SLUGS = ["platform_admin"] as const;
@@ -251,6 +253,37 @@ export const ASSIGNABLE_SYSTEM_ROLE_SLUGS = ["platform_admin"] as const;
 export type AssignableOrgRoleSlug = (typeof ASSIGNABLE_ORG_ROLE_SLUGS)[number];
 export type AssignableSystemRoleSlug =
   (typeof ASSIGNABLE_SYSTEM_ROLE_SLUGS)[number];
+
+/**
+ * Derive the legacy `members.role` value from the current set of assignable
+ * org- and system-role tags. Used by the member PATCH route to keep the
+ * legacy column consistent whenever the admin saves permission tags.
+ *
+ * Priority (highest first):
+ *   1. platform_admin system role → "Admin"
+ *   2. Any executive-board slug   → "ExecutiveBoard"
+ *   3. bylaws_chair               → "BylawsChair"
+ *   4. committee_chair            → "CommitteeChair"
+ *   5. else                       → "Member"
+ */
+export function deriveLegacyRole(
+  orgRoleSlugs: readonly string[],
+  systemRoleSlugs: readonly string[],
+): string {
+  if (systemRoleSlugs.includes("platform_admin")) return "Admin";
+  const EXEC_SLUGS = new Set([
+    "president",
+    "vice_president",
+    "secretary",
+    "treasurer",
+    "parliamentarian",
+    "historian",
+  ]);
+  if (orgRoleSlugs.some((s) => EXEC_SLUGS.has(s))) return "ExecutiveBoard";
+  if (orgRoleSlugs.includes("bylaws_chair")) return "BylawsChair";
+  if (orgRoleSlugs.includes("committee_chair")) return "CommitteeChair";
+  return "Member";
+}
 
 /**
  * Replaces a member's assignments among the whitelisted org-role tags only.

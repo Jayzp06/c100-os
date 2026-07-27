@@ -620,7 +620,7 @@ export const UpdateMemberBody = zod.object({
   "duesPaid": zod.boolean().optional(),
   "accountActive": zod.boolean().optional(),
   "fullName": zod.string().optional(),
-  "orgRoleSlugs": zod.array(zod.enum(['president', 'vice_president', 'secretary', 'treasurer', 'parliamentarian', 'historian'])).optional().describe('Replaces the member\'s additional officer-position permission tags. Omit this field to leave them unchanged.'),
+  "orgRoleSlugs": zod.array(zod.enum(['president', 'vice_president', 'secretary', 'treasurer', 'parliamentarian', 'historian', 'committee_chair', 'bylaws_chair'])).optional().describe('Replaces the member\'s additional officer-position permission tags. Omit this field to leave them unchanged.'),
   "systemRoleSlugs": zod.array(zod.enum(['platform_admin'])).optional().describe('Replaces the member\'s additional platform-level permission tags. Omit this field to leave them unchanged.')
 })
 
@@ -1377,6 +1377,26 @@ export const RunNudgeEvaluationResponse = zod.object({
   "evaluated": zod.number(),
   "nudgesSent": zod.number(),
   "ranAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Mark a single nudge as read (current member only)
+ */
+export const MarkNudgeReadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkNudgeReadResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Mark all nudges for the current member as read
+ */
+export const MarkAllNudgesReadResponse = zod.object({
+  "ok": zod.boolean()
 })
 
 

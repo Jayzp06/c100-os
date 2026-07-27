@@ -48,6 +48,8 @@ export * from './listNudgesParams';
 export * from './logoutSuccess';
 export * from './manualAttendanceInput';
 export * from './manualAttendanceInputMethod';
+export * from './markAllNudgesRead200';
+export * from './markNudgeRead200';
 export * from './member';
 export * from './memberAvailableExperiencesItem';
 export * from './memberDashboard';

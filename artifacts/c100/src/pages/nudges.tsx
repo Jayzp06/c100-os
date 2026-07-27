@@ -4,6 +4,8 @@ import {
   useListMyNudges,
   useListNudges,
   useRunNudgeEvaluation,
+  useMarkNudgeRead,
+  useMarkAllNudgesRead,
   getListMyNudgesQueryKey,
   getListNudgesQueryKey,
   getGetMyDashboardQueryKey,
@@ -32,8 +34,9 @@ import {
 import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
 import { Pill } from "@/components/badges";
-import { Bell, Mail, RefreshCw } from "lucide-react";
+import { Bell, Check, CheckCheck, Mail, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const NUDGE_TONES: Record<string, "success" | "primary" | "gold" | "warning" | "danger"> = {
   ActiveEncouragement: "success",
@@ -88,7 +91,29 @@ function Nudges() {
 }
 
 function MyNudges() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
   const data = useListMyNudges();
+
+  const markRead = useMarkNudgeRead({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListMyNudgesQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetMyDashboardQueryKey() });
+      },
+    },
+  });
+
+  const markAllRead = useMarkAllNudgesRead({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "All nudges marked as read." });
+        qc.invalidateQueries({ queryKey: getListMyNudgesQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetMyDashboardQueryKey() });
+      },
+    },
+  });
+
   if (data.isLoading) return <CardSkeleton rows={4} />;
   if (!data.data || data.data.length === 0) {
     return (
@@ -98,10 +123,35 @@ function MyNudges() {
       />
     );
   }
+
+  const unreadCount = data.data.filter((n) => !n.read).length;
+
   return (
     <div className="space-y-3">
+      {unreadCount > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{unreadCount}</span>{" "}
+            unread {unreadCount === 1 ? "nudge" : "nudges"}
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+            data-testid="button-mark-all-read"
+          >
+            <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+            {markAllRead.isPending ? "Marking…" : "Mark all read"}
+          </Button>
+        </div>
+      )}
       {data.data.map((n) => (
-        <Card key={n.id} data-testid={`nudge-${n.id}`}>
+        <Card
+          key={n.id}
+          data-testid={`nudge-${n.id}`}
+          className={cn(!n.read && "border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.04)]")}
+        >
           <CardContent className="space-y-2 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -112,7 +162,24 @@ function MyNudges() {
                   <Mail className="h-3 w-3" /> {n.deliveryChannel}
                 </span>
               </div>
-              {!n.read ? <Pill tone="primary">Unread</Pill> : null}
+              <div className="flex items-center gap-1.5">
+                {!n.read && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => markRead.mutate({ id: n.id })}
+                    disabled={markRead.isPending}
+                    data-testid={`button-mark-read-${n.id}`}
+                    aria-label="Mark as read"
+                  >
+                    <Check className="h-3 w-3" />
+                  </Button>
+                )}
+                {!n.read ? (
+                  <span className="h-2 w-2 rounded-full bg-[hsl(var(--primary))]" aria-label="Unread" />
+                ) : null}
+              </div>
             </div>
             <p className="text-sm">{n.messageContent}</p>
             <p className="text-xs text-muted-foreground">

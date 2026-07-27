@@ -16,4 +16,6 @@ export const UpdateMemberInputOrgRoleSlugsItem = {
   treasurer: 'treasurer',
   parliamentarian: 'parliamentarian',
   historian: 'historian',
+  committee_chair: 'committee_chair',
+  bylaws_chair: 'bylaws_chair',
 } as const;

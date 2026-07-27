@@ -18,7 +18,14 @@ import {
   requireRole,
   writeAuditLog,
 } from "../lib/c100";
-import { setMemberOrgRoleTags, setMemberSystemRoleTags } from "../lib/rbac";
+import {
+  setMemberOrgRoleTags,
+  setMemberSystemRoleTags,
+  resolveRbacContext,
+  ASSIGNABLE_ORG_ROLE_SLUGS,
+  ASSIGNABLE_SYSTEM_ROLE_SLUGS,
+  deriveLegacyRole,
+} from "../lib/rbac";
 import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
@@ -256,6 +263,26 @@ router.patch(
         body.data.systemRoleSlugs,
         req.member.id,
       );
+    }
+
+    // Auto-sync the legacy `role` column from the final assignable tag set.
+    // This keeps requireRole() gates consistent when the admin saves tags
+    // without explicitly setting the role field.
+    if (body.data.orgRoleSlugs !== undefined || body.data.systemRoleSlugs !== undefined) {
+      const ctx = await resolveRbacContext(params.data.id);
+      const assignableOrgSlugs = ctx.orgRoles.filter((s) =>
+        (ASSIGNABLE_ORG_ROLE_SLUGS as readonly string[]).includes(s),
+      );
+      const assignableSysSlugs = ctx.systemRoles.filter((s) =>
+        (ASSIGNABLE_SYSTEM_ROLE_SLUGS as readonly string[]).includes(s),
+      );
+      const derivedRole = deriveLegacyRole(assignableOrgSlugs, assignableSysSlugs);
+      const [derivedResult] = await db
+        .update(membersTable)
+        .set({ role: derivedRole })
+        .where(eq(membersTable.id, params.data.id))
+        .returning();
+      if (derivedResult) updated = derivedResult;
     }
 
     await writeAuditLog({

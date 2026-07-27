@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { ListNudgesQueryParams } from "@workspace/api-zod";
 import { db, membersTable, nudgeLogsTable } from "@workspace/db";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import {
   EXEC_OR_ADMIN,
   computeNudgeTier,
@@ -9,6 +9,7 @@ import {
   getActiveSemester,
   getParticipationThreshold,
   nudgeMessageFor,
+  requireAuth,
   requireRole,
 } from "../lib/c100";
 
@@ -90,6 +91,51 @@ router.post(
       nudgesSent,
       ranAt: new Date().toISOString(),
     });
+  }),
+);
+
+/**
+ * Mark a single nudge as read. Only the nudge's owner may mark it.
+ */
+router.patch(
+  "/nudges/:id/read",
+  requireAuth(async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [log] = await db
+      .select()
+      .from(nudgeLogsTable)
+      .where(eq(nudgeLogsTable.id, id));
+    if (!log) {
+      res.status(404).json({ error: "Nudge not found" });
+      return;
+    }
+    if (log.userId !== req.member.id) {
+      res.status(403).json({ error: "Not your nudge" });
+      return;
+    }
+    await db
+      .update(nudgeLogsTable)
+      .set({ read: true })
+      .where(and(eq(nudgeLogsTable.id, id), eq(nudgeLogsTable.userId, req.member.id)));
+    res.json({ ok: true });
+  }),
+);
+
+/**
+ * Mark all of the current member's nudges as read.
+ */
+router.post(
+  "/nudges/read-all",
+  requireAuth(async (req, res) => {
+    await db
+      .update(nudgeLogsTable)
+      .set({ read: true })
+      .where(eq(nudgeLogsTable.userId, req.member.id));
+    res.json({ ok: true });
   }),
 );
 

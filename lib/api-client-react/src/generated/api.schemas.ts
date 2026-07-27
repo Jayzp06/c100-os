@@ -302,6 +302,8 @@ export const UpdateMemberInputOrgRoleSlugsItem = {
   treasurer: 'treasurer',
   parliamentarian: 'parliamentarian',
   historian: 'historian',
+  committee_chair: 'committee_chair',
+  bylaws_chair: 'bylaws_chair',
 } as const;
 
 export type UpdateMemberInputSystemRoleSlugsItem = typeof UpdateMemberInputSystemRoleSlugsItem[keyof typeof UpdateMemberInputSystemRoleSlugsItem];
@@ -831,6 +833,14 @@ export const ListEventsStatus = {
 export type ListNudgesParams = {
 userId?: number;
 tier?: string;
+};
+
+export type MarkNudgeRead200 = {
+  ok: boolean;
+};
+
+export type MarkAllNudgesRead200 = {
+  ok: boolean;
 };
 
 export type GetScholarshipEligibilityParams = {

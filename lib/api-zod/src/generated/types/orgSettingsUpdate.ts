@@ -7,12 +7,29 @@
  */
 
 export interface OrgSettingsUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
   universityName?: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
   chapterName?: string;
+  /**
+     * @minLength 1
+     * @maxLength 20
+     */
   chapterIdentifier?: string;
-  /** @nullable */
+  /**
+     * @maxLength 200
+     * @nullable
+     */
   motto?: string | null;
+  /** @pattern ^#[0-9a-fA-F]{6}$ */
   primaryColor?: string;
+  /** @pattern ^#[0-9a-fA-F]{6}$ */
   secondaryColor?: string;
   /** @nullable */
   logoUrl?: string | null;

@@ -7,7 +7,8 @@
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node /home/runner/workspace/node_modules/.pnpm/tsx@4.22.4/node_modules/tsx/dist/cli.mjs --test src/__tests__/validation.test.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

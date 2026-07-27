@@ -1,0 +1,122 @@
+Perform a focused completion audit of the previous C100 OS work order. Do not add unrelated features.
+
+## 1. Correct the update-checker error handling
+
+The current implementation incorrectly classifies broad errors such as `failed to fetch` as `{ status: "up-to-date" }`.
+
+That is not acceptable because a network failure does not prove that the installed version is current.
+
+The updater must distinguish:
+
+- Successful check with no newer version → `up-to-date`
+- Successful check with newer version → `update-available`
+- No published release or missing manifest → a specific release-configuration state
+- Network, DNS, TLS, timeout, or GitHub availability failure → connection error
+- Invalid signature or invalid manifest → verification/configuration error
+- Installation or relaunch failure → installation error
+
+Only return `up-to-date` when the updater successfully contacts the configured endpoint, parses the manifest, compares versions, and determines that no newer version exists.
+
+Do not classify `failed to fetch`, generic 404 responses, malformed manifests, or connection errors as “up to date.”
+
+Show clear user-facing messages for each condition without exposing secrets.
+
+## 2. Complete the missing text-field validation work
+
+The original eighth requirement was an audit of user-editable text fields. Seed changes do not replace this requirement.
+
+Audit the important forms and add field-specific frontend and server validation.
+
+At minimum, inspect:
+
+- Member profile and member administration
+- Event creation and editing
+- Committee creation and editing
+- Nudges
+- Organization settings
+- Authentication-related forms
+- Report filters or names
+- Any Executive Board workspace forms
+
+Requirements:
+
+- Trim accidental outer whitespace.
+- Enforce appropriate minimum and maximum lengths.
+- Reject blank required fields.
+- Validate email, URL, phone, date, and identifier formats where applicable.
+- Reject control characters and clearly unsafe input.
+- Preserve legitimate names containing apostrophes, hyphens, spaces, and accented characters.
+- Do not silently truncate input.
+- Return specific field-level errors.
+- Enforce rules on the server as well as the frontend.
+- Do not use one restrictive regular expression for every field.
+
+Add regression tests for the most important validation rules.
+
+## 3. Verify every export format
+
+Individually test:
+
+- CSV
+- Excel
+- PDF
+
+Confirm:
+
+- CSV produces a valid `.csv`.
+- Excel produces a real `.xlsx` workbook, not CSV content renamed to `.xlsx`.
+- PDF produces a readable `.pdf`.
+- Each contains actual report data.
+- Correct content types and filenames are returned.
+- Empty reports are handled clearly.
+- Unauthorized users cannot export restricted reports.
+- Downloads work in the production web application.
+- Downloads work in the packaged Tauri application using authenticated requests.
+
+If Excel does not currently have a real server implementation, add one using the project’s existing dependency approach.
+
+## 4. Verify role persistence and authorization
+
+Test and report the results for:
+
+- President plus Committee Chair
+- Treasurer plus Platform Administrator
+- Bylaws Chair plus Committee Chair
+- President plus Bylaws Chair plus Platform Administrator
+- Platform Administrator without an Executive officer position
+
+For each combination, confirm:
+
+- All checked tags persist after refresh.
+- Reopening member details shows the correct selections.
+- The experience switcher shows the correct workspaces.
+- Server-side authorization grants the union of assigned permissions.
+- Removing one tag removes only that tag’s access.
+- Saving tags does not erase other assignments.
+- The derived legacy role never overrides the granular tags.
+
+## 5. Verify nudge persistence
+
+Confirm that read state is stored per user and does not mark the same nudge as read for other members.
+
+Test:
+
+- Individual mark-as-read
+- Mark all as read
+- Refresh persistence
+- Sign-out/sign-in persistence
+- Two different member accounts viewing the same nudge
+
+## Final response
+
+Return:
+
+- Any additional files changed
+- Tests added
+- Typecheck and test results
+- Exact export verification results for all three formats
+- Exact multi-role combinations tested
+- Exact updater states tested
+- Any manual release or packaged-desktop test still required
+
+Do not say the work order is complete until these checks pass.

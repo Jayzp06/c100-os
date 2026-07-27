@@ -8,14 +8,28 @@
 import type { CreateEventInputEventType } from './createEventInputEventType';
 
 export interface CreateEventInput {
+  /**
+     * @minLength 3
+     * @maxLength 150
+     */
   title: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
   description: string;
   eventType: CreateEventInputEventType;
   /** @nullable */
   committeeId?: number | null;
   date: Date;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   startTime: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   endTime: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
   location: string;
   /** @nullable */
   pointValue?: number | null;

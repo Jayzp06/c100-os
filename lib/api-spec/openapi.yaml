@@ -1560,14 +1560,22 @@ components:
       properties:
         fullName:
           type: string
+          minLength: 2
+          maxLength: 100
         phone:
           type: string
+          maxLength: 20
         studentId:
           type: string
+          maxLength: 30
         gpa:
           type: number
+          minimum: 0
+          maximum: 4.5
         graduationYear:
           type: integer
+          minimum: 2000
+          maximum: 2100
 
     CreateMemberInput:
       type: object
@@ -1578,8 +1586,10 @@ components:
         fullName:
           type: string
           minLength: 2
+          maxLength: 100
         email:
           type: string
+          description: Must be a valid email address.
         role:
           type: string
           enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin, TechnologyChair]
@@ -1638,6 +1648,8 @@ components:
           type: boolean
         fullName:
           type: string
+          minLength: 2
+          maxLength: 100
         orgRoleSlugs:
           type: array
           items:
@@ -1905,8 +1917,12 @@ components:
       properties:
         title:
           type: string
+          minLength: 3
+          maxLength: 150
         description:
           type: string
+          minLength: 10
+          maxLength: 2000
         eventType:
           type: string
           enum:
@@ -1925,10 +1941,14 @@ components:
           format: date
         startTime:
           type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
         endTime:
           type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
         location:
           type: string
+          minLength: 2
+          maxLength: 200
         pointValue:
           type: [integer, 'null']
         impactMultiplier:
@@ -1941,8 +1961,12 @@ components:
       properties:
         title:
           type: string
+          minLength: 3
+          maxLength: 150
         description:
           type: string
+          minLength: 10
+          maxLength: 2000
         eventType:
           type: string
           enum:
@@ -1961,10 +1985,14 @@ components:
           format: date
         startTime:
           type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
         endTime:
           type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
         location:
           type: string
+          minLength: 2
+          maxLength: 200
         pointValue:
           type: integer
         impactMultiplier:
@@ -2344,16 +2372,25 @@ components:
       properties:
         universityName:
           type: string
+          minLength: 1
+          maxLength: 120
         chapterName:
           type: string
+          minLength: 1
+          maxLength: 100
         chapterIdentifier:
           type: string
+          minLength: 1
+          maxLength: 20
         motto:
           type: [string, 'null']
+          maxLength: 200
         primaryColor:
           type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
         secondaryColor:
           type: string
+          pattern: '^#[0-9a-fA-F]{6}$'
         logoUrl:
           type: [string, 'null']
         participationGoalPct:

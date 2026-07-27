@@ -88,6 +88,7 @@ function NewEventForm() {
     location: "",
     checkInWindowMinutes: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   function update<K extends keyof typeof form>(
     key: K,
@@ -98,21 +99,25 @@ function NewEventForm() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.title || !form.description || !form.location) {
-      toast({ title: "Title, description, and location are required.", variant: "destructive" });
-      return;
-    }
-    if (form.startTime && form.endTime && form.endTime <= form.startTime) {
-      toast({ title: "End time must be after start time.", variant: "destructive" });
-      return;
-    }
-    if (form.date && form.startTime) {
+    const errs: Record<string, string> = {};
+    if (!form.title.trim()) errs.title = "Title is required.";
+    else if (form.title.trim().length < 3) errs.title = "Title must be at least 3 characters.";
+    else if (form.title.trim().length > 150) errs.title = "Title must be 150 characters or fewer.";
+    if (!form.description.trim()) errs.description = "Description is required.";
+    else if (form.description.trim().length < 10) errs.description = "Description must be at least 10 characters.";
+    else if (form.description.trim().length > 2000) errs.description = "Description must be 2000 characters or fewer.";
+    if (!form.location.trim()) errs.location = "Location is required.";
+    else if (form.location.trim().length < 2) errs.location = "Location must be at least 2 characters.";
+    else if (form.location.trim().length > 200) errs.location = "Location must be 200 characters or fewer.";
+    if (form.startTime && form.endTime && form.endTime <= form.startTime)
+      errs.endTime = "End time must be after start time.";
+    if (form.date && form.startTime && !errs.endTime) {
       const eventStart = new Date(`${form.date}T${form.startTime}`);
-      if (!isNaN(eventStart.getTime()) && eventStart < new Date()) {
-        toast({ title: "Event start time cannot be in the past.", variant: "destructive" });
-        return;
-      }
+      if (!isNaN(eventStart.getTime()) && eventStart < new Date())
+        errs.date = "Event start time cannot be in the past.";
     }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     const payload = {
       title: form.title,
       description: form.description,

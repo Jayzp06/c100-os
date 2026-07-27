@@ -63,6 +63,7 @@ function ProfileInner() {
     gpa: "",
     graduationYear: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (profile.data) {
@@ -98,6 +99,29 @@ function ProfileInner() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const errors: Record<string, string> = {};
+    const trimName = form.fullName.trim();
+    if (trimName && trimName.length < 2)
+      errors.fullName = "Full name must be at least 2 characters.";
+    if (trimName && trimName.length > 100)
+      errors.fullName = "Full name must be 100 characters or fewer.";
+    if (form.phone.trim().length > 20)
+      errors.phone = "Phone number must be 20 characters or fewer.";
+    if (form.studentId.trim().length > 30)
+      errors.studentId = "Student ID must be 30 characters or fewer.";
+    if (form.gpa.trim()) {
+      const gpaNum = Number(form.gpa);
+      if (isNaN(gpaNum) || gpaNum < 0 || gpaNum > 4.5)
+        errors.gpa = "GPA must be between 0 and 4.5.";
+    }
+    if (form.graduationYear.trim()) {
+      const yr = Number(form.graduationYear);
+      if (!Number.isInteger(yr) || yr < 2000 || yr > 2100)
+        errors.graduationYear = "Graduation year must be between 2000 and 2100.";
+    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     const payload: Record<string, string | number | undefined> = {};
     if (form.fullName.trim()) payload.fullName = form.fullName.trim();
     if (form.phone.trim()) payload.phone = form.phone.trim();
@@ -129,33 +153,48 @@ function ProfileInner() {
                   <Input
                     id="fullName"
                     value={form.fullName}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, fullName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, fullName: e.target.value }));
+                      if (fieldErrors.fullName) setFieldErrors((fe) => ({ ...fe, fullName: "" }));
+                    }}
+                    aria-invalid={!!fieldErrors.fullName}
                     data-testid="input-fullname"
                   />
+                  {fieldErrors.fullName && (
+                    <p className="text-xs text-destructive">{fieldErrors.fullName}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
                     value={form.phone}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, phone: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, phone: e.target.value }));
+                      if (fieldErrors.phone) setFieldErrors((fe) => ({ ...fe, phone: "" }));
+                    }}
+                    aria-invalid={!!fieldErrors.phone}
                     data-testid="input-phone"
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-xs text-destructive">{fieldErrors.phone}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="studentId">Student ID</Label>
                   <Input
                     id="studentId"
                     value={form.studentId}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, studentId: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, studentId: e.target.value }));
+                      if (fieldErrors.studentId) setFieldErrors((fe) => ({ ...fe, studentId: "" }));
+                    }}
+                    aria-invalid={!!fieldErrors.studentId}
                     data-testid="input-studentid"
                   />
+                  {fieldErrors.studentId && (
+                    <p className="text-xs text-destructive">{fieldErrors.studentId}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="gpa">GPA</Label>
@@ -164,13 +203,18 @@ function ProfileInner() {
                     type="number"
                     step="0.01"
                     min="0"
-                    max="4"
+                    max="4.5"
                     value={form.gpa}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, gpa: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, gpa: e.target.value }));
+                      if (fieldErrors.gpa) setFieldErrors((fe) => ({ ...fe, gpa: "" }));
+                    }}
+                    aria-invalid={!!fieldErrors.gpa}
                     data-testid="input-gpa"
                   />
+                  {fieldErrors.gpa && (
+                    <p className="text-xs text-destructive">{fieldErrors.gpa}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="grad">Graduation year</Label>

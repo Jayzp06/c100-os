@@ -215,10 +215,24 @@ export interface SwitchExperienceInput {
 }
 
 export interface UpdateProfileInput {
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
   fullName?: string;
+  /** @maxLength 20 */
   phone?: string;
+  /** @maxLength 30 */
   studentId?: string;
+  /**
+     * @minimum 0
+     * @maximum 4.5
+     */
   gpa?: number;
+  /**
+     * @minimum 2000
+     * @maximum 2100
+     */
   graduationYear?: number;
 }
 
@@ -245,8 +259,12 @@ export const CreateMemberInputMembershipStatus = {
 } as const;
 
 export interface CreateMemberInput {
-  /** @minLength 2 */
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
   fullName: string;
+  /** Must be a valid email address. */
   email: string;
   role?: CreateMemberInputRole;
   /** @nullable */
@@ -320,6 +338,10 @@ export interface UpdateMemberInput {
   membershipStatus?: UpdateMemberInputMembershipStatus;
   duesPaid?: boolean;
   accountActive?: boolean;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
   fullName?: string;
   /** Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged. */
   orgRoleSlugs?: UpdateMemberInputOrgRoleSlugsItem[];
@@ -513,14 +535,28 @@ export const CreateEventInputEventType = {
 } as const;
 
 export interface CreateEventInput {
+  /**
+     * @minLength 3
+     * @maxLength 150
+     */
   title: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
   description: string;
   eventType: CreateEventInputEventType;
   /** @nullable */
   committeeId?: number | null;
   date: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   startTime: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   endTime: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
   location: string;
   /** @nullable */
   pointValue?: number | null;
@@ -555,14 +591,28 @@ export const UpdateEventInputStatus = {
 } as const;
 
 export interface UpdateEventInput {
+  /**
+     * @minLength 3
+     * @maxLength 150
+     */
   title?: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
   description?: string;
   eventType?: UpdateEventInputEventType;
   /** @nullable */
   committeeId?: number | null;
   date?: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   startTime?: string;
+  /** @pattern ^([01]\d|2[0-3]):[0-5]\d$ */
   endTime?: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
   location?: string;
   pointValue?: number;
   impactMultiplier?: number;
@@ -734,12 +784,29 @@ export interface OrgSettings {
 }
 
 export interface OrgSettingsUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
   universityName?: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
   chapterName?: string;
+  /**
+     * @minLength 1
+     * @maxLength 20
+     */
   chapterIdentifier?: string;
-  /** @nullable */
+  /**
+     * @maxLength 200
+     * @nullable
+     */
   motto?: string | null;
+  /** @pattern ^#[0-9a-fA-F]{6}$ */
   primaryColor?: string;
+  /** @pattern ^#[0-9a-fA-F]{6}$ */
   secondaryColor?: string;
   /** @nullable */
   logoUrl?: string | null;

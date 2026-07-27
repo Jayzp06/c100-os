@@ -9,8 +9,12 @@ import type { CreateMemberInputMembershipStatus } from './createMemberInputMembe
 import type { CreateMemberInputRole } from './createMemberInputRole';
 
 export interface CreateMemberInput {
-  /** @minLength 2 */
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
   fullName: string;
+  /** Must be a valid email address. */
   email: string;
   role?: CreateMemberInputRole;
   /** @nullable */

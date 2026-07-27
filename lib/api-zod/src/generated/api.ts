@@ -149,12 +149,27 @@ export const GetMyProfileResponse = zod.object({
 /**
  * @summary Update the current member's profile fields
  */
+export const updateMyProfileBodyFullNameMin = 2;
+export const updateMyProfileBodyFullNameMax = 100;
+
+export const updateMyProfileBodyPhoneMax = 20;
+
+export const updateMyProfileBodyStudentIdMax = 30;
+
+export const updateMyProfileBodyGpaMin = 0;
+export const updateMyProfileBodyGpaMax = 4.5;
+
+export const updateMyProfileBodyGraduationYearMin = 2000;
+export const updateMyProfileBodyGraduationYearMax = 2100;
+
+
+
 export const UpdateMyProfileBody = zod.object({
-  "fullName": zod.string().optional(),
-  "phone": zod.string().optional(),
-  "studentId": zod.string().optional(),
-  "gpa": zod.number().optional(),
-  "graduationYear": zod.number().optional()
+  "fullName": zod.string().min(updateMyProfileBodyFullNameMin).max(updateMyProfileBodyFullNameMax).optional(),
+  "phone": zod.string().max(updateMyProfileBodyPhoneMax).optional(),
+  "studentId": zod.string().max(updateMyProfileBodyStudentIdMax).optional(),
+  "gpa": zod.number().min(updateMyProfileBodyGpaMin).max(updateMyProfileBodyGpaMax).optional(),
+  "graduationYear": zod.number().min(updateMyProfileBodyGraduationYearMin).max(updateMyProfileBodyGraduationYearMax).optional()
 })
 
 export const UpdateMyProfileResponse = zod.object({
@@ -479,12 +494,13 @@ export const ListMembersResponse = zod.array(ListMembersResponseItem)
  * @summary Create a single member (admin only)
  */
 export const createMemberBodyFullNameMin = 2;
+export const createMemberBodyFullNameMax = 100;
 
 
 
 export const CreateMemberBody = zod.object({
-  "fullName": zod.string().min(createMemberBodyFullNameMin),
-  "email": zod.string(),
+  "fullName": zod.string().min(createMemberBodyFullNameMin).max(createMemberBodyFullNameMax),
+  "email": zod.string().describe('Must be a valid email address.'),
   "role": zod.enum(['Member', 'CommitteeChair', 'BylawsChair', 'ExecutiveBoard', 'Admin', 'TechnologyChair']).optional(),
   "committeeId": zod.number().nullish(),
   "studentId": zod.string().nullish(),
@@ -536,14 +552,15 @@ export const CreateMemberResponse = zod.object({
  * @summary Import multiple members at once (admin only)
  */
 export const bulkImportMembersBodyMembersItemFullNameMin = 2;
+export const bulkImportMembersBodyMembersItemFullNameMax = 100;
 
 
 
 
 export const BulkImportMembersBody = zod.object({
   "members": zod.array(zod.object({
-  "fullName": zod.string().min(bulkImportMembersBodyMembersItemFullNameMin),
-  "email": zod.string(),
+  "fullName": zod.string().min(bulkImportMembersBodyMembersItemFullNameMin).max(bulkImportMembersBodyMembersItemFullNameMax),
+  "email": zod.string().describe('Must be a valid email address.'),
   "role": zod.enum(['Member', 'CommitteeChair', 'BylawsChair', 'ExecutiveBoard', 'Admin', 'TechnologyChair']).optional(),
   "committeeId": zod.number().nullish(),
   "studentId": zod.string().nullish(),
@@ -613,13 +630,18 @@ export const UpdateMemberParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateMemberBodyFullNameMin = 2;
+export const updateMemberBodyFullNameMax = 100;
+
+
+
 export const UpdateMemberBody = zod.object({
   "role": zod.enum(['Member', 'CommitteeChair', 'BylawsChair', 'ExecutiveBoard', 'Admin', 'TechnologyChair']).optional(),
   "committeeId": zod.number().nullish(),
   "membershipStatus": zod.enum(['Active', 'Probationary', 'Suspended', 'Inactive']).optional(),
   "duesPaid": zod.boolean().optional(),
   "accountActive": zod.boolean().optional(),
-  "fullName": zod.string().optional(),
+  "fullName": zod.string().min(updateMemberBodyFullNameMin).max(updateMemberBodyFullNameMax).optional(),
   "orgRoleSlugs": zod.array(zod.enum(['president', 'vice_president', 'secretary', 'treasurer', 'parliamentarian', 'historian', 'committee_chair', 'bylaws_chair'])).optional().describe('Replaces the member\'s additional officer-position permission tags. Omit this field to leave them unchanged.'),
   "systemRoleSlugs": zod.array(zod.enum(['platform_admin'])).optional().describe('Replaces the member\'s additional platform-level permission tags. Omit this field to leave them unchanged.')
 })
@@ -1011,15 +1033,28 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
 /**
  * @summary Create a new event (chair or admin)
  */
+export const createEventBodyTitleMin = 3;
+export const createEventBodyTitleMax = 150;
+
+export const createEventBodyDescriptionMin = 10;
+export const createEventBodyDescriptionMax = 2000;
+
+export const createEventBodyStartTimeRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const createEventBodyEndTimeRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const createEventBodyLocationMin = 2;
+export const createEventBodyLocationMax = 200;
+
+
+
 export const CreateEventBody = zod.object({
-  "title": zod.string(),
-  "description": zod.string(),
+  "title": zod.string().min(createEventBodyTitleMin).max(createEventBodyTitleMax),
+  "description": zod.string().min(createEventBodyDescriptionMin).max(createEventBodyDescriptionMax),
   "eventType": zod.enum(['GeneralBodyMeeting', 'CommitteeMeeting', 'CommunityService', 'MentoringSession', 'Workshop', 'Fundraiser', 'Conference', 'Social']),
   "committeeId": zod.number().nullish(),
   "date": zod.coerce.date(),
-  "startTime": zod.string(),
-  "endTime": zod.string(),
-  "location": zod.string(),
+  "startTime": zod.string().regex(createEventBodyStartTimeRegExp),
+  "endTime": zod.string().regex(createEventBodyEndTimeRegExp),
+  "location": zod.string().min(createEventBodyLocationMin).max(createEventBodyLocationMax),
   "pointValue": zod.number().nullish(),
   "impactMultiplier": zod.number().nullish(),
   "checkInWindowMinutes": zod.number().nullish()
@@ -1099,15 +1134,28 @@ export const UpdateEventParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateEventBodyTitleMin = 3;
+export const updateEventBodyTitleMax = 150;
+
+export const updateEventBodyDescriptionMin = 10;
+export const updateEventBodyDescriptionMax = 2000;
+
+export const updateEventBodyStartTimeRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updateEventBodyEndTimeRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updateEventBodyLocationMin = 2;
+export const updateEventBodyLocationMax = 200;
+
+
+
 export const UpdateEventBody = zod.object({
-  "title": zod.string().optional(),
-  "description": zod.string().optional(),
+  "title": zod.string().min(updateEventBodyTitleMin).max(updateEventBodyTitleMax).optional(),
+  "description": zod.string().min(updateEventBodyDescriptionMin).max(updateEventBodyDescriptionMax).optional(),
   "eventType": zod.enum(['GeneralBodyMeeting', 'CommitteeMeeting', 'CommunityService', 'MentoringSession', 'Workshop', 'Fundraiser', 'Conference', 'Social']).optional(),
   "committeeId": zod.number().nullish(),
   "date": zod.coerce.date().optional(),
-  "startTime": zod.string().optional(),
-  "endTime": zod.string().optional(),
-  "location": zod.string().optional(),
+  "startTime": zod.string().regex(updateEventBodyStartTimeRegExp).optional(),
+  "endTime": zod.string().regex(updateEventBodyEndTimeRegExp).optional(),
+  "location": zod.string().min(updateEventBodyLocationMin).max(updateEventBodyLocationMax).optional(),
   "pointValue": zod.number().optional(),
   "impactMultiplier": zod.number().optional(),
   "checkInWindowMinutes": zod.number().optional(),
@@ -1730,6 +1778,16 @@ export const GetOrgSettingsResponse = zod.object({
 /**
  * @summary Update organisation settings (Admin only)
  */
+export const updateOrgSettingsBodyUniversityNameMax = 120;
+
+export const updateOrgSettingsBodyChapterNameMax = 100;
+
+export const updateOrgSettingsBodyChapterIdentifierMax = 20;
+
+export const updateOrgSettingsBodyMottoMax = 200;
+
+export const updateOrgSettingsBodyPrimaryColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateOrgSettingsBodySecondaryColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
 export const updateOrgSettingsBodyParticipationGoalPctMin = 0;
 export const updateOrgSettingsBodyParticipationGoalPctMax = 100;
 
@@ -1747,12 +1805,12 @@ export const updateOrgSettingsBodyDuesAmountCentsMin = 0;
 
 
 export const UpdateOrgSettingsBody = zod.object({
-  "universityName": zod.string().optional(),
-  "chapterName": zod.string().optional(),
-  "chapterIdentifier": zod.string().optional(),
-  "motto": zod.string().nullish(),
-  "primaryColor": zod.string().optional(),
-  "secondaryColor": zod.string().optional(),
+  "universityName": zod.string().min(1).max(updateOrgSettingsBodyUniversityNameMax).optional(),
+  "chapterName": zod.string().min(1).max(updateOrgSettingsBodyChapterNameMax).optional(),
+  "chapterIdentifier": zod.string().min(1).max(updateOrgSettingsBodyChapterIdentifierMax).optional(),
+  "motto": zod.string().max(updateOrgSettingsBodyMottoMax).nullish(),
+  "primaryColor": zod.string().regex(updateOrgSettingsBodyPrimaryColorRegExp).optional(),
+  "secondaryColor": zod.string().regex(updateOrgSettingsBodySecondaryColorRegExp).optional(),
   "logoUrl": zod.string().nullish(),
   "participationGoalPct": zod.number().min(updateOrgSettingsBodyParticipationGoalPctMin).max(updateOrgSettingsBodyParticipationGoalPctMax).optional(),
   "scholarshipMinPct": zod.number().min(updateOrgSettingsBodyScholarshipMinPctMin).max(updateOrgSettingsBodyScholarshipMinPctMax).optional(),

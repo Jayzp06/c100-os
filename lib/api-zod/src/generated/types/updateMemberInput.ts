@@ -17,6 +17,10 @@ export interface UpdateMemberInput {
   membershipStatus?: UpdateMemberInputMembershipStatus;
   duesPaid?: boolean;
   accountActive?: boolean;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
   fullName?: string;
   /** Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged. */
   orgRoleSlugs?: UpdateMemberInputOrgRoleSlugsItem[];

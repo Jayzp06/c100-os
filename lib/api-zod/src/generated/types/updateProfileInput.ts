@@ -7,9 +7,23 @@
  */
 
 export interface UpdateProfileInput {
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
   fullName?: string;
+  /** @maxLength 20 */
   phone?: string;
+  /** @maxLength 30 */
   studentId?: string;
+  /**
+     * @minimum 0
+     * @maximum 4.5
+     */
   gpa?: number;
+  /**
+     * @minimum 2000
+     * @maximum 2100
+     */
   graduationYear?: number;
 }

@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { UpdateMyProfileBody } from "@workspace/api-zod";
+import { sanitizeStringFields } from "../lib/validation";
 import {
   db,
   membersTable,
@@ -170,10 +171,24 @@ router.patch(
   requireAuth(async (req, res) => {
     const parsed = UpdateMyProfileBody.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "Invalid profile body" });
+      res.status(400).json({
+        error: "Validation failed",
+        fields: parsed.error.flatten().fieldErrors,
+      });
       return;
     }
     const data = parsed.data;
+
+    // Trim and reject control characters in free-text fields
+    const sanitizeErrors = sanitizeStringFields(
+      data as Record<string, unknown>,
+      ["fullName", "phone", "studentId"],
+    );
+    if (Object.keys(sanitizeErrors).length > 0) {
+      res.status(400).json({ error: "Validation failed", fields: sanitizeErrors });
+      return;
+    }
+
     const update: Record<string, unknown> = {};
     if (data.fullName !== undefined) update["fullName"] = data.fullName;
     if (data.phone !== undefined) update["phone"] = data.phone;

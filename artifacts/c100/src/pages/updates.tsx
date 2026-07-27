@@ -118,6 +118,29 @@ function UpdatesPanel() {
           </div>
         ) : null}
 
+        {stage.kind === "result" && stage.result.status === "release-not-configured" ? (
+          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+            <CheckCircle2 className="h-4 w-4" />
+            {stage.result.message}
+          </div>
+        ) : null}
+
+        {stage.kind === "result" && stage.result.status === "connection-error" ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4" />
+              {stage.result.message}
+            </div>
+            <Button size="sm" variant="outline" onClick={runCheck}>
+              Try again
+            </Button>
+          </div>
+        ) : null}
+
+        {stage.kind === "result" && stage.result.status === "verification-error" ? (
+          <ErrorBlock title="Update verification failed" message={stage.result.message} />
+        ) : null}
+
         {stage.kind === "result" && stage.result.status === "error" ? (
           <ErrorBlock title="Could not check for updates" message={stage.result.message} />
         ) : null}

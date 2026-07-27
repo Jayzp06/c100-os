@@ -59,6 +59,22 @@ export async function getDesktopMetadata(): Promise<AppMetadata> {
 export type UpdateCheckResult =
   | { status: "up-to-date" }
   | { status: "available"; version: string; date?: string; body?: string }
+  /**
+   * The updater reached the endpoint but found no published (non-draft) release.
+   * This is not an error — it means the server responded and there is simply
+   * nothing to install yet.
+   */
+  | { status: "release-not-configured"; message: string }
+  /**
+   * A network, DNS, TLS, timeout, or remote availability failure prevented the
+   * check from completing. Do NOT treat this as "up-to-date".
+   */
+  | { status: "connection-error"; message: string }
+  /**
+   * The manifest was retrieved but failed signature or parse validation.
+   */
+  | { status: "verification-error"; message: string }
+  /** Any other unexpected error during the update check. */
   | { status: "error"; message: string };
 
 /**
@@ -83,21 +99,52 @@ export async function checkForUpdate(): Promise<UpdateCheckResult> {
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    // Distinguish "no published release yet" from genuine errors.
-    // The Tauri updater throws (rather than returning null) when the manifest
-    // URL returns a 4xx — which happens when no non-draft release has been
-    // published. Treat these like "no update available" instead of "error".
-    const NO_MANIFEST_PATTERNS = [
-      /404/i,
-      /not found/i,
-      /no release/i,
-      /no update/i,
-      /failed to fetch/i,
-      /manifest/i,
-    ];
-    if (NO_MANIFEST_PATTERNS.some((re) => re.test(msg))) {
-      return { status: "up-to-date" };
+
+    // --- Connection / network failure ----------------------------------------
+    // These mean we never reached the update server, so we do NOT know whether
+    // the installed version is current. Never return "up-to-date" here.
+    if (
+      /failed to fetch|network\s+error|net::|timeout|ECONNREFUSED|ECONNRESET|ERR_INTERNET|ERR_NAME_NOT_RESOLVED|dns|tls\b|ssl\b|certificate/i.test(
+        msg,
+      )
+    ) {
+      return {
+        status: "connection-error",
+        message:
+          "Could not reach the update server. Check your internet connection and try again.",
+      };
     }
+
+    // --- No published release (manifest 404) ---------------------------------
+    // The Tauri updater throws when the manifest URL returns a 4xx, which
+    // happens when no non-draft GitHub release has been published yet.
+    // The server responded successfully — there is simply nothing to install.
+    if (
+      /\b404\b|no release|no published|not found|does not exist|resource not found/i.test(
+        msg,
+      )
+    ) {
+      return {
+        status: "release-not-configured",
+        message:
+          "No release has been published for this channel yet. You are on the latest build.",
+      };
+    }
+
+    // --- Manifest signature or parse failure ----------------------------------
+    if (
+      /signature|invalid manifest|malformed|deserializ|failed to parse|json\s+parse/i.test(
+        msg,
+      )
+    ) {
+      return {
+        status: "verification-error",
+        message:
+          "The update manifest could not be verified. Contact your system administrator.",
+      };
+    }
+
+    // --- Everything else -----------------------------------------------------
     return {
       status: "error",
       message: msg || "Could not check for updates.",

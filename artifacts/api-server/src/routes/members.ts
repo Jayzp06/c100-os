@@ -26,6 +26,7 @@ import {
   ASSIGNABLE_SYSTEM_ROLE_SLUGS,
   deriveLegacyRole,
 } from "../lib/rbac";
+import { isValidEmail, sanitizeStringFields } from "../lib/validation";
 import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
@@ -63,12 +64,29 @@ router.post(
   requireRole(...TECH_OR_ADMIN)(async (req, res) => {
     const parsed = CreateMemberBody.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: "Invalid request body",
-          details: parsed.error.flatten(),
-        });
+      res.status(400).json({
+        error: "Validation failed",
+        fields: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    // Email format validation (Zod v3 has no built-in email validator)
+    if (!isValidEmail(parsed.data.email)) {
+      res.status(400).json({
+        error: "Validation failed",
+        fields: { email: ["Must be a valid email address."] },
+      });
+      return;
+    }
+
+    // Control-character rejection for free-text fields
+    const sanitizeErrors = sanitizeStringFields(
+      parsed.data as Record<string, unknown>,
+      ["fullName"],
+    );
+    if (Object.keys(sanitizeErrors).length > 0) {
+      res.status(400).json({ error: "Validation failed", fields: sanitizeErrors });
       return;
     }
 

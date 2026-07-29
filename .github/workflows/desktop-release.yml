@@ -1,12 +1,14 @@
 name: Desktop Release
 
 # Triggers:
-#   - Push a version tag (e.g. git tag v0.2.0 && git push --tags)
+#   - Push a version tag:  git tag v0.9.1 && git push --tags
 #   - Manual dispatch from the GitHub Actions UI
+#
+# Branch pushes to main do NOT trigger this workflow — doing so would create a
+# release tagged "main" and would skip updater artifacts because no version tag
+# is present.
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
@@ -55,6 +57,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── Pre-flight: verify updater signing secrets are present ───────────────
+      # Fail immediately — before the expensive Rust compile — if either secret
+      # is missing.  Aliases (SIGN_KEY / SIGN_PASS) are used so that the secret
+      # names are not echoed in the log even if GitHub's masking is bypassed.
+      - name: Verify updater signing secrets
+        run: |
+          missing=""
+          [ -z "$SIGN_KEY" ]  && missing="${missing}\n  - TAURI_SIGNING_PRIVATE_KEY"
+          [ -z "$SIGN_PASS" ] && missing="${missing}\n  - TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "ERROR: The following required GitHub repository secrets are not configured:"
+            printf "%b\n" "$missing"
+            echo ""
+            echo "These secrets are needed to sign updater artifacts (.sig files)."
+            echo "Without them the installed application cannot verify update authenticity."
+            echo "Add them at: GitHub → Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "Updater signing secrets are present."
+        env:
+          SIGN_KEY:  ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          SIGN_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -93,8 +118,11 @@ jobs:
           projectPath: artifacts/c100-desktop
           tauriScript: pnpm tauri
           args: --target universal-apple-darwin
-          tagName: ${{ github.ref_name }}
-          releaseName: 'C100 Operations ${{ github.ref_name }}'
+          # __VERSION__ is replaced by tauri-action with the version from tauri.conf.json.
+          # This ensures the release is tagged v0.9.1 (not "main") regardless of
+          # which branch or event triggered the workflow.
+          tagName: v__VERSION__
+          releaseName: 'C100 Operations v__VERSION__'
           releaseBody: |
             C100 Trailblazing Chapter Operations Console — macOS installer.
 
@@ -123,8 +151,8 @@ jobs:
           projectPath: artifacts/c100-desktop
           tauriScript: pnpm tauri
           args: --target universal-apple-darwin
-          tagName: ${{ github.ref_name }}
-          releaseName: 'C100 Operations ${{ github.ref_name }}'
+          tagName: v__VERSION__
+          releaseName: 'C100 Operations v__VERSION__'
           releaseBody: |
             C100 Trailblazing Chapter Operations Console — macOS installer.
 
@@ -132,6 +160,22 @@ jobs:
           releaseDraft: ${{ github.event.inputs.draft != 'false' }}
           prerelease: false
           includeUpdaterJson: true
+
+      # ── Post-build: assert updater signature files were produced ─────────────
+      # A green build that silently skipped .sig files must not pass.
+      - name: Assert updater artifacts exist (.sig files)
+        run: |
+          sig_count=$(find artifacts/c100-desktop/src-tauri/target \
+                        -name "*.sig" 2>/dev/null | wc -l | tr -d '[:space:]')
+          if [ "$sig_count" -eq 0 ]; then
+            echo "ERROR: No updater signature files (.sig) found in the build output."
+            echo "Verify that:"
+            echo "  1. bundle.createUpdaterArtifacts = true in tauri.conf.json"
+            echo "  2. TAURI_SIGNING_PRIVATE_KEY is set and non-empty in GitHub secrets"
+            exit 1
+          fi
+          echo "Updater artifacts verified — ${sig_count} .sig file(s) produced:"
+          find artifacts/c100-desktop/src-tauri/target -name "*.sig"
 
   # ─────────────────────────────────────────────────────────
   #  Windows — x64 MSI installer
@@ -141,6 +185,27 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # ── Pre-flight: verify updater signing secrets are present ───────────────
+      - name: Verify updater signing secrets
+        shell: pwsh
+        run: |
+          $missing = @()
+          if ([string]::IsNullOrEmpty($env:SIGN_KEY))  { $missing += "TAURI_SIGNING_PRIVATE_KEY" }
+          if ([string]::IsNullOrEmpty($env:SIGN_PASS)) { $missing += "TAURI_SIGNING_PRIVATE_KEY_PASSWORD" }
+          if ($missing.Count -gt 0) {
+            Write-Host "ERROR: The following required GitHub repository secrets are not configured:"
+            $missing | ForEach-Object { Write-Host "  - $_" }
+            Write-Host ""
+            Write-Host "These secrets are needed to sign updater artifacts (.sig files)."
+            Write-Host "Without them the installed application cannot verify update authenticity."
+            Write-Host "Add them at: GitHub → Settings → Secrets and variables → Actions"
+            exit 1
+          }
+          Write-Host "Updater signing secrets are present."
+        env:
+          SIGN_KEY:  ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          SIGN_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -174,8 +239,8 @@ jobs:
         with:
           projectPath: artifacts/c100-desktop
           tauriScript: pnpm tauri
-          tagName: ${{ github.ref_name }}
-          releaseName: 'C100 Operations ${{ github.ref_name }}'
+          tagName: v__VERSION__
+          releaseName: 'C100 Operations v__VERSION__'
           releaseBody: |
             C100 Trailblazing Chapter Operations Console — Windows installer.
 
@@ -184,3 +249,20 @@ jobs:
           releaseDraft: ${{ github.event.inputs.draft != 'false' }}
           prerelease: false
           includeUpdaterJson: true
+
+      # ── Post-build: assert updater signature files were produced ─────────────
+      - name: Assert updater artifacts exist (.sig files)
+        shell: pwsh
+        run: |
+          $sigs = Get-ChildItem -Recurse -Filter "*.sig" `
+                    -Path "artifacts/c100-desktop/src-tauri/target" `
+                    -ErrorAction SilentlyContinue
+          if ($sigs.Count -eq 0) {
+            Write-Host "ERROR: No updater signature files (.sig) found in the build output."
+            Write-Host "Verify that:"
+            Write-Host "  1. bundle.createUpdaterArtifacts = true in tauri.conf.json"
+            Write-Host "  2. TAURI_SIGNING_PRIVATE_KEY is set and non-empty in GitHub secrets"
+            exit 1
+          }
+          Write-Host "Updater artifacts verified — $($sigs.Count) .sig file(s) produced:"
+          $sigs | ForEach-Object { Write-Host $_.FullName }

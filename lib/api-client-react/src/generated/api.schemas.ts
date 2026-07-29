@@ -792,6 +792,324 @@ export interface StartImpersonationInput {
   viewAs: StartImpersonationInputViewAs;
 }
 
+export interface IdParam {}
+
+export interface ErrorBody {
+  error: string;
+}
+
+export interface PresignedUploadUrl {
+  uploadUrl: string;
+  objectPath: string;
+  expiresAt: string;
+}
+
+export interface GovernanceDocument {
+  id: number;
+  title: string;
+  category: string;
+  versionLabel: string;
+  effectiveDate: string;
+  /** @nullable */
+  approvalDate?: string | null;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  originalFilename?: string | null;
+  /** @nullable */
+  mimeType?: string | null;
+  /** @nullable */
+  fileSizeBytes?: number | null;
+  /** @nullable */
+  storageKey?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GovernanceDocumentCreate {
+  title: string;
+  category: string;
+  versionLabel: string;
+  effectiveDate: string;
+  /** @nullable */
+  approvalDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  originalFilename?: string | null;
+  /** @nullable */
+  mimeType?: string | null;
+  /** @nullable */
+  fileSizeBytes?: number | null;
+  /** @nullable */
+  storageKey?: string | null;
+}
+
+export interface MeetingRecord {
+  id: number;
+  meetingType: string;
+  title: string;
+  meetingDate: string;
+  status: string;
+  /** @nullable */
+  agendaText?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MeetingRecordCreate {
+  meetingType: string;
+  title: string;
+  meetingDate: string;
+  /** @nullable */
+  agendaText?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface CorrespondenceEntry {
+  id: number;
+  direction: string;
+  correspondent: string;
+  subject: string;
+  dateSent: string;
+  /** @nullable */
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CorrespondenceEntryCreate {
+  direction: string;
+  correspondent: string;
+  subject: string;
+  dateSent: string;
+  /** @nullable */
+  description?: string | null;
+}
+
+export interface FinancialTransaction {
+  id: number;
+  description: string;
+  amountCents: number;
+  direction: string;
+  category: string;
+  transactionDate: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinancialTransactionCreate {
+  description: string;
+  amountCents: number;
+  direction: string;
+  category: string;
+  transactionDate: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface DuesEntry {
+  id: number;
+  memberId: number;
+  semesterLabel: string;
+  amountCents: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @nullable */
+  paidAt?: string | null;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DuesEntryCreate {
+  memberId: number;
+  semesterLabel: string;
+  amountCents: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  referenceNumber?: string | null;
+  /** @nullable */
+  paidAt?: string | null;
+  status?: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type TreasurerSummaryTransactions = {
+  totalIncomeCents?: number;
+  totalExpenseCents?: number;
+  transactionCount?: number;
+};
+
+export type TreasurerSummaryDues = {
+  totalOutstandingCents?: number;
+  totalPaidCents?: number;
+  duesCount?: number;
+};
+
+export interface TreasurerSummary {
+  transactions: TreasurerSummaryTransactions;
+  dues: TreasurerSummaryDues;
+}
+
+export interface ArchiveEntry {
+  id: number;
+  title: string;
+  description: string;
+  eventDate: string;
+  category: string;
+  /** @nullable */
+  peopleText?: string | null;
+  memberRefs?: number[];
+  /** @nullable */
+  storageKey?: string | null;
+  /** @nullable */
+  originalFilename?: string | null;
+  visibility: string;
+  tags?: string[];
+  /** @nullable */
+  archivedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArchiveEntryCreate {
+  title: string;
+  description: string;
+  eventDate: string;
+  category: string;
+  /** @nullable */
+  peopleText?: string | null;
+  /** @nullable */
+  storageKey?: string | null;
+  /** @nullable */
+  originalFilename?: string | null;
+  visibility: string;
+  tags?: string[];
+}
+
+export interface ConductRecord {
+  id: number;
+  recordType: string;
+  reportDate: string;
+  /** @nullable */
+  memberId?: number | null;
+  /** @nullable */
+  eventId?: number | null;
+  summary: string;
+  privateDetails: string;
+  status: string;
+  /** @nullable */
+  resolution?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConductRecordCreate {
+  recordType: string;
+  reportDate: string;
+  /** @nullable */
+  memberId?: number | null;
+  /** @nullable */
+  eventId?: number | null;
+  summary: string;
+  privateDetails?: string;
+}
+
+export interface Motion {
+  id: number;
+  motionText: string;
+  result: string;
+  voteYes: number;
+  voteNo: number;
+  voteAbstain: number;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface MotionCreate {
+  motionText: string;
+  result: string;
+  voteYes?: number;
+  voteNo?: number;
+  voteAbstain?: number;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface ParliamentaryRuling {
+  id: number;
+  rulingText: string;
+  authoritySource: string;
+  /** @nullable */
+  governanceRef?: string | null;
+  createdAt: string;
+}
+
+export interface ParliamentaryRulingCreate {
+  rulingText: string;
+  authoritySource: string;
+  /** @nullable */
+  governanceRef?: string | null;
+}
+
+export interface QuorumRecordCreate {
+  totalMembership: number;
+  quorumThreshold: number;
+  membersPresent: number;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface QuorumRecord {
+  id: number;
+  totalMembership: number;
+  quorumThreshold: number;
+  membersPresent: number;
+  quorumMet: number;
+  /** @nullable */
+  notes?: string | null;
+  recordedAt: string;
+}
+
+export interface ConductRecordResolveBody {
+  resolution: string;
+}
+
+export interface MeetingRecordReviseBody {
+  reason: string;
+  /** @nullable */
+  agendaText?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface ConductRecordArchiveBody {
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type ForbiddenResponse = {
+  error?: string;
+};
+
+export type NotFoundResponse = {
+  error?: string;
+};
+
 /**
  * Opaque session token — `Bearer <sid>`.
  */

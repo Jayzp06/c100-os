@@ -11,6 +11,13 @@ import orgRouter from "./org";
 import techRouter from "./tech";
 import eventTypeConfigRouter from "./event-type-config";
 import systemRouter from "./system";
+import storageRouter from "./storage";
+import governanceRouter from "./governance";
+import secretaryRouter from "./secretary";
+import treasurerRouter from "./treasurer";
+import historianRouter from "./historian";
+import conductRouter from "./conduct";
+import procedureRouter from "./procedure";
 
 const router: IRouter = Router();
 
@@ -26,5 +33,12 @@ router.use(membersRouter);
 router.use(committeesRouter);
 router.use(eventsRouter);
 router.use(reportsRouter);
+router.use(storageRouter);
+router.use(governanceRouter);
+router.use(secretaryRouter);
+router.use(treasurerRouter);
+router.use(historianRouter);
+router.use(conductRouter);
+router.use(procedureRouter);
 
 export default router;

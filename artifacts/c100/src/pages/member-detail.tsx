@@ -62,6 +62,7 @@ const ORG_ROLE_TAGS: { slug: string; label: string }[] = [
   { slug: "treasurer", label: "Treasurer" },
   { slug: "parliamentarian", label: "Parliamentarian" },
   { slug: "historian", label: "Historian" },
+  { slug: "bylaws_chair", label: "Bylaws Officer" },
   { slug: "committee_chair", label: "Committee Chair" },
 ];
 const SYSTEM_ROLE_TAGS: { slug: string; label: string }[] = [
@@ -220,6 +221,7 @@ function MemberDetail({ id }: { id: number }) {
           | "treasurer"
           | "parliamentarian"
           | "historian"
+          | "bylaws_chair"
           | "committee_chair"
         )[],
         systemRoleSlugs: systemRoleSlugs as "platform_admin"[],
@@ -355,25 +357,48 @@ function MemberDetail({ id }: { id: number }) {
                   Officer positions and platform access. Executive board access
                   is derived automatically from exec-officer tags.
                 </p>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[...orgRoleSlugs, ...systemRoleSlugs].map((slug) => (
-                    <Pill key={slug} tone="gold" className="pr-1">
-                      {PERMISSION_TAG_LABELS[slug] ?? slug}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${PERMISSION_TAG_LABELS[slug] ?? slug}`}
-                        className="ml-1 rounded-full hover:bg-black/10"
-                        onClick={() =>
-                          ORG_ROLE_TAGS.some((t) => t.slug === slug)
-                            ? toggleOrgRole(slug, false)
-                            : toggleSystemRole(slug, false)
-                        }
-                        data-testid={`button-remove-tag-${slug}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Pill>
-                  ))}
+                <div className="space-y-2">
+                  {/* Officer positions */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {orgRoleSlugs.map((slug) => (
+                      <Pill key={slug} tone="gold" className="pr-1">
+                        {PERMISSION_TAG_LABELS[slug] ?? slug}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${PERMISSION_TAG_LABELS[slug] ?? slug}`}
+                          className="ml-1 rounded-full hover:bg-black/10"
+                          onClick={() => toggleOrgRole(slug, false)}
+                          data-testid={`button-remove-tag-${slug}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Pill>
+                    ))}
+                  </div>
+                  {/* Platform access — visually separated */}
+                  {systemRoleSlugs.length > 0 && (
+                    <div className="pt-1 border-t">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+                        Platform Access
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {systemRoleSlugs.map((slug) => (
+                          <Pill key={slug} tone="warning" className="pr-1">
+                            {PERMISSION_TAG_LABELS[slug] ?? slug}
+                            <button
+                              type="button"
+                              aria-label={`Remove ${PERMISSION_TAG_LABELS[slug] ?? slug}`}
+                              className="ml-1 rounded-full hover:bg-black/10"
+                              onClick={() => toggleSystemRole(slug, false)}
+                              data-testid={`button-remove-tag-${slug}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Pill>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button

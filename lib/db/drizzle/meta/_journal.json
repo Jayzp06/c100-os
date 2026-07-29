@@ -29,6 +29,13 @@
       "when": 1785349000000,
       "tag": "0003_remove_nudge_logs_and_nudge_status",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787000000000,
+      "tag": "0004_officer_workspaces_foundation",
+      "breakpoints": true
     }
   ]
 }

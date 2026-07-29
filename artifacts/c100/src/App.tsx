@@ -36,6 +36,7 @@ import TreasurerWorkspacePage from "@/pages/exec/treasurer";
 import HistorianWorkspacePage from "@/pages/exec/historian";
 import SergeantAtArmsWorkspacePage from "@/pages/exec/sergeant-at-arms";
 import ParliamentarianWorkspacePage from "@/pages/exec/parliamentarian";
+import BylawsWorkspacePage from "@/pages/exec/bylaws";
 import TechnologyWorkspacePage from "@/pages/exec/technology";
 
 // ---------------------------------------------------------------------------
@@ -110,6 +111,7 @@ function Router() {
       <Route path="/exec/historian" component={HistorianWorkspacePage} />
       <Route path="/exec/sergeant-at-arms" component={SergeantAtArmsWorkspacePage} />
       <Route path="/exec/parliamentarian" component={ParliamentarianWorkspacePage} />
+      <Route path="/exec/bylaws" component={BylawsWorkspacePage} />
       <Route path="/exec/technology" component={TechnologyWorkspacePage} />
       <Route component={NotFound} />
     </Switch>

@@ -4,3 +4,7 @@ export * from "./c100";
 export * from "./rbac";
 export * from "./finance";
 export * from "./governance";
+export * from "./secretary";
+export * from "./historian";
+export * from "./conduct";
+export * from "./procedure";

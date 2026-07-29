@@ -91,6 +91,8 @@ export const ORG_ROLE_PERMS: Record<string, string[]> = {
     "manage_procedure_records", "manage_motions", "manage_parliamentary_rulings",
     // Archive domain
     "manage_archives", "upload_archive_material", "manage_chapter_timeline", "view_archives",
+    // Conduct domain
+    "manage_conduct_records",
     // Reports
     "view_chapter_overview", "view_financial_reports", "view_eligibility_reports",
     "view_committee_reports", "view_official_records", "view_governance_reports",
@@ -116,6 +118,7 @@ export const ORG_ROLE_PERMS: Record<string, string[]> = {
   ],
   sergeant_at_arms: [
     "manage_events", "manage_attendance", "manage_executive_dashboard",
+    "manage_conduct_records",
     "view_conduct_reports",
   ],
   // ── Appointed Officers ────────────────────────────────────────────────────

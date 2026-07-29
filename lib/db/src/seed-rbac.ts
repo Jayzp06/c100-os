@@ -140,6 +140,7 @@ const PERM_GROUPS = [
   { slug: "view_committee_reports",     name: "View Committee Reports",      scope: "org",    description: "Per-committee participation and activity reports" },
   { slug: "view_governance_reports",    name: "View Governance Reports",     scope: "org",    description: "Bylaws, amendments, and governance history reports" },
   { slug: "view_archive_reports",       name: "View Archive Reports",        scope: "org",    description: "Chapter history, media, and documentation reports" },
+  { slug: "manage_conduct_records",     name: "Manage Conduct Records",      scope: "org",    description: "Create, review, and resolve member conduct records (Sergeant-at-Arms)" },
   { slug: "view_conduct_reports",       name: "View Conduct Reports",        scope: "org",    description: "Member conduct standing and procedural records" },
   // ── System ───────────────────────────────────────────────────────────────
   { slug: "manage_system_settings",     name: "Manage System Settings",      scope: "system", description: "Platform-level configuration, integrations, and feature flags" },
@@ -272,6 +273,11 @@ const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>
   ],
   view_archive_reports: [
     { slug: "reports:archives", name: "View archive and history reports" },
+  ],
+  manage_conduct_records: [
+    { slug: "conduct:read",    name: "View conduct records" },
+    { slug: "conduct:write",   name: "Create and update conduct records" },
+    { slug: "conduct:resolve", name: "Resolve and archive conduct records" },
   ],
   view_conduct_reports: [
     { slug: "reports:conduct", name: "View member conduct reports" },

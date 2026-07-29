@@ -8,9 +8,10 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node /home/runner/workspace/node_modules/.pnpm/tsx@4.22.4/node_modules/tsx/dist/cli.mjs --test src/__tests__/validation.test.ts src/__tests__/rbac-permissions.test.ts"
+    "test": "node /home/runner/workspace/node_modules/.pnpm/tsx@4.22.4/node_modules/tsx/dist/cli.mjs --test src/__tests__/validation.test.ts src/__tests__/rbac-permissions.test.ts src/__tests__/workspace-isolation.test.ts"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.21.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/checkin-codes": "workspace:*",
     "@workspace/db": "workspace:*",
@@ -22,7 +23,8 @@
     "openid-client": "^6.8.4",
     "pdfkit": "^0.19.1",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

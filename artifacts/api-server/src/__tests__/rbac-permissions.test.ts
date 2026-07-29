@@ -23,14 +23,15 @@ import { RESERVED_COMMITTEE_NAMES, validateCommitteeName } from "../routes/commi
 // assert the contract without importing a frontend module. This list must stay
 // in sync with artifacts/c100/src/lib/exec-workspaces.ts.
 const WORKSPACE_PERMISSION_MAP: Record<string, string> = {
-  president:        "manage_org_settings",
-  "vice-president": "view_committee_reports",
-  secretary:        "manage_minutes",
-  treasurer:        "manage_finances",
-  historian:        "manage_archives",
-  "sergeant-at-arms": "view_conduct_reports",
-  parliamentarian:  "manage_procedure_records",
-  technology:       "view_system_diagnostics",
+  president:          "manage_org_settings",
+  "vice-president":   "view_committee_reports",
+  secretary:          "manage_minutes",
+  treasurer:          "manage_finances",
+  historian:          "manage_archives",
+  "sergeant-at-arms": "manage_conduct_records",
+  parliamentarian:    "manage_procedure_records",
+  bylaws:             "manage_governance_documents",
+  technology:         "view_system_diagnostics",
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -724,4 +725,124 @@ describe("workspace permission matrix — legacy ExecutiveBoard role name not us
       );
     }
   });
+});
+
+// ── Officer workspace permission isolation — Task 2 additions ─────────────────
+
+describe("bylaws_chair — manage_governance_documents only among officer workspace perms", () => {
+  const p = orgPerms("bylaws_chair");
+
+  test("bylaws_chair has manage_governance_documents", () => assertHas(p, "manage_governance_documents", "bylaws_chair"));
+  test("bylaws_chair has upload_governance_documents", () => assertHas(p, "upload_governance_documents", "bylaws_chair"));
+
+  // Must NOT have other officer workspace permissions
+  const DENIED = ["manage_minutes", "manage_finances", "manage_archives", "manage_conduct_records", "manage_procedure_records"];
+  for (const perm of DENIED) {
+    test(`bylaws_chair lacks "${perm}"`, () => assertLacks(p, perm, "bylaws_chair"));
+  }
+});
+
+describe("parliamentarian — view_governance_documents only (no manage)", () => {
+  const p = orgPerms("parliamentarian");
+
+  test("parliamentarian has view_governance_documents (read-only)", () => assertHas(p, "view_governance_documents", "parliamentarian"));
+  test("parliamentarian has manage_procedure_records", () => assertHas(p, "manage_procedure_records", "parliamentarian"));
+
+  const DENIED = ["manage_governance_documents", "manage_finances", "manage_minutes", "manage_archives", "manage_conduct_records"];
+  for (const perm of DENIED) {
+    test(`parliamentarian lacks "${perm}"`, () => assertLacks(p, perm, "parliamentarian"));
+  }
+});
+
+describe("secretary — manage_minutes only; no cross-workspace leakage", () => {
+  const p = orgPerms("secretary");
+
+  test("secretary has manage_minutes", () => assertHas(p, "manage_minutes", "secretary"));
+
+  const DENIED = ["manage_finances", "manage_conduct_records", "manage_governance_documents", "manage_archives", "manage_procedure_records"];
+  for (const perm of DENIED) {
+    test(`secretary lacks "${perm}"`, () => assertLacks(p, perm, "secretary"));
+  }
+});
+
+describe("treasurer — manage_finances only; no cross-workspace leakage", () => {
+  const p = orgPerms("treasurer");
+
+  test("treasurer has manage_finances", () => assertHas(p, "manage_finances", "treasurer"));
+
+  const DENIED = ["manage_minutes", "manage_conduct_records", "manage_archives", "manage_governance_documents", "manage_procedure_records"];
+  for (const perm of DENIED) {
+    test(`treasurer lacks "${perm}"`, () => assertLacks(p, perm, "treasurer"));
+  }
+});
+
+describe("historian — manage_archives only; no cross-workspace leakage", () => {
+  const p = orgPerms("historian");
+
+  test("historian has manage_archives", () => assertHas(p, "manage_archives", "historian"));
+  test("historian has upload_archive_material", () => assertHas(p, "upload_archive_material", "historian"));
+
+  const DENIED = ["manage_finances", "manage_minutes", "manage_conduct_records", "manage_governance_documents", "manage_procedure_records"];
+  for (const perm of DENIED) {
+    test(`historian lacks "${perm}"`, () => assertLacks(p, perm, "historian"));
+  }
+});
+
+describe("sergeant_at_arms — manage_conduct_records; no cross-workspace leakage", () => {
+  const p = orgPerms("sergeant_at_arms");
+
+  test("sergeant_at_arms has manage_conduct_records", () => assertHas(p, "manage_conduct_records", "sergeant_at_arms"));
+  test("sergeant_at_arms has view_conduct_reports", () => assertHas(p, "view_conduct_reports", "sergeant_at_arms"));
+
+  const DENIED = ["manage_finances", "manage_minutes", "manage_archives", "manage_governance_documents", "manage_procedure_records"];
+  for (const perm of DENIED) {
+    test(`sergeant_at_arms lacks "${perm}"`, () => assertLacks(p, perm, "sergeant_at_arms"));
+  }
+});
+
+describe("platform_admin — no officer workspace permissions", () => {
+  const p = sysPerms("platform_admin");
+
+  const OFFICER_PERMS = [
+    "manage_governance_documents", "manage_minutes", "manage_finances",
+    "manage_archives", "manage_conduct_records", "manage_procedure_records",
+  ];
+  for (const perm of OFFICER_PERMS) {
+    test(`platform_admin lacks officer workspace perm "${perm}"`, () => assertLacks(p, perm, "platform_admin"));
+  }
+});
+
+describe("technology_chair — no officer workspace permissions", () => {
+  const p = sysPerms("technology_chair");
+
+  const OFFICER_PERMS = [
+    "manage_governance_documents", "manage_minutes", "manage_finances",
+    "manage_archives", "manage_conduct_records", "manage_procedure_records",
+  ];
+  for (const perm of OFFICER_PERMS) {
+    test(`technology_chair lacks officer workspace perm "${perm}"`, () => assertLacks(p, perm, "technology_chair"));
+  }
+});
+
+describe("president — holds ALL officer workspace permissions (union)", () => {
+  const p = orgPerms("president");
+
+  const ALL_OFFICER_PERMS = [
+    "manage_governance_documents", "manage_minutes", "manage_finances",
+    "manage_archives", "manage_conduct_records", "manage_procedure_records",
+    "manage_org_settings",
+  ];
+  for (const perm of ALL_OFFICER_PERMS) {
+    test(`president has "${perm}"`, () => assertHas(p, perm, "president"));
+  }
+});
+
+describe("multi-role combination: secretary + historian gets both permission sets", () => {
+  const combined = union("secretary", "historian");
+
+  test("combined has manage_minutes (from secretary)", () => assertHas(combined, "manage_minutes", "secretary+historian"));
+  test("combined has manage_archives (from historian)", () => assertHas(combined, "manage_archives", "secretary+historian"));
+  test("combined lacks manage_finances (neither role has it)", () => assertLacks(combined, "manage_finances", "secretary+historian"));
+  test("combined lacks manage_governance_documents (neither role has it)", () => assertLacks(combined, "manage_governance_documents", "secretary+historian"));
+  test("combined lacks manage_conduct_records (neither role has it)", () => assertLacks(combined, "manage_conduct_records", "secretary+historian"));
 });

@@ -1910,3 +1910,1066 @@ export const GetSystemDiagnosticsResponse = zod.object({
 })
 
 
+/**
+ * @summary List governance documents
+ */
+export const ListGovernanceDocumentsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListGovernanceDocumentsResponse = zod.array(ListGovernanceDocumentsResponseItem)
+
+
+/**
+ * @summary Create a governance document
+ */
+export const CreateGovernanceDocumentBody = zod.object({
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish()
+})
+
+export const CreateGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a governance document
+ */
+export const GetGovernanceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a governance document
+ */
+export const UpdateGovernanceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateGovernanceDocumentBody = zod.object({
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish()
+})
+
+export const UpdateGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Publish a governance document
+ */
+export const PublishGovernanceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PublishGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Supersede a governance document
+ */
+export const SupersedeGovernanceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SupersedeGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Archive a governance document
+ */
+export const ArchiveGovernanceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ArchiveGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Restore an archived governance document
+ */
+export const RestoreGovernanceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreGovernanceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List meeting records
+ */
+export const ListMeetingRecordsResponseItem = zod.object({
+  "id": zod.number(),
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "status": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListMeetingRecordsResponse = zod.array(ListMeetingRecordsResponseItem)
+
+
+/**
+ * @summary Create a meeting record
+ */
+export const CreateMeetingRecordBody = zod.object({
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const CreateMeetingRecordResponse = zod.object({
+  "id": zod.number(),
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "status": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a meeting record
+ */
+export const GetMeetingRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetMeetingRecordResponse = zod.object({
+  "id": zod.number(),
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "status": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a meeting record (not allowed when status is approved)
+ */
+export const PatchMeetingRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchMeetingRecordBody = zod.object({
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const PatchMeetingRecordResponse = zod.object({
+  "id": zod.number(),
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "status": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Approve a meeting record
+ */
+export const ApproveMeetingRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveMeetingRecordResponse = zod.object({
+  "id": zod.number(),
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "status": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Add a revision to an approved meeting record
+ */
+export const ReviseMeetingRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReviseMeetingRecordBody = zod.object({
+  "reason": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const ReviseMeetingRecordResponse = zod.object({
+  "id": zod.number(),
+  "meetingType": zod.string(),
+  "title": zod.string(),
+  "meetingDate": zod.string(),
+  "status": zod.string(),
+  "agendaText": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List correspondence log
+ */
+export const ListCorrespondenceResponseItem = zod.object({
+  "id": zod.number(),
+  "direction": zod.string(),
+  "correspondent": zod.string(),
+  "subject": zod.string(),
+  "dateSent": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListCorrespondenceResponse = zod.array(ListCorrespondenceResponseItem)
+
+
+/**
+ * @summary Log a correspondence entry
+ */
+export const CreateCorrespondenceEntryBody = zod.object({
+  "direction": zod.string(),
+  "correspondent": zod.string(),
+  "subject": zod.string(),
+  "dateSent": zod.string(),
+  "description": zod.string().nullish()
+})
+
+export const CreateCorrespondenceEntryResponse = zod.object({
+  "id": zod.number(),
+  "direction": zod.string(),
+  "correspondent": zod.string(),
+  "subject": zod.string(),
+  "dateSent": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a correspondence entry
+ */
+export const UpdateCorrespondenceEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateCorrespondenceEntryBody = zod.object({
+  "direction": zod.string(),
+  "correspondent": zod.string(),
+  "subject": zod.string(),
+  "dateSent": zod.string(),
+  "description": zod.string().nullish()
+})
+
+export const UpdateCorrespondenceEntryResponse = zod.object({
+  "id": zod.number(),
+  "direction": zod.string(),
+  "correspondent": zod.string(),
+  "subject": zod.string(),
+  "dateSent": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List financial transactions
+ */
+export const ListTransactionsResponseItem = zod.object({
+  "id": zod.number(),
+  "description": zod.string(),
+  "amountCents": zod.number(),
+  "direction": zod.string(),
+  "category": zod.string(),
+  "transactionDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListTransactionsResponse = zod.array(ListTransactionsResponseItem)
+
+
+/**
+ * @summary Create a financial transaction
+ */
+export const CreateTransactionBody = zod.object({
+  "description": zod.string(),
+  "amountCents": zod.number(),
+  "direction": zod.string(),
+  "category": zod.string(),
+  "transactionDate": zod.string(),
+  "notes": zod.string().nullish()
+})
+
+export const CreateTransactionResponse = zod.object({
+  "id": zod.number(),
+  "description": zod.string(),
+  "amountCents": zod.number(),
+  "direction": zod.string(),
+  "category": zod.string(),
+  "transactionDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a financial transaction
+ */
+export const PatchTransactionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchTransactionBody = zod.object({
+  "description": zod.string(),
+  "amountCents": zod.number(),
+  "direction": zod.string(),
+  "category": zod.string(),
+  "transactionDate": zod.string(),
+  "notes": zod.string().nullish()
+})
+
+export const PatchTransactionResponse = zod.object({
+  "id": zod.number(),
+  "description": zod.string(),
+  "amountCents": zod.number(),
+  "direction": zod.string(),
+  "category": zod.string(),
+  "transactionDate": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List dues ledger
+ */
+export const ListDuesEntriesResponseItem = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "semesterLabel": zod.string(),
+  "amountCents": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "referenceNumber": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListDuesEntriesResponse = zod.array(ListDuesEntriesResponseItem)
+
+
+/**
+ * @summary Record a dues payment
+ */
+export const CreateDuesEntryBody = zod.object({
+  "memberId": zod.number(),
+  "semesterLabel": zod.string(),
+  "amountCents": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "referenceNumber": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const CreateDuesEntryResponse = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "semesterLabel": zod.string(),
+  "amountCents": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "referenceNumber": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a dues entry
+ */
+export const PatchDuesEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchDuesEntryBody = zod.object({
+  "memberId": zod.number(),
+  "semesterLabel": zod.string(),
+  "amountCents": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "referenceNumber": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const PatchDuesEntryResponse = zod.object({
+  "id": zod.number(),
+  "memberId": zod.number(),
+  "semesterLabel": zod.string(),
+  "amountCents": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "referenceNumber": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Financial summary totals
+ */
+export const GetTreasurerSummaryResponse = zod.object({
+  "transactions": zod.object({
+  "totalIncomeCents": zod.number().optional(),
+  "totalExpenseCents": zod.number().optional(),
+  "transactionCount": zod.number().optional()
+}),
+  "dues": zod.object({
+  "totalOutstandingCents": zod.number().optional(),
+  "totalPaidCents": zod.number().optional(),
+  "duesCount": zod.number().optional()
+})
+})
+
+
+/**
+ * @summary List archive entries
+ */
+export const ListArchiveEntriesResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "memberRefs": zod.array(zod.number()).optional(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "archivedAt": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListArchiveEntriesResponse = zod.array(ListArchiveEntriesResponseItem)
+
+
+/**
+ * @summary Create an archive entry
+ */
+export const CreateArchiveEntryBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional()
+})
+
+export const CreateArchiveEntryResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "memberRefs": zod.array(zod.number()).optional(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "archivedAt": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update an archive entry
+ */
+export const PatchArchiveEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchArchiveEntryBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional()
+})
+
+export const PatchArchiveEntryResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "memberRefs": zod.array(zod.number()).optional(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "archivedAt": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Soft-archive an archive entry
+ */
+export const ArchiveHistorianEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ArchiveHistorianEntryResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "memberRefs": zod.array(zod.number()).optional(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "archivedAt": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Restore a soft-archived entry
+ */
+export const RestoreHistorianEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RestoreHistorianEntryResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "eventDate": zod.string(),
+  "category": zod.string(),
+  "peopleText": zod.string().nullish(),
+  "memberRefs": zod.array(zod.number()).optional(),
+  "storageKey": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "visibility": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "archivedAt": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Request presigned upload URL for archive media
+ */
+export const RequestHistorianMediaUrlResponse = zod.object({
+  "uploadUrl": zod.string(),
+  "objectPath": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List conduct records (confidential)
+ */
+export const ListConductRecordsResponseItem = zod.object({
+  "id": zod.number(),
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string(),
+  "status": zod.string(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListConductRecordsResponse = zod.array(ListConductRecordsResponseItem)
+
+
+/**
+ * @summary Create a conduct record
+ */
+export const CreateConductRecordBody = zod.object({
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string().optional()
+})
+
+export const CreateConductRecordResponse = zod.object({
+  "id": zod.number(),
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string(),
+  "status": zod.string(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a conduct record
+ */
+export const PatchConductRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchConductRecordBody = zod.object({
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string().optional()
+})
+
+export const PatchConductRecordResponse = zod.object({
+  "id": zod.number(),
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string(),
+  "status": zod.string(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Resolve a conduct record
+ */
+export const ResolveConductRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResolveConductRecordBody = zod.object({
+  "resolution": zod.string()
+})
+
+export const ResolveConductRecordResponse = zod.object({
+  "id": zod.number(),
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string(),
+  "status": zod.string(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Archive a conduct record
+ */
+export const ArchiveConductRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ArchiveConductRecordResponse = zod.object({
+  "id": zod.number(),
+  "recordType": zod.string(),
+  "reportDate": zod.string(),
+  "memberId": zod.number().nullish(),
+  "eventId": zod.number().nullish(),
+  "summary": zod.string(),
+  "privateDetails": zod.string(),
+  "status": zod.string(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List parliamentary motions
+ */
+export const ListMotionsResponseItem = zod.object({
+  "id": zod.number(),
+  "motionText": zod.string(),
+  "result": zod.string(),
+  "voteYes": zod.number(),
+  "voteNo": zod.number(),
+  "voteAbstain": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListMotionsResponse = zod.array(ListMotionsResponseItem)
+
+
+/**
+ * @summary Record a motion
+ */
+export const CreateMotionBody = zod.object({
+  "motionText": zod.string(),
+  "result": zod.string(),
+  "voteYes": zod.number().optional(),
+  "voteNo": zod.number().optional(),
+  "voteAbstain": zod.number().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const CreateMotionResponse = zod.object({
+  "id": zod.number(),
+  "motionText": zod.string(),
+  "result": zod.string(),
+  "voteYes": zod.number(),
+  "voteNo": zod.number(),
+  "voteAbstain": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a motion
+ */
+export const PatchMotionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchMotionBody = zod.object({
+  "motionText": zod.string(),
+  "result": zod.string(),
+  "voteYes": zod.number().optional(),
+  "voteNo": zod.number().optional(),
+  "voteAbstain": zod.number().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const PatchMotionResponse = zod.object({
+  "id": zod.number(),
+  "motionText": zod.string(),
+  "result": zod.string(),
+  "voteYes": zod.number(),
+  "voteNo": zod.number(),
+  "voteAbstain": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List parliamentary rulings
+ */
+export const ListRulingsResponseItem = zod.object({
+  "id": zod.number(),
+  "rulingText": zod.string(),
+  "authoritySource": zod.string(),
+  "governanceRef": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListRulingsResponse = zod.array(ListRulingsResponseItem)
+
+
+/**
+ * @summary Record a parliamentary ruling
+ */
+export const CreateRulingBody = zod.object({
+  "rulingText": zod.string(),
+  "authoritySource": zod.string(),
+  "governanceRef": zod.string().nullish()
+})
+
+export const CreateRulingResponse = zod.object({
+  "id": zod.number(),
+  "rulingText": zod.string(),
+  "authoritySource": zod.string(),
+  "governanceRef": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a parliamentary ruling
+ */
+export const PatchRulingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchRulingBody = zod.object({
+  "rulingText": zod.string(),
+  "authoritySource": zod.string(),
+  "governanceRef": zod.string().nullish()
+})
+
+export const PatchRulingResponse = zod.object({
+  "id": zod.number(),
+  "rulingText": zod.string(),
+  "authoritySource": zod.string(),
+  "governanceRef": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List quorum records
+ */
+export const ListQuorumRecordsResponseItem = zod.object({
+  "id": zod.number(),
+  "totalMembership": zod.number(),
+  "quorumThreshold": zod.number(),
+  "membersPresent": zod.number(),
+  "quorumMet": zod.number(),
+  "notes": zod.string().nullish(),
+  "recordedAt": zod.coerce.date()
+})
+export const ListQuorumRecordsResponse = zod.array(ListQuorumRecordsResponseItem)
+
+
+/**
+ * @summary Record quorum check
+ */
+export const CreateQuorumRecordBody = zod.object({
+  "totalMembership": zod.number(),
+  "quorumThreshold": zod.number(),
+  "membersPresent": zod.number(),
+  "notes": zod.string().nullish()
+})
+
+export const CreateQuorumRecordResponse = zod.object({
+  "id": zod.number(),
+  "totalMembership": zod.number(),
+  "quorumThreshold": zod.number(),
+  "membersPresent": zod.number(),
+  "quorumMet": zod.number(),
+  "notes": zod.string().nullish(),
+  "recordedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a quorum record
+ */
+export const GetQuorumRecordParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetQuorumRecordResponse = zod.object({
+  "id": zod.number(),
+  "totalMembership": zod.number(),
+  "quorumThreshold": zod.number(),
+  "membersPresent": zod.number(),
+  "quorumMet": zod.number(),
+  "notes": zod.string().nullish(),
+  "recordedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Read-only governance documents for parliamentarian
+ */
+export const ProcedureGovernanceDocsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "versionLabel": zod.string(),
+  "effectiveDate": zod.string(),
+  "approvalDate": zod.string().nullish(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "originalFilename": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSizeBytes": zod.number().nullish(),
+  "storageKey": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ProcedureGovernanceDocsResponse = zod.array(ProcedureGovernanceDocsResponseItem)
+
+

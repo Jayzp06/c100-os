@@ -119,3 +119,58 @@ export const reimbursementRequestsTable = pgTable("reimbursement_requests", {
 
 export type ReimbursementRequest =
   typeof reimbursementRequestsTable.$inferSelect;
+
+// ─── Dues ledger (Treasurer workspace) ─────────────────────────────────────
+
+export const DUES_LEDGER_STATUS_VALUES = [
+  "Outstanding",
+  "Paid",
+  "Waived",
+] as const;
+export type DuesLedgerStatus = (typeof DUES_LEDGER_STATUS_VALUES)[number];
+
+export const duesLedgerTable = pgTable("dues_ledger", {
+  id: serial("id").primaryKey(),
+  memberId: integer("member_id")
+    .notNull()
+    .references(() => membersTable.id, { onDelete: "cascade" }),
+  semesterLabel: varchar("semester_label", { length: 24 }).notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  paymentMethod: varchar("payment_method", { length: 50 }),
+  referenceNumber: varchar("reference_number", { length: 100 }),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  status: varchar("status", { length: 16 }).notNull().default("Outstanding"),
+  notes: text("notes"),
+  recordedById: integer("recorded_by").references(() => membersTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type DuesLedger = typeof duesLedgerTable.$inferSelect;
+
+// ─── Receipt attachments (Treasurer workspace) ──────────────────────────────
+
+export const receiptAttachmentsTable = pgTable("receipt_attachments", {
+  id: serial("id").primaryKey(),
+  transactionId: integer("transaction_id")
+    .notNull()
+    .references(() => financialTransactionsTable.id, { onDelete: "cascade" }),
+  storageKey: varchar("storage_key", { length: 500 }).notNull(),
+  originalFilename: varchar("original_filename", { length: 300 }).notNull(),
+  fileSizeBytes: integer("file_size_bytes"),
+  uploadedById: integer("uploaded_by").references(() => membersTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type ReceiptAttachment = typeof receiptAttachmentsTable.$inferSelect;

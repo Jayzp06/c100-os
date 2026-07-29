@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Gavel,
   Cpu,
+  BookOpen,
 } from "lucide-react";
 
 export type ExecWorkspaceSlug =
@@ -18,6 +19,7 @@ export type ExecWorkspaceSlug =
   | "historian"
   | "sergeant-at-arms"
   | "parliamentarian"
+  | "bylaws"
   | "technology";
 
 export type ExecWorkspaceConfig = {
@@ -88,8 +90,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "sergeant-at-arms",
     label: "Sergeant-at-Arms",
-    // view_conduct_reports: Sergeant-at-Arms + President.
-    requiredPermission: "view_conduct_reports",
+    // manage_conduct_records: Sergeant-at-Arms + President only.
+    requiredPermission: "manage_conduct_records",
     icon: ShieldCheck,
     eyebrow: "Executive Board",
     description: "Order, conduct standing, and meeting procedure support.",
@@ -102,6 +104,15 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
     icon: Gavel,
     eyebrow: "Appointed Officer",
     description: "Bylaws compliance and parliamentary procedure.",
+  },
+  {
+    slug: "bylaws",
+    label: "Bylaws Officer",
+    // manage_governance_documents: Bylaws Chair + President.
+    requiredPermission: "manage_governance_documents",
+    icon: BookOpen,
+    eyebrow: "Appointed Officer",
+    description: "Governance documents, bylaws, amendments, and version history.",
   },
   {
     slug: "technology",

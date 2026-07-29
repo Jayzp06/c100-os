@@ -10,6 +10,61 @@ import {
 } from "drizzle-orm/pg-core";
 import { eventsTable, membersTable } from "./c100";
 
+// ─── Governance Documents (Bylaws workspace) ────────────────────────────────
+
+export const GOV_DOC_CATEGORY_VALUES = [
+  "ChapterConstitution",
+  "ChapterBylaws",
+  "InstitutionPolicy",
+  "NationalGuidance",
+  "StandingRules",
+  "Amendment",
+  "Other",
+] as const;
+export type GovDocCategory = (typeof GOV_DOC_CATEGORY_VALUES)[number];
+
+export const GOV_DOC_STATUS_VALUES = [
+  "draft",
+  "under_review",
+  "current",
+  "superseded",
+  "archived",
+] as const;
+export type GovDocStatus = (typeof GOV_DOC_STATUS_VALUES)[number];
+
+export const governanceDocumentsTable = pgTable("governance_documents", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  category: varchar("category", { length: 32 }).notNull().default("Other"),
+  versionLabel: varchar("version_label", { length: 50 }).notNull().default("1.0"),
+  effectiveDate: varchar("effective_date", { length: 20 }).notNull(), // ISO date
+  approvalDate: varchar("approval_date", { length: 20 }),
+  status: varchar("status", { length: 16 }).notNull().default("draft"),
+  notes: text("notes"),
+  originalFilename: varchar("original_filename", { length: 300 }),
+  mimeType: varchar("mime_type", { length: 100 }),
+  fileSizeBytes: integer("file_size_bytes"),
+  storageKey: varchar("storage_key", { length: 500 }),
+  uploadedById: integer("uploaded_by").references(() => membersTable.id, {
+    onDelete: "set null",
+  }),
+  createdById: integer("created_by").references(() => membersTable.id, {
+    onDelete: "set null",
+  }),
+  updatedById: integer("updated_by").references(() => membersTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type GovernanceDocument = typeof governanceDocumentsTable.$inferSelect;
+
 // ─── Executive Meetings, Decisions, and Action Items ───────────────────────
 // Schema groundwork for Secretary/officer-collaboration workspaces (Phase 10-13).
 // Kept in its own file since it is a new capability area, not part of the core

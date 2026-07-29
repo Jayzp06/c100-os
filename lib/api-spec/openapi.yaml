@@ -30,6 +30,20 @@ tags:
     description: Admin-configurable auto-scoring rules per event type
   - name: System
     description: Application identity, release notes, and diagnostics
+  - name: GovernanceDocs
+    description: Bylaws Officer governance documents workspace
+  - name: Secretary
+    description: Secretary meeting records and correspondence
+  - name: Treasurer
+    description: Treasurer dues ledger and financial transactions
+  - name: Historian
+    description: Historian archive entries and media
+  - name: Conduct
+    description: Sergeant-at-Arms conduct records (confidential)
+  - name: Procedure
+    description: Parliamentarian motions, rulings, and quorum records
+  - name: Storage
+    description: Object storage presigned URL endpoints
 paths:
   /healthz:
     get:
@@ -1125,9 +1139,800 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SystemDiagnostics'
+  # ── Governance Documents ────────────────────────────────────────────────────
+  /governance/documents:
+    get:
+      operationId: listGovernanceDocuments
+      tags: [GovernanceDocs]
+      summary: List governance documents
+      responses:
+        "200":
+          description: List of governance documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Create a governance document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GovernanceDocumentCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /governance/documents/{id}:
+    get:
+      operationId: getGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Get a governance document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Governance document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Update a governance document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GovernanceDocumentCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /governance/documents/{id}/publish:
+    post:
+      operationId: publishGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Publish a governance document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /governance/documents/{id}/supersede:
+    post:
+      operationId: supersedeGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Supersede a governance document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Superseded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /governance/documents/{id}/archive:
+    post:
+      operationId: archiveGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Archive a governance document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /governance/documents/{id}/restore:
+    post:
+      operationId: restoreGovernanceDocument
+      tags: [GovernanceDocs]
+      summary: Restore an archived governance document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernanceDocument"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Secretary ───────────────────────────────────────────────────────────────
+  /secretary/meetings:
+    get:
+      operationId: listMeetingRecords
+      tags: [Secretary]
+      summary: List meeting records
+      responses:
+        "200":
+          description: Meeting records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MeetingRecord"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createMeetingRecord
+      tags: [Secretary]
+      summary: Create a meeting record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeetingRecordCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingRecord"
+
+  /secretary/meetings/{id}:
+    get:
+      operationId: getMeetingRecord
+      tags: [Secretary]
+      summary: Get a meeting record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Meeting record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingRecord"
+    patch:
+      operationId: patchMeetingRecord
+      tags: [Secretary]
+      summary: Update a meeting record (not allowed when status is approved)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeetingRecordCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingRecord"
+        "409":
+          description: Conflict — record is approved, use /revise
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+
+  /secretary/meetings/{id}/approve:
+    post:
+      operationId: approveMeetingRecord
+      tags: [Secretary]
+      summary: Approve a meeting record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingRecord"
+
+  /secretary/meetings/{id}/revise:
+    post:
+      operationId: reviseMeetingRecord
+      tags: [Secretary]
+      summary: Add a revision to an approved meeting record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeetingRecordReviseBody"
+      responses:
+        "200":
+          description: Revised
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetingRecord"
+
+  /secretary/correspondence:
+    get:
+      operationId: listCorrespondence
+      tags: [Secretary]
+      summary: List correspondence log
+      responses:
+        "200":
+          description: Correspondence entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CorrespondenceEntry"
+    post:
+      operationId: createCorrespondenceEntry
+      tags: [Secretary]
+      summary: Log a correspondence entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrespondenceEntryCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrespondenceEntry"
+
+  /secretary/correspondence/{id}:
+    put:
+      operationId: updateCorrespondenceEntry
+      tags: [Secretary]
+      summary: Update a correspondence entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrespondenceEntryCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrespondenceEntry"
+
+  # ── Treasurer ───────────────────────────────────────────────────────────────
+  /treasurer/transactions:
+    get:
+      operationId: listTransactions
+      tags: [Treasurer]
+      summary: List financial transactions
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialTransaction"
+    post:
+      operationId: createTransaction
+      tags: [Treasurer]
+      summary: Create a financial transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialTransactionCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialTransaction"
+
+  /treasurer/transactions/{id}:
+    patch:
+      operationId: patchTransaction
+      tags: [Treasurer]
+      summary: Update a financial transaction
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialTransactionCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialTransaction"
+
+  /treasurer/dues:
+    get:
+      operationId: listDuesEntries
+      tags: [Treasurer]
+      summary: List dues ledger
+      responses:
+        "200":
+          description: Dues entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DuesEntry"
+    post:
+      operationId: createDuesEntry
+      tags: [Treasurer]
+      summary: Record a dues payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DuesEntryCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuesEntry"
+
+  /treasurer/dues/{id}:
+    patch:
+      operationId: patchDuesEntry
+      tags: [Treasurer]
+      summary: Update a dues entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DuesEntryCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuesEntry"
+
+  /treasurer/summary:
+    get:
+      operationId: getTreasurerSummary
+      tags: [Treasurer]
+      summary: Financial summary totals
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TreasurerSummary"
+
+  # ── Historian ───────────────────────────────────────────────────────────────
+  /historian/archive:
+    get:
+      operationId: listArchiveEntries
+      tags: [Historian]
+      summary: List archive entries
+      responses:
+        "200":
+          description: Archive entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArchiveEntry"
+    post:
+      operationId: createArchiveEntry
+      tags: [Historian]
+      summary: Create an archive entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArchiveEntryCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveEntry"
+
+  /historian/archive/{id}:
+    patch:
+      operationId: patchArchiveEntry
+      tags: [Historian]
+      summary: Update an archive entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArchiveEntryCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveEntry"
+
+  /historian/archive/{id}/archive:
+    post:
+      operationId: archiveHistorianEntry
+      tags: [Historian]
+      summary: Soft-archive an archive entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveEntry"
+
+  /historian/archive/{id}/restore:
+    post:
+      operationId: restoreHistorianEntry
+      tags: [Historian]
+      summary: Restore a soft-archived entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveEntry"
+
+  /historian/media/request-url:
+    post:
+      operationId: requestHistorianMediaUrl
+      tags: [Historian]
+      summary: Request presigned upload URL for archive media
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresignedUploadUrl"
+
+  # ── Conduct ─────────────────────────────────────────────────────────────────
+  /conduct/records:
+    get:
+      operationId: listConductRecords
+      tags: [Conduct]
+      summary: List conduct records (confidential)
+      responses:
+        "200":
+          description: Conduct records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConductRecord"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createConductRecord
+      tags: [Conduct]
+      summary: Create a conduct record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConductRecordCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConductRecord"
+
+  /conduct/records/{id}:
+    patch:
+      operationId: patchConductRecord
+      tags: [Conduct]
+      summary: Update a conduct record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConductRecordCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConductRecord"
+
+  /conduct/records/{id}/resolve:
+    post:
+      operationId: resolveConductRecord
+      tags: [Conduct]
+      summary: Resolve a conduct record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConductRecordResolveBody"
+      responses:
+        "200":
+          description: Resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConductRecord"
+
+  /conduct/records/{id}/archive:
+    post:
+      operationId: archiveConductRecord
+      tags: [Conduct]
+      summary: Archive a conduct record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConductRecord"
+
+  # ── Procedure ───────────────────────────────────────────────────────────────
+  /procedure/motions:
+    get:
+      operationId: listMotions
+      tags: [Procedure]
+      summary: List parliamentary motions
+      responses:
+        "200":
+          description: Motions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Motion"
+    post:
+      operationId: createMotion
+      tags: [Procedure]
+      summary: Record a motion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MotionCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Motion"
+
+  /procedure/motions/{id}:
+    patch:
+      operationId: patchMotion
+      tags: [Procedure]
+      summary: Update a motion
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MotionCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Motion"
+
+  /procedure/rulings:
+    get:
+      operationId: listRulings
+      tags: [Procedure]
+      summary: List parliamentary rulings
+      responses:
+        "200":
+          description: Rulings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParliamentaryRuling"
+    post:
+      operationId: createRuling
+      tags: [Procedure]
+      summary: Record a parliamentary ruling
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParliamentaryRulingCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParliamentaryRuling"
+
+  /procedure/rulings/{id}:
+    patch:
+      operationId: patchRuling
+      tags: [Procedure]
+      summary: Update a parliamentary ruling
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParliamentaryRulingCreate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParliamentaryRuling"
+
+  /procedure/quorum:
+    get:
+      operationId: listQuorumRecords
+      tags: [Procedure]
+      summary: List quorum records
+      responses:
+        "200":
+          description: Quorum records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuorumRecord"
+    post:
+      operationId: createQuorumRecord
+      tags: [Procedure]
+      summary: Record quorum check
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuorumRecordCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuorumRecord"
+
+  /procedure/quorum/{id}:
+    get:
+      operationId: getQuorumRecord
+      tags: [Procedure]
+      summary: Get a quorum record
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Quorum record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuorumRecord"
+
+  /procedure/governance-docs:
+    get:
+      operationId: procedureGovernanceDocs
+      tags: [Procedure]
+      summary: Read-only governance documents for parliamentarian
+      responses:
+        "200":
+          description: Governance documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GovernanceDocument"
 
 components:
   parameters:
+    IdParam:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+
     AuthorizationSessionHeader:
       name: Authorization
       in: header
@@ -1160,6 +1965,26 @@ components:
       description: Restrict the report to a specific semester. Defaults to the active semester.
       schema:
         type: string
+
+  responses:
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
 
   schemas:
     HealthStatus:
@@ -2272,3 +3097,522 @@ components:
         viewAs:
           type: string
           enum: [Member, CommitteeChair, BylawsChair, ExecutiveBoard, Admin]
+    # ── Shared components ────────────────────────────────────────────────────
+    IdParam:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+
+    ErrorBody:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    PresignedUploadUrl:
+      type: object
+      required: [uploadUrl, objectPath, expiresAt]
+      properties:
+        uploadUrl:
+          type: string
+        objectPath:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    # ── GovernanceDocs schemas ───────────────────────────────────────────────
+    GovernanceDocument:
+      type: object
+      required: [id, title, category, versionLabel, effectiveDate, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+        versionLabel:
+          type: string
+        effectiveDate:
+          type: string
+        approvalDate:
+          type: [string, 'null']
+        status:
+          type: string
+        notes:
+          type: [string, 'null']
+        originalFilename:
+          type: [string, 'null']
+        mimeType:
+          type: [string, 'null']
+        fileSizeBytes:
+          type: [integer, 'null']
+        storageKey:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    GovernanceDocumentCreate:
+      type: object
+      required: [title, category, versionLabel, effectiveDate]
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        versionLabel:
+          type: string
+        effectiveDate:
+          type: string
+        approvalDate:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+        originalFilename:
+          type: [string, 'null']
+        mimeType:
+          type: [string, 'null']
+        fileSizeBytes:
+          type: [integer, 'null']
+        storageKey:
+          type: [string, 'null']
+
+    # ── Secretary schemas ────────────────────────────────────────────────────
+    MeetingRecord:
+      type: object
+      required: [id, meetingType, title, meetingDate, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        meetingType:
+          type: string
+        title:
+          type: string
+        meetingDate:
+          type: string
+        status:
+          type: string
+        agendaText:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MeetingRecordCreate:
+      type: object
+      required: [meetingType, title, meetingDate]
+      properties:
+        meetingType:
+          type: string
+        title:
+          type: string
+        meetingDate:
+          type: string
+        agendaText:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+
+    CorrespondenceEntry:
+      type: object
+      required: [id, direction, correspondent, subject, dateSent, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        direction:
+          type: string
+        correspondent:
+          type: string
+        subject:
+          type: string
+        dateSent:
+          type: string
+        description:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CorrespondenceEntryCreate:
+      type: object
+      required: [direction, correspondent, subject, dateSent]
+      properties:
+        direction:
+          type: string
+        correspondent:
+          type: string
+        subject:
+          type: string
+        dateSent:
+          type: string
+        description:
+          type: [string, 'null']
+
+    # ── Treasurer schemas ────────────────────────────────────────────────────
+    FinancialTransaction:
+      type: object
+      required: [id, description, amountCents, direction, category, transactionDate, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        amountCents:
+          type: integer
+        direction:
+          type: string
+        category:
+          type: string
+        transactionDate:
+          type: string
+        notes:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FinancialTransactionCreate:
+      type: object
+      required: [description, amountCents, direction, category, transactionDate]
+      properties:
+        description:
+          type: string
+        amountCents:
+          type: integer
+        direction:
+          type: string
+        category:
+          type: string
+        transactionDate:
+          type: string
+        notes:
+          type: [string, 'null']
+
+    DuesEntry:
+      type: object
+      required: [id, memberId, semesterLabel, amountCents, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        memberId:
+          type: integer
+        semesterLabel:
+          type: string
+        amountCents:
+          type: integer
+        paymentMethod:
+          type: [string, 'null']
+        referenceNumber:
+          type: [string, 'null']
+        paidAt:
+          type: [string, 'null']
+        status:
+          type: string
+        notes:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DuesEntryCreate:
+      type: object
+      required: [memberId, semesterLabel, amountCents]
+      properties:
+        memberId:
+          type: integer
+        semesterLabel:
+          type: string
+        amountCents:
+          type: integer
+        paymentMethod:
+          type: [string, 'null']
+        referenceNumber:
+          type: [string, 'null']
+        paidAt:
+          type: [string, 'null']
+        status:
+          type: string
+        notes:
+          type: [string, 'null']
+
+    TreasurerSummary:
+      type: object
+      required: [transactions, dues]
+      properties:
+        transactions:
+          type: object
+          properties:
+            totalIncomeCents:
+              type: integer
+            totalExpenseCents:
+              type: integer
+            transactionCount:
+              type: integer
+        dues:
+          type: object
+          properties:
+            totalOutstandingCents:
+              type: integer
+            totalPaidCents:
+              type: integer
+            duesCount:
+              type: integer
+
+    # ── Historian schemas ────────────────────────────────────────────────────
+    ArchiveEntry:
+      type: object
+      required: [id, title, description, eventDate, category, visibility, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        eventDate:
+          type: string
+        category:
+          type: string
+        peopleText:
+          type: [string, 'null']
+        memberRefs:
+          type: array
+          items:
+            type: integer
+        storageKey:
+          type: [string, 'null']
+        originalFilename:
+          type: [string, 'null']
+        visibility:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        archivedAt:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ArchiveEntryCreate:
+      type: object
+      required: [title, description, eventDate, category, visibility]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        eventDate:
+          type: string
+        category:
+          type: string
+        peopleText:
+          type: [string, 'null']
+        storageKey:
+          type: [string, 'null']
+        originalFilename:
+          type: [string, 'null']
+        visibility:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    # ── Conduct schemas ──────────────────────────────────────────────────────
+    ConductRecord:
+      type: object
+      required: [id, recordType, reportDate, summary, privateDetails, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        recordType:
+          type: string
+        reportDate:
+          type: string
+        memberId:
+          type: [integer, 'null']
+        eventId:
+          type: [integer, 'null']
+        summary:
+          type: string
+        privateDetails:
+          type: string
+        status:
+          type: string
+        resolution:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ConductRecordCreate:
+      type: object
+      required: [recordType, reportDate, summary]
+      properties:
+        recordType:
+          type: string
+        reportDate:
+          type: string
+        memberId:
+          type: [integer, 'null']
+        eventId:
+          type: [integer, 'null']
+        summary:
+          type: string
+        privateDetails:
+          type: string
+
+    # ── Procedure schemas ────────────────────────────────────────────────────
+    Motion:
+      type: object
+      required: [id, motionText, result, voteYes, voteNo, voteAbstain, createdAt]
+      properties:
+        id:
+          type: integer
+        motionText:
+          type: string
+        result:
+          type: string
+        voteYes:
+          type: integer
+        voteNo:
+          type: integer
+        voteAbstain:
+          type: integer
+        notes:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+
+    MotionCreate:
+      type: object
+      required: [motionText, result]
+      properties:
+        motionText:
+          type: string
+        result:
+          type: string
+        voteYes:
+          type: integer
+        voteNo:
+          type: integer
+        voteAbstain:
+          type: integer
+        notes:
+          type: [string, 'null']
+
+    ParliamentaryRuling:
+      type: object
+      required: [id, rulingText, authoritySource, createdAt]
+      properties:
+        id:
+          type: integer
+        rulingText:
+          type: string
+        authoritySource:
+          type: string
+        governanceRef:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+
+    ParliamentaryRulingCreate:
+      type: object
+      required: [rulingText, authoritySource]
+      properties:
+        rulingText:
+          type: string
+        authoritySource:
+          type: string
+        governanceRef:
+          type: [string, 'null']
+
+    QuorumRecordCreate:
+      type: object
+      required: [totalMembership, quorumThreshold, membersPresent]
+      properties:
+        totalMembership:
+          type: integer
+        quorumThreshold:
+          type: integer
+        membersPresent:
+          type: integer
+        notes:
+          type: [string, 'null']
+
+    QuorumRecord:
+      type: object
+      required: [id, totalMembership, quorumThreshold, membersPresent, quorumMet, recordedAt]
+      properties:
+        id:
+          type: integer
+        totalMembership:
+          type: integer
+        quorumThreshold:
+          type: integer
+        membersPresent:
+          type: integer
+        quorumMet:
+          type: integer
+        notes:
+          type: [string, 'null']
+        recordedAt:
+          type: string
+          format: date-time
+
+    ConductRecordResolveBody:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+
+    MeetingRecordReviseBody:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+        agendaText:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+
+    ConductRecordArchiveBody:
+      type: object
+      properties:
+        notes:
+          type: [string, 'null']
+

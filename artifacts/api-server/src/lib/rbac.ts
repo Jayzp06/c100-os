@@ -257,6 +257,7 @@ export const ASSIGNABLE_ORG_ROLE_SLUGS = [
   "treasurer",
   "parliamentarian",
   "historian",
+  "bylaws_chair",
   "committee_chair",
 ] as const;
 

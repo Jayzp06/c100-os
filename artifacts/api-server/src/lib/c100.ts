@@ -373,7 +373,6 @@ export function requirePermGroup(slug: string) {
 
 export const LEADERSHIP_ROLES: Role[] = [
   "CommitteeChair",
-  "BylawsChair",
   "ExecutiveBoard",
   "Admin",
   "TechnologyChair",
@@ -410,7 +409,6 @@ export type ResolvedPermissions = {
 const VALID_VIEW_AS = [
   "Member",
   "CommitteeChair",
-  "BylawsChair",
   "ExecutiveBoard",
   "Admin",
 ] as const;
@@ -433,15 +431,6 @@ export function syntheticPermissionsFor(viewAs: string): ResolvedPermissions {
         availableExperiences: ["committee_portal", "member_portal"],
         officerPositions: [],
         committeeChairId: 1,
-        isTechChair: true,
-        rbac: EMPTY_RBAC,
-      };
-    case "BylawsChair":
-      return {
-        experience: "committee_portal",
-        availableExperiences: ["committee_portal", "member_portal"],
-        officerPositions: [],
-        committeeChairId: null,
         isTechChair: true,
         rbac: EMPTY_RBAC,
       };

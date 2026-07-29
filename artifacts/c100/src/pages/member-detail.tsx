@@ -63,7 +63,6 @@ const ORG_ROLE_TAGS: { slug: string; label: string }[] = [
   { slug: "parliamentarian", label: "Parliamentarian" },
   { slug: "historian", label: "Historian" },
   { slug: "committee_chair", label: "Committee Chair" },
-  { slug: "bylaws_chair", label: "Bylaws Chair" },
 ];
 const SYSTEM_ROLE_TAGS: { slug: string; label: string }[] = [
   { slug: "platform_admin", label: "Platform Administrator" },
@@ -222,7 +221,6 @@ function MemberDetail({ id }: { id: number }) {
           | "parliamentarian"
           | "historian"
           | "committee_chair"
-          | "bylaws_chair"
         )[],
         systemRoleSlugs: systemRoleSlugs as "platform_admin"[],
       },

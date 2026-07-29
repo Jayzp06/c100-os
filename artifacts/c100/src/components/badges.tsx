@@ -41,7 +41,7 @@ export function Pill({
 const ROLE_LABEL: Record<string, string> = {
   Member: "Member",
   CommitteeChair: "Committee Chair",
-  BylawsChair: "Bylaws Chair",
+  BylawsChair: "Committee Chair",
   ExecutiveBoard: "Executive Board",
   Admin: "Admin",
 };

@@ -230,7 +230,6 @@ function ImportDialog({ onImported }: { onImported: () => void }) {
 const ROLES = [
   "Member",
   "CommitteeChair",
-  "BylawsChair",
   "ExecutiveBoard",
   "Admin",
 ];
@@ -427,7 +426,7 @@ export default function MembersPage() {
       <AppShell>
         <ErrorBlock
           title="Leadership only"
-          message="Only Committee Chairs, Bylaws Chair, Executive Board, and Admin can view the member roster."
+          message="Only Committee Chairs, Executive Board, and Admin can view the member roster."
         />
       </AppShell>
     );

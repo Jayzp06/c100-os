@@ -258,7 +258,6 @@ export const ASSIGNABLE_ORG_ROLE_SLUGS = [
   "parliamentarian",
   "historian",
   "committee_chair",
-  "bylaws_chair",
 ] as const;
 
 export const ASSIGNABLE_SYSTEM_ROLE_SLUGS = ["platform_admin"] as const;
@@ -275,8 +274,7 @@ export type AssignableSystemRoleSlug =
  * Priority (highest first):
  *   1. platform_admin system role → "Admin"
  *   2. Any executive-board slug   → "ExecutiveBoard"
- *   3. bylaws_chair               → "BylawsChair"
- *   4. committee_chair            → "CommitteeChair"
+ *   3. committee_chair            → "CommitteeChair"
  *   5. else                       → "Member"
  */
 export function deriveLegacyRole(
@@ -293,8 +291,7 @@ export function deriveLegacyRole(
     "historian",
   ]);
   if (orgRoleSlugs.some((s) => EXEC_SLUGS.has(s))) return "ExecutiveBoard";
-  if (orgRoleSlugs.includes("bylaws_chair")) return "BylawsChair";
-  if (orgRoleSlugs.includes("committee_chair")) return "CommitteeChair";
+  if (orgRoleSlugs.includes("committee_chair") || orgRoleSlugs.includes("bylaws_chair")) return "CommitteeChair";
   return "Member";
 }
 

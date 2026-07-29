@@ -21,7 +21,6 @@ import { hasSystemRole } from "./rbac";
 
 /** Roles that can see any committee's roster/report, any event, any member. */
 export const CHAPTER_WIDE_REPORT_ROLES: Role[] = [
-  "BylawsChair",
   "ExecutiveBoard",
   "Admin",
   "TechnologyChair",

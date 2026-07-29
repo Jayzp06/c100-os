@@ -275,7 +275,6 @@ router.get("/committees/:id", async (req, res) => {
 });
 
 const CHAPTER_WIDE_ROSTER_ROLES: Role[] = [
-  "BylawsChair",
   "ExecutiveBoard",
   "Admin",
   "TechnologyChair",

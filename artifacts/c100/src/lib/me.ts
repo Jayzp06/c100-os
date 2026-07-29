@@ -14,7 +14,6 @@ export type ExperienceType = Member["experience"];
 
 export const LEADERSHIP_ROLES: Role[] = [
   "CommitteeChair",
-  "BylawsChair",
   "ExecutiveBoard",
   "Admin",
   "TechnologyChair",

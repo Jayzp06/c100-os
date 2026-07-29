@@ -52,12 +52,6 @@ const VIEW_OPTIONS: {
     experience: "Committee Portal",
   },
   {
-    value: "BylawsChair",
-    label: "Bylaws Chair",
-    description: "Top-nav portal — bylaws-specific committee view",
-    experience: "Committee Portal",
-  },
-  {
     value: "ExecutiveBoard",
     label: "Executive Board",
     description: "Operations console with sidebar — dashboard, members, committees, reports",
@@ -177,7 +171,7 @@ function RoleViewSwitcher() {
                   if (isCurrent) {
                     endMutation.mutate();
                   } else {
-                    startMutation.mutate({ data: { viewAs: opt.value as "Member" | "CommitteeChair" | "BylawsChair" | "ExecutiveBoard" | "Admin" } });
+                    startMutation.mutate({ data: { viewAs: opt.value as "Member" | "CommitteeChair" | "ExecutiveBoard" | "Admin" } });
                   }
                 }}
                 className={cn(

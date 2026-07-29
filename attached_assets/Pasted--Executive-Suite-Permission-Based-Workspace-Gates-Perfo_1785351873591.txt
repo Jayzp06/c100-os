@@ -1,0 +1,38 @@
+# Executive Suite — Permission-Based Workspace Gates
+
+Perform one focused correction. Do not build new workspace features.
+
+The completed report states that Executive Suite workspace gates now allow “the exact orgRole holder only.” Replace hardcoded role-to-workspace authorization with permission-based workspace gates.
+
+Each `EXEC_WORKSPACES` entry should declare the permission required to enter it.
+
+Examples:
+
+- President workspace → `view_chapter_overview`
+- Vice President workspace → `manage_programs`
+- Treasurer workspace → `view_financial_reports` or `manage_finances`
+- Secretary workspace → `view_official_records` or `manage_minutes`
+- Bylaws workspace → `view_governance_documents`
+- Parliamentarian workspace → `manage_procedure_records`
+- Historian workspace → `view_archives` or `manage_archives`
+- Sergeant-at-Arms workspace → `manage_conduct`
+- Technology workspace → an appropriate technical permission such as `view_system_diagnostics`
+
+Requirements:
+
+1. Frontend workspace visibility must use resolved permission groups.
+2. Workspace route gates must use the same permission groups.
+3. Backend APIs must continue enforcing corresponding permissions.
+4. Multiple-role users receive the union of their permissions.
+5. Removing a role removes the permissions and workspace access it provided.
+6. Do not reintroduce Platform Administrator or Technology Chair bypasses.
+7. Platform Administrator must not receive Executive Suite access merely through system-role status.
+8. Technology Chair must remain limited to explicitly granted technical tools.
+9. Legacy `ExecutiveBoard` must not grant workspace access.
+10. Update tests so they assert permission-based access, not merely matching role names.
+
+President requirement:
+
+The President should receive access to all Executive Suite officer workspaces through an explicit permission list. Do not implement this through a bypass. Every permission must appear in the President’s resolved permission set and remain server-enforced.
+
+Run all tests and typechecks. Return the workspace-to-permission matrix and confirm no role-name gate remains where a permission check should be used.

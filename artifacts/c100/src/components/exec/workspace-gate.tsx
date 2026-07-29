@@ -5,26 +5,24 @@ import LoginPage from "@/pages/login";
 import type { ExecWorkspaceConfig } from "@/lib/exec-workspaces";
 
 /**
- * Gates an Executive Suite workspace behind the exact org role required for
- * that workspace, or the Technology Chair system role for the Technology workspace.
+ * Gates an Executive Suite workspace using the permission-group declared on
+ * the workspace config (`workspace.requiredPermission`).
  *
- * Rules enforced here:
- *  - Technology workspace (orgRole === null): only Technology Chair qualifies.
- *    Platform Admin does NOT get automatic access to any executive workspace.
- *  - All other workspaces: only the holder of the exact officer org-role qualifies.
- *    No blanket bypass for Tech Chair, Platform Admin, or any other system role.
+ * Access is granted if and only if the member's resolved permission set
+ * contains the required permission. No role-name bypasses, no `orgRole`
+ * string comparisons, no `isTechChair` / `isAdmin` special-cases.
  *
- * These rules mirror the RBAC matrix in rbac-matrix.ts: every tool is locked to
- * the position that holds the corresponding permission group.
+ * The President holds every officer permission explicitly in the RBAC matrix,
+ * so he receives access to all officer workspaces through the union of his
+ * permission set — without any dedicated bypass.
+ *
+ * The Technology workspace requires `view_system_diagnostics`, which is granted
+ * only to the Technology Chair system role. Platform Admin does not hold this
+ * permission and therefore cannot access the Executive Suite.
  */
 export function useExecWorkspaceAccess(workspace: ExecWorkspaceConfig) {
   const me = useMe();
-  if (workspace.orgRole === null) {
-    // Technology workspace: Technology Chair only.
-    return me.isTechChair;
-  }
-  // All other workspaces: the exact position holder only.
-  return me.orgRoles.includes(workspace.orgRole);
+  return me.can(workspace.requiredPermission);
 }
 
 export function ExecWorkspaceShell({

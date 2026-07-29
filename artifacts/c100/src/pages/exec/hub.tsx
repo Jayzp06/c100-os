@@ -15,11 +15,11 @@ export default function ExecutiveSuiteHubPage() {
   if (me.isLoading) return null;
   if (!me.isAuthenticated) return <LoginPage />;
 
-  // Tech Chair qualifies via the Technology workspace (orgRole === null branch).
-  // Platform Admin no longer receives automatic Executive Suite access.
-  const hasAnyAccess = EXEC_WORKSPACES.some((w) =>
-    w.orgRole ? me.orgRoles.includes(w.orgRole) : me.isTechChair,
-  );
+  // Access is driven entirely by resolved permission groups — no role-name checks.
+  // President has all officer permissions so sees all officer workspaces.
+  // Technology Chair has view_system_diagnostics so sees only the Technology workspace.
+  // Platform Admin has no workspace permission and sees nothing here.
+  const hasAnyAccess = EXEC_WORKSPACES.some((w) => me.can(w.requiredPermission));
 
   if (!hasAnyAccess) {
     return (

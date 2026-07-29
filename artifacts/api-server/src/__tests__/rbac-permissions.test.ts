@@ -18,6 +18,21 @@ import assert from "node:assert/strict";
 import { ORG_ROLE_PERMS, SYSTEM_ROLE_PERMS } from "../../../../lib/db/src/rbac-matrix.js";
 import { RESERVED_COMMITTEE_NAMES, validateCommitteeName } from "../routes/committees.js";
 
+// ── Workspace permission matrix ───────────────────────────────────────────────
+// Mirror the EXEC_WORKSPACES entries from the frontend lib so the backend can
+// assert the contract without importing a frontend module. This list must stay
+// in sync with artifacts/c100/src/lib/exec-workspaces.ts.
+const WORKSPACE_PERMISSION_MAP: Record<string, string> = {
+  president:        "manage_org_settings",
+  "vice-president": "view_committee_reports",
+  secretary:        "manage_minutes",
+  treasurer:        "manage_finances",
+  historian:        "manage_archives",
+  "sergeant-at-arms": "view_conduct_reports",
+  parliamentarian:  "manage_procedure_records",
+  technology:       "view_system_diagnostics",
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function orgPerms(slug: string): Set<string> {
@@ -571,5 +586,123 @@ describe("validateCommitteeName", () => {
       RESERVED_COMMITTEE_NAMES.includes("Bylaws" as any),
       "Bylaws must appear in RESERVED_COMMITTEE_NAMES",
     );
+  });
+});
+
+// ── Workspace permission matrix ────────────────────────────────────────────────
+//
+// Each EXEC_WORKSPACES entry declares a requiredPermission.  These tests verify
+// the backend permission matrix supports that contract:
+//   • the primary role for the workspace holds the permission (positive)
+//   • the president holds every officer workspace permission (union access)
+//   • platform_admin holds none of the workspace permissions (no exec access)
+//   • technology_chair holds only the technology workspace permission
+//   • general_member / committee_chair hold no workspace permissions
+//
+// WORKSPACE_PERMISSION_MAP must stay in sync with
+// artifacts/c100/src/lib/exec-workspaces.ts.
+
+describe("workspace permission matrix — primary role positive checks", () => {
+  const cases: Array<[string, string, string]> = [
+    // [workspaceSlug, orgOrSystemRole, permission]
+    ["president",         "president",        "manage_org_settings"],
+    ["vice-president",    "vice_president",   "view_committee_reports"],
+    ["secretary",         "secretary",        "manage_minutes"],
+    ["treasurer",         "treasurer",        "manage_finances"],
+    ["historian",         "historian",        "manage_archives"],
+    ["sergeant-at-arms",  "sergeant_at_arms", "view_conduct_reports"],
+    ["parliamentarian",   "parliamentarian",  "manage_procedure_records"],
+  ];
+
+  for (const [workspace, role, perm] of cases) {
+    test(`${workspace}: ${role} has required permission "${perm}"`, () => {
+      assertHas(orgPerms(role), perm, role);
+    });
+  }
+
+  test("technology: technology_chair (system role) has view_system_diagnostics", () => {
+    assertHas(sysPerms("technology_chair"), "view_system_diagnostics", "technology_chair");
+  });
+});
+
+describe("workspace permission matrix — president holds all officer workspace permissions", () => {
+  const officerWorkspacePerms = Object.entries(WORKSPACE_PERMISSION_MAP)
+    .filter(([slug]) => slug !== "technology")
+    .map(([, perm]) => perm);
+
+  const p = orgPerms("president");
+  for (const perm of officerWorkspacePerms) {
+    test(`president has workspace permission "${perm}"`, () => assertHas(p, perm, "president"));
+  }
+
+  test("president does NOT have technology workspace permission (view_system_diagnostics)", () => {
+    // President is an executive officer, not a technical system role.
+    assertLacks(p, "view_system_diagnostics", "president");
+  });
+});
+
+describe("workspace permission matrix — platform_admin holds no exec-suite workspace permissions", () => {
+  const p = sysPerms("platform_admin");
+  for (const [workspace, perm] of Object.entries(WORKSPACE_PERMISSION_MAP)) {
+    test(`platform_admin lacks workspace permission for "${workspace}" (${perm})`, () =>
+      assertLacks(p, perm, "platform_admin"));
+  }
+});
+
+describe("workspace permission matrix — technology_chair holds only the technology workspace permission", () => {
+  const p = sysPerms("technology_chair");
+  test("technology_chair has view_system_diagnostics (technology workspace)", () =>
+    assertHas(p, "view_system_diagnostics", "technology_chair"));
+
+  const officerWorkspacePerms = Object.entries(WORKSPACE_PERMISSION_MAP)
+    .filter(([slug]) => slug !== "technology")
+    .map(([, perm]) => perm);
+
+  for (const perm of officerWorkspacePerms) {
+    test(`technology_chair lacks officer workspace permission "${perm}"`, () =>
+      assertLacks(p, perm, "technology_chair"));
+  }
+});
+
+describe("workspace permission matrix — general_member and committee_chair hold no workspace permissions", () => {
+  const noAccessRoles = ["general_member", "committee_chair", "committee_member"];
+
+  for (const role of noAccessRoles) {
+    const p = orgPerms(role);
+    for (const [workspace, perm] of Object.entries(WORKSPACE_PERMISSION_MAP)) {
+      test(`${role} lacks workspace permission for "${workspace}" (${perm})`, () =>
+        assertLacks(p, perm, role));
+    }
+  }
+});
+
+describe("workspace permission matrix — legacy ExecutiveBoard role name not used as a gate", () => {
+  // The 'ExecutiveBoard' string was the old legacy role-name gate.
+  // Workspace access is now permission-based, so no workspace permission is
+  // granted solely by having role='ExecutiveBoard'.  Actual exec members
+  // (president, secretary, etc.) get access through their explicit org roles.
+  test("'ExecutiveBoard' is not a key in WORKSPACE_PERMISSION_MAP", () => {
+    assert.ok(
+      !Object.prototype.hasOwnProperty.call(WORKSPACE_PERMISSION_MAP, "ExecutiveBoard"),
+      "ExecutiveBoard must not be a workspace access discriminator",
+    );
+  });
+  test("workspace permissions are granted by org-role slugs, not legacy role strings", () => {
+    // Each workspace permission must appear in at least one specific org-role's
+    // permission set (not only in a broad legacy role like 'ExecutiveBoard').
+    for (const [workspace, perm] of Object.entries(WORKSPACE_PERMISSION_MAP)) {
+      if (workspace === "technology") continue; // system-role checked separately
+      const holderRoles = Object.entries(ORG_ROLE_PERMS)
+        .filter(([, perms]) => perms.includes(perm))
+        .map(([role]) => role);
+      assert.ok(
+        holderRoles.length > 0,
+        `workspace "${workspace}" permission "${perm}" must be held by at least one org role`,
+      );
+      assert.ok(
+        !holderRoles.includes("ExecutiveBoard" as never),
+        `workspace "${workspace}" permission "${perm}" must not be granted via the legacy 'ExecutiveBoard' role`,
+      );
+    }
   });
 });

@@ -23,8 +23,17 @@ export type ExecWorkspaceSlug =
 export type ExecWorkspaceConfig = {
   slug: ExecWorkspaceSlug;
   label: string;
-  /** Org role slug that grants direct access, or null when gated by system role instead. */
-  orgRole: string | null;
+  /**
+   * The permission-group slug that grants access to this workspace.
+   * Access is granted if and only if the member's resolved permission set
+   * contains this slug. No role-name bypasses are honoured — all access
+   * flows through the RBAC matrix in rbac-matrix.ts.
+   *
+   * President holds all officer permissions explicitly, so President
+   * automatically has access to every officer workspace through the union
+   * of his permission set, without any special-case logic.
+   */
+  requiredPermission: string;
   icon: LucideIcon;
   eyebrow: string;
   description: string;
@@ -34,7 +43,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "president",
     label: "President",
-    orgRole: "president",
+    // manage_org_settings is granted only to president in the org-role matrix.
+    requiredPermission: "manage_org_settings",
     icon: Crown,
     eyebrow: "Executive Board",
     description: "Chapter-wide health, standing, and executive oversight.",
@@ -42,7 +52,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "vice-president",
     label: "Vice President",
-    orgRole: "vice_president",
+    // view_committee_reports: VP + President (President has access to all workspaces).
+    requiredPermission: "view_committee_reports",
     icon: Users2,
     eyebrow: "Executive Board",
     description: "Committee oversight and cross-committee coordination.",
@@ -50,7 +61,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "secretary",
     label: "Secretary",
-    orgRole: "secretary",
+    // manage_minutes: Secretary + President.
+    requiredPermission: "manage_minutes",
     icon: NotebookPen,
     eyebrow: "Executive Board",
     description: "Meeting attendance records and chapter documentation.",
@@ -58,7 +70,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "treasurer",
     label: "Treasurer",
-    orgRole: "treasurer",
+    // manage_finances: Treasurer + President.
+    requiredPermission: "manage_finances",
     icon: Landmark,
     eyebrow: "Executive Board",
     description: "Dues tracking and chapter financial oversight.",
@@ -66,7 +79,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "historian",
     label: "Historian",
-    orgRole: "historian",
+    // manage_archives: Historian + President.
+    requiredPermission: "manage_archives",
     icon: Camera,
     eyebrow: "Appointed Officer",
     description: "Chapter history, media archive, and event documentation.",
@@ -74,7 +88,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "sergeant-at-arms",
     label: "Sergeant-at-Arms",
-    orgRole: "sergeant_at_arms",
+    // view_conduct_reports: Sergeant-at-Arms + President.
+    requiredPermission: "view_conduct_reports",
     icon: ShieldCheck,
     eyebrow: "Executive Board",
     description: "Order, conduct standing, and meeting procedure support.",
@@ -82,7 +97,8 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "parliamentarian",
     label: "Parliamentarian",
-    orgRole: "parliamentarian",
+    // manage_procedure_records: Parliamentarian + President.
+    requiredPermission: "manage_procedure_records",
     icon: Gavel,
     eyebrow: "Appointed Officer",
     description: "Bylaws compliance and parliamentary procedure.",
@@ -90,7 +106,10 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
   {
     slug: "technology",
     label: "Technology",
-    orgRole: null,
+    // view_system_diagnostics: Technology Chair system role only.
+    // Platform Admin does not hold this permission and must not receive
+    // Executive Suite access through system-role status.
+    requiredPermission: "view_system_diagnostics",
     icon: Cpu,
     eyebrow: "System Role",
     description: "Platform administration, roles, and system health.",

@@ -361,14 +361,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     isExecOrAdmin: me.isExecOrAdmin,
     isTechChair: me.isTechChair,
     isChair: me.isChair,
-    // Show Executive Suite nav only when the member holds a qualifying position:
-    // a specific exec/appointed-officer org role, or is Tech Chair (who accesses
-    // the Technology workspace). Platform Admin is technical-only and no longer
-    // receives automatic Executive Suite access.
-    // "general_member" alone must NOT qualify — every member has that role.
-    hasExecWorkspace:
-      me.isTechChair ||
-      EXEC_WORKSPACES.some((w) => w.orgRole !== null && me.orgRoles.includes(w.orgRole)),
+    // Show Executive Suite nav when the member holds at least one workspace
+    // permission. Driven entirely by resolved permission groups — no role-name
+    // checks, no isTechChair / isAdmin special cases. Technology Chair qualifies
+    // via view_system_diagnostics; Platform Admin holds no workspace permission.
+    hasExecWorkspace: EXEC_WORKSPACES.some((w) => me.can(w.requiredPermission)),
   };
   const items = NAV.filter((n) => n.show(ctx));
 

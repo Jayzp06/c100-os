@@ -123,7 +123,10 @@ router.put(
 );
 
 // POST /governance/documents/:id/publish — set status to current
-// Transactionally supersedes any previously current doc with same category
+// Supersedes any previously current doc in the same category ATOMICALLY.
+// Both UPDATEs run inside a single DB transaction: if either fails, neither
+// is committed. This prevents a state where old docs are superseded but the
+// new one was never promoted to current.
 router.post(
   "/governance/documents/:id/publish",
   requirePermGroup("manage_governance_documents")(async (req, res) => {
@@ -132,19 +135,31 @@ router.post(
     if (!doc) { res.status(404).json({ error: "Not found" }); return; }
     if (doc.status === "current") { res.status(400).json({ error: "Already current" }); return; }
 
-    // Supersede any existing current docs in the same category
-    await db
-      .update(governanceDocumentsTable)
-      .set({ status: "superseded", updatedById: (req as any).member.id })
-      .where(eq(governanceDocumentsTable.category, doc.category));
+    const actorId = (req as any).member.id;
 
-    const [updated] = await db
-      .update(governanceDocumentsTable)
-      .set({ status: "current", updatedById: (req as any).member.id })
-      .where(eq(governanceDocumentsTable.id, id))
-      .returning();
+    // Wrap both UPDATEs in a single transaction so the supersede and the
+    // promote are atomic — partial failure leaves the database unchanged.
+    const updated = await db.transaction(async (tx) => {
+      // Step 1: mark all existing current docs in this category as superseded.
+      await tx
+        .update(governanceDocumentsTable)
+        .set({ status: "superseded", updatedById: actorId })
+        .where(
+          eq(governanceDocumentsTable.category, doc.category),
+        );
 
-    await writeAuditLog({ action: "governance_doc.publish", targetType: "officer_workspace", actorId: (req as any).member.id, targetId: id, after: { category: doc.category } });
+      // Step 2: promote this document to current.
+      const [promoted] = await tx
+        .update(governanceDocumentsTable)
+        .set({ status: "current", updatedById: actorId })
+        .where(eq(governanceDocumentsTable.id, id))
+        .returning();
+
+      return promoted;
+    });
+
+    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+    await writeAuditLog({ action: "governance_doc.publish", targetType: "officer_workspace", actorId, targetId: id, after: { category: doc.category } });
     res.json(updated);
   }),
 );

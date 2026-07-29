@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, TrendingUp, TrendingDown, Plus, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ReportExportMenu } from "@/components/report-export";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "treasurer")!;
 
@@ -118,7 +119,9 @@ export default function TreasurerWorkspacePage() {
           </TabsList>
 
           <TabsContent value="dues" className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-2">
+              <ReportExportMenu endpoint="/api/treasurer/dues/export" label="Export Dues" />
+              <ReportExportMenu endpoint="/api/treasurer/transactions/export" label="Export Transactions" />
               <Dialog open={duesOpen} onOpenChange={setDuesOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> Record Dues</Button>

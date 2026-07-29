@@ -33,6 +33,42 @@ const WORKSPACE_PERMISSION_GATE: Record<string, string[]> = {
   procedure: ['manage_procedure_records'],
 };
 
+/**
+ * Server-side upload policy per workspace.
+ *
+ * maxBytes  — hard cap on the Content-Length the caller declares (the GCS
+ *             presigned URL enforces the same limit on the actual PUT).
+ * allowedTypes — when set, the declared contentType must be one of these
+ *              exact MIME strings.  Omit to allow any type.
+ *
+ * These checks run BEFORE a presigned URL is issued, so no bytes ever
+ * reach storage for over-size or wrong-type uploads.
+ */
+const WORKSPACE_UPLOAD_POLICY: Record<
+  string,
+  { maxBytes: number; allowedTypes?: string[] }
+> = {
+  governance: {
+    maxBytes: 20 * 1024 * 1024, // 20 MB
+    allowedTypes: [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ],
+  },
+  secretary:  { maxBytes: 20 * 1024 * 1024 },
+  finances:   { maxBytes: 20 * 1024 * 1024 },
+  historian:  {
+    maxBytes: 100 * 1024 * 1024, // 100 MB — photos/video
+    allowedTypes: [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/quicktime',
+      'application/pdf',
+    ],
+  },
+  conduct:    { maxBytes: 20 * 1024 * 1024 },
+  procedure:  { maxBytes: 20 * 1024 * 1024 },
+};
+
 /** Extract the workspace slug from a `/objects/{workspace}/{uuid}` path. */
 function extractWorkspace(objectPath: string): string | null {
   // objectPath is like /objects/governance/some-uuid
@@ -92,6 +128,22 @@ router.post(
     if (!(await canAccessWorkspaceObject(req.member.id, workspace))) {
       res.status(403).json({ error: `Insufficient permissions for workspace: ${workspace}` });
       return;
+    }
+
+    // Enforce server-side size and MIME-type policy before issuing a URL.
+    const policy = WORKSPACE_UPLOAD_POLICY[workspace];
+    if (policy) {
+      if (size > policy.maxBytes) {
+        const limitMB = (policy.maxBytes / 1024 / 1024).toFixed(0);
+        res.status(413).json({ error: `File too large. Maximum size for this workspace is ${limitMB} MB.` });
+        return;
+      }
+      if (policy.allowedTypes && !policy.allowedTypes.includes(contentType)) {
+        res.status(415).json({
+          error: `File type not allowed for this workspace. Accepted types: ${policy.allowedTypes.join(', ')}`,
+        });
+        return;
+      }
     }
 
     try {

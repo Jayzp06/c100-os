@@ -10,9 +10,10 @@ import {
   financialTransactionsTable,
   receiptAttachmentsTable,
 } from "@workspace/db";
-import { eq, desc, sum, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { requirePermGroup, writeAuditLog } from "../lib/c100";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { isExportFormat, sendCsv, sendXlsx, sendPdf, type ReportColumn } from "../lib/export";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -234,6 +235,68 @@ router.get(
       .from(duesLedgerTable);
 
     res.json({ transactions: txnSummary, dues: duesSummary });
+  }),
+);
+
+// GET /treasurer/dues/export?format=csv|xlsx|pdf
+router.get(
+  "/treasurer/dues/export",
+  requirePermGroup("manage_finances")(async (req, res) => {
+    const format = req.query.format;
+    if (!isExportFormat(format)) {
+      res.status(400).json({ error: "format must be csv, xlsx, or pdf" });
+      return;
+    }
+    const rows = await db
+      .select()
+      .from(duesLedgerTable)
+      .orderBy(desc(duesLedgerTable.createdAt));
+
+    type Row = (typeof rows)[number];
+    const meta = { title: "Dues Ledger", filenameBase: "dues-ledger" };
+    const columns: ReportColumn<Row>[] = [
+      { header: "Member ID",      key: "memberId",       value: (r) => r.memberId,                             width: 12 },
+      { header: "Semester",       key: "semesterLabel",  value: (r) => r.semesterLabel,                        width: 18 },
+      { header: "Amount ($)",     key: "amount",         value: (r) => (r.amountCents / 100).toFixed(2),       width: 14 },
+      { header: "Status",         key: "status",         value: (r) => r.status,                               width: 14 },
+      { header: "Payment Method", key: "paymentMethod",  value: (r) => r.paymentMethod ?? "",                  width: 18 },
+      { header: "Reference",      key: "referenceNumber",value: (r) => r.referenceNumber ?? "",                width: 18 },
+      { header: "Notes",          key: "notes",          value: (r) => r.notes ?? "",                          width: 30 },
+    ];
+    if (format === "csv")  return sendCsv(res, meta, columns, rows);
+    if (format === "xlsx") return sendXlsx(res, meta, [{ name: "Dues Ledger", columns, rows }]);
+    return sendPdf(res, meta, columns, rows);
+  }),
+);
+
+// GET /treasurer/transactions/export?format=csv|xlsx|pdf
+router.get(
+  "/treasurer/transactions/export",
+  requirePermGroup("manage_finances")(async (req, res) => {
+    const format = req.query.format;
+    if (!isExportFormat(format)) {
+      res.status(400).json({ error: "format must be csv, xlsx, or pdf" });
+      return;
+    }
+    const rows = await db
+      .select()
+      .from(financialTransactionsTable)
+      .orderBy(desc(financialTransactionsTable.transactionDate));
+
+    type Row = (typeof rows)[number];
+    const meta = { title: "Financial Transactions", filenameBase: "transactions" };
+    const columns: ReportColumn<Row>[] = [
+      { header: "Date",           key: "transactionDate", value: (r) => String(r.transactionDate),            width: 14 },
+      { header: "Type",           key: "transactionType", value: (r) => r.transactionType,                   width: 10 },
+      { header: "Amount ($)",     key: "amount",          value: (r) => (r.amountCents / 100).toFixed(2),    width: 14 },
+      { header: "Description",    key: "description",     value: (r) => r.description,                       width: 40 },
+      { header: "Payment Method", key: "paymentMethod",   value: (r) => (r as any).paymentMethod ?? "",      width: 18 },
+      { header: "Reference",      key: "referenceNumber", value: (r) => (r as any).referenceNumber ?? "",    width: 18 },
+      { header: "Status",         key: "txnStatus",       value: (r) => (r as any).txnStatus ?? "",          width: 12 },
+    ];
+    if (format === "csv")  return sendCsv(res, meta, columns, rows);
+    if (format === "xlsx") return sendXlsx(res, meta, [{ name: "Transactions", columns, rows }]);
+    return sendPdf(res, meta, columns, rows);
   }),
 );
 

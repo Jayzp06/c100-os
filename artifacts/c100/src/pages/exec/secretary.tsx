@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, Mail, Plus, CheckCircle2, FileText } from "lucide-react";
+import { CalendarDays, Mail, Plus, CheckCircle2, FileText, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -50,6 +50,29 @@ export default function SecretaryWorkspacePage() {
 
   const [corrOpen, setCorrOpen] = useState(false);
   const [corrForm, setCorrForm] = useState({ direction: "Inbound" as "Inbound" | "Outbound", correspondent: "", subject: "", dateSent: new Date().toISOString().split("T")[0], description: "" });
+
+  const [reviseOpen, setReviseOpen] = useState(false);
+  const [revisingId, setRevisingId] = useState<number | null>(null);
+  const [reviseForm, setReviseForm] = useState({ reason: "", agendaText: "", notes: "" });
+
+  const createRevision = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: typeof reviseForm }) => {
+      const r = await fetch(`/api/secretary/meetings/${id}/revise`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error ?? "Failed"); }
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["secretary", "meetings"] });
+      setReviseOpen(false);
+      setRevisingId(null);
+      toast({ title: "Revision recorded. Record moved back to submitted." });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
 
   const createMeeting = useMutation({
     mutationFn: async (data: typeof meetingForm) => {
@@ -163,6 +186,17 @@ export default function SecretaryWorkspacePage() {
                             {m.status !== "approved" && m.status !== "archived" && (
                               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => approveMeeting.mutate(m.id)} disabled={approveMeeting.isPending}>Approve</Button>
                             )}
+                            {m.status === "approved" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => { setRevisingId(m.id); setReviseForm({ reason: "", agendaText: "", notes: "" }); setReviseOpen(true); }}
+                              >
+                                <RotateCcw className="mr-1 h-3 w-3" />
+                                Revise
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -241,6 +275,41 @@ export default function SecretaryWorkspacePage() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Revision dialog — shown when "Revise" is clicked on an approved record */}
+        <Dialog open={reviseOpen} onOpenChange={(open) => { setReviseOpen(open); if (!open) setRevisingId(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Create Revision</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground -mt-2">
+              The approved record will be preserved in full revision history. This revision moves the record back to &ldquo;submitted&rdquo; status.
+            </p>
+            <div className="space-y-4 pt-1">
+              <div className="space-y-1.5">
+                <Label>Reason for revision <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Corrected quorum count"
+                  value={reviseForm.reason}
+                  onChange={(e) => setReviseForm((f) => ({ ...f, reason: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Updated agenda (optional)</Label>
+                <Textarea rows={3} value={reviseForm.agendaText} onChange={(e) => setReviseForm((f) => ({ ...f, agendaText: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Updated notes (optional)</Label>
+                <Textarea rows={3} value={reviseForm.notes} onChange={(e) => setReviseForm((f) => ({ ...f, notes: e.target.value }))} />
+              </div>
+              <Button
+                className="w-full"
+                disabled={!reviseForm.reason || createRevision.isPending}
+                onClick={() => { if (revisingId !== null) createRevision.mutate({ id: revisingId, data: reviseForm }); }}
+              >
+                {createRevision.isPending ? "Saving…" : "Submit Revision"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </ExecWorkspaceShell>
   );

@@ -22,6 +22,7 @@ import {
   setMemberOrgRoleTags,
   setMemberSystemRoleTags,
   resolveRbacContext,
+  hasPermissionGroup,
   ASSIGNABLE_ORG_ROLE_SLUGS,
   ASSIGNABLE_SYSTEM_ROLE_SLUGS,
   deriveLegacyRole,
@@ -276,6 +277,14 @@ router.patch(
       );
     }
     if (body.data.systemRoleSlugs !== undefined) {
+      // Assigning or removing system roles (e.g. platform_admin) requires the
+      // caller to hold manage_roles. Tech Chair and general leadership roles
+      // must not be able to escalate privileges via this field.
+      const callerCtx = await resolveRbacContext(req.member.id);
+      if (!hasPermissionGroup(callerCtx, "manage_roles")) {
+        res.status(403).json({ error: "Assigning system roles requires manage_roles permission" });
+        return;
+      }
       await setMemberSystemRoleTags(
         params.data.id,
         body.data.systemRoleSlugs,

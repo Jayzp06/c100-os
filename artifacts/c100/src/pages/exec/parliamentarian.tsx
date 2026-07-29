@@ -24,7 +24,7 @@ const workspace = EXEC_WORKSPACES.find((w) => w.slug === "parliamentarian")!;
 interface Motion { id: number; motionText: string; result: string; voteYes: number; voteNo: number; voteAbstain: number; notes?: string | null; createdAt: string; }
 interface Ruling { id: number; rulingText: string; authoritySource: string; governanceRef?: string | null; createdAt: string; }
 interface QuorumRecord { id: number; totalMembership: number; quorumThreshold: number; membersPresent: number; quorumMet: number; recordedAt: string; }
-interface GovDoc { id: number; title: string; category: string; status: string; versionLabel: string; effectiveDate: string; }
+interface GovDoc { id: number; title: string; category: string; status: string; versionLabel: string; effectiveDate: string; storageKey?: string | null; }
 
 const MOTION_RESULTS = ["Passed", "Failed", "Tabled", "Withdrawn", "Other"];
 
@@ -265,7 +265,19 @@ export default function ParliamentarianWorkspacePage() {
                         <p className="font-medium">{d.title}</p>
                         <p className="text-xs text-muted-foreground">{d.category} · v{d.versionLabel} · {d.effectiveDate}</p>
                       </div>
-                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${d.status === "current" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>{d.status}</span>
+                      <div className="flex items-center gap-2 shrink-0 ml-4">
+                        <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${d.status === "current" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>{d.status}</span>
+                        {d.storageKey && (
+                          <a
+                            href={`/api/storage${d.storageKey}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium border hover:bg-muted transition-colors"
+                          >
+                            View
+                          </a>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

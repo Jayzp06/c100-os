@@ -434,28 +434,32 @@ function MemberDetail({ id }: { id: number }) {
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Platform access
-                        </p>
-                        <div className="space-y-1.5">
-                          {SYSTEM_ROLE_TAGS.map((t) => (
-                            <label
-                              key={t.slug}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <Checkbox
-                                checked={systemRoleSlugs.includes(t.slug)}
-                                onCheckedChange={(v) =>
-                                  toggleSystemRole(t.slug, v === true)
-                                }
-                                data-testid={`checkbox-system-role-${t.slug}`}
-                              />
-                              {t.label}
-                            </label>
-                          ))}
+                      {/* Only account administrators (manage_roles) may
+                          assign or remove system roles like Platform Admin. */}
+                      {me.isAdmin && (
+                        <div>
+                          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Platform access
+                          </p>
+                          <div className="space-y-1.5">
+                            {SYSTEM_ROLE_TAGS.map((t) => (
+                              <label
+                                key={t.slug}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <Checkbox
+                                  checked={systemRoleSlugs.includes(t.slug)}
+                                  onCheckedChange={(v) =>
+                                    toggleSystemRole(t.slug, v === true)
+                                  }
+                                  data-testid={`checkbox-system-role-${t.slug}`}
+                                />
+                                {t.label}
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </PopoverContent>
                   </Popover>
                 </div>

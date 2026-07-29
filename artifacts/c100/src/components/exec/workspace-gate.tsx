@@ -5,22 +5,26 @@ import LoginPage from "@/pages/login";
 import type { ExecWorkspaceConfig } from "@/lib/exec-workspaces";
 
 /**
- * Gates an Executive Suite workspace behind the matching org role (or, for
- * Technology, the Technology Chair / Platform Admin system role).
+ * Gates an Executive Suite workspace behind the exact org role required for
+ * that workspace, or the Technology Chair system role for the Technology workspace.
  *
- * Non-technology workspaces require the exact officer position.
- * Platform Admin (isAdmin) does NOT get automatic access to executive-content
- * workspaces (treasurer, secretary, etc.) — those hold confidential records.
- * Tech Chair retains oversight access to all workspaces for technical support.
+ * Rules enforced here:
+ *  - Technology workspace (orgRole === null): only Technology Chair qualifies.
+ *    Platform Admin does NOT get automatic access to any executive workspace.
+ *  - All other workspaces: only the holder of the exact officer org-role qualifies.
+ *    No blanket bypass for Tech Chair, Platform Admin, or any other system role.
+ *
+ * These rules mirror the RBAC matrix in rbac-matrix.ts: every tool is locked to
+ * the position that holds the corresponding permission group.
  */
 export function useExecWorkspaceAccess(workspace: ExecWorkspaceConfig) {
   const me = useMe();
   if (workspace.orgRole === null) {
-    // Technology workspace: Tech Chair and Platform Admin both qualify
-    return me.isTechChair || me.isAdmin;
+    // Technology workspace: Technology Chair only.
+    return me.isTechChair;
   }
-  // All other workspaces: only the specific position holder or Tech Chair
-  return me.orgRoles.includes(workspace.orgRole) || me.isTechChair;
+  // All other workspaces: the exact position holder only.
+  return me.orgRoles.includes(workspace.orgRole);
 }
 
 export function ExecWorkspaceShell({
@@ -42,7 +46,7 @@ export function ExecWorkspaceShell({
         <PageHeader eyebrow={workspace.eyebrow} title={workspace.label} />
         <ErrorBlock
           title="Restricted workspace"
-          message={`Only the ${workspace.label} officer, or an administrator, can view this workspace.`}
+          message={`This workspace is reserved for the ${workspace.label} officer. Contact an administrator if you believe this is an error.`}
         />
       </AppShell>
     );

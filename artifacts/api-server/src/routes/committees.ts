@@ -48,7 +48,6 @@ import {
   requireAuth,
   resolvePermissions,
 } from "../lib/c100";
-import { hasSystemRole } from "../lib/rbac";
 
 const router: IRouter = Router();
 
@@ -274,10 +273,12 @@ router.get("/committees/:id", async (req, res) => {
   });
 });
 
+// Technology Chair is technical-only and must not receive automatic access to
+// private committee records. Only Executive Board and Platform Admin (Admin)
+// may view any committee's roster unconditionally.
 const CHAPTER_WIDE_ROSTER_ROLES: Role[] = [
   "ExecutiveBoard",
   "Admin",
-  "TechnologyChair",
 ];
 
 router.get(
@@ -291,9 +292,10 @@ router.get(
     if (!CHAPTER_WIDE_ROSTER_ROLES.includes(req.member.role as Role)) {
       const perms = await resolvePermissions(req.member);
       const isOwnCommitteeChair = perms.committeeChairId === params.data.id;
-      const isPlatformAdmin =
-        perms.isTechChair || hasSystemRole(perms.rbac, "platform_admin");
-      if (!isOwnCommitteeChair && !isPlatformAdmin) {
+      // No blanket Tech Chair or Platform Admin bypass here. A chair can view
+      // their own committee's roster via the isOwnCommitteeChair path. Any other
+      // escalated access must come from a role in CHAPTER_WIDE_ROSTER_ROLES.
+      if (!isOwnCommitteeChair) {
         res.status(403).json({ error: "Insufficient role" });
         return;
       }

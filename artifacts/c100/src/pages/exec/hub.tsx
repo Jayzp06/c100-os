@@ -15,9 +15,10 @@ export default function ExecutiveSuiteHubPage() {
   if (me.isLoading) return null;
   if (!me.isAuthenticated) return <LoginPage />;
 
-  // Tech Chair is included via the technology workspace (orgRole === null branch)
+  // Tech Chair qualifies via the Technology workspace (orgRole === null branch).
+  // Platform Admin no longer receives automatic Executive Suite access.
   const hasAnyAccess = EXEC_WORKSPACES.some((w) =>
-    w.orgRole ? me.orgRoles.includes(w.orgRole) : me.isTechChair || me.isAdmin,
+    w.orgRole ? me.orgRoles.includes(w.orgRole) : me.isTechChair,
   );
 
   if (!hasAnyAccess) {

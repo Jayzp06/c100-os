@@ -402,7 +402,9 @@ export function requirePermissionGroup(permGroupSlug: string) {
   return (handler: AuthedHandler) =>
     async (req: Request & { user: any; member: MemberRow }, res: Response, next: NextFunction) => {
       const ctx = await resolveRbacContext(req.member.id);
-      if (!isTechSuperuser(ctx) && !hasPermissionGroup(ctx, permGroupSlug)) {
+      // No blanket bypass for Tech Chair or Platform Admin.
+      // All access is driven by explicit permission-group membership in the matrix.
+      if (!hasPermissionGroup(ctx, permGroupSlug)) {
         res.status(403).json({ error: "Insufficient permissions" });
         return;
       }

@@ -96,7 +96,7 @@ const ORG_ROLES = [
   { slug: "community_service_chair",      name: "Community Service Chair",       tier: "committee_leadership", sortOrder: 35 },
   { slug: "special_events_chair",         name: "Special Events Chair",          tier: "committee_leadership", sortOrder: 36 },
   { slug: "committee_chair",              name: "Committee Chair",               tier: "committee_leadership", sortOrder: 37 },
-  { slug: "bylaws_chair",                 name: "Bylaws Chair",                  tier: "committee_leadership", sortOrder: 38 },
+  { slug: "bylaws_chair",                 name: "Bylaws Chair",                  tier: "appointed_officer",    sortOrder: 38 },
   // General
   { slug: "committee_member",       name: "Committee Member",                    tier: "committee_member",     sortOrder: 40 },
   { slug: "general_member",         name: "General Member",                      tier: "general_member",       sortOrder: 50 },
@@ -106,30 +106,66 @@ const ORG_ROLES = [
 
 // Permission groups — scope: "org" or "system"
 const PERM_GROUPS = [
+  // ── Operational ─────────────────────────────────────────────────────────
   { slug: "manage_members",             name: "Manage Members",              scope: "org",    description: "View, create, update, and deactivate chapter members" },
   { slug: "manage_attendance",          name: "Manage Attendance",           scope: "org",    description: "Record, correct, and override event attendance" },
   { slug: "manage_committees",          name: "Manage Committees",           scope: "org",    description: "Create and manage committees and assignments" },
   { slug: "manage_events",              name: "Manage Events",               scope: "org",    description: "Create, edit, and cancel chapter events" },
   { slug: "manage_finances",            name: "Manage Finances",             scope: "org",    description: "Financial dashboard, budget, dues, and reporting" },
-  { slug: "manage_documents",           name: "Manage Documents",            scope: "org",    description: "Upload, version, and publish chapter documents" },
   { slug: "manage_executive_dashboard", name: "Manage Executive Dashboard",  scope: "org",    description: "Access executive overview and cross-committee analytics" },
   { slug: "manage_org_settings",        name: "Manage Org Settings",         scope: "org",    description: "Update chapter name, branding, and eligibility thresholds" },
-  { slug: "view_reports",               name: "View Reports",                scope: "org",    description: "Access scholarship, conference, and chapter eligibility reports" },
+  // ── Secretary documents ──────────────────────────────────────────────────
+  { slug: "manage_minutes",             name: "Manage Minutes",              scope: "org",    description: "Create, edit, and publish meeting minutes" },
+  { slug: "manage_agendas",             name: "Manage Agendas",              scope: "org",    description: "Create and distribute meeting agendas" },
+  { slug: "manage_official_correspondence", name: "Manage Official Correspondence", scope: "org", description: "Draft and publish official chapter correspondence" },
+  { slug: "view_official_records",      name: "View Official Records",       scope: "org",    description: "Read minutes, agendas, and official correspondence" },
+  // ── Governance documents ─────────────────────────────────────────────────
+  { slug: "manage_governance_documents",  name: "Manage Governance Documents",  scope: "org", description: "Create and edit bylaws and governance documents" },
+  { slug: "upload_governance_documents",  name: "Upload Governance Documents",  scope: "org", description: "Upload new governance document versions" },
+  { slug: "version_governance_documents", name: "Version Governance Documents", scope: "org", description: "Publish official governance document versions (Bylaws Chair only)" },
+  { slug: "view_governance_documents",    name: "View Governance Documents",    scope: "org", description: "Read governance documents and amendments" },
+  // ── Parliamentary documents ──────────────────────────────────────────────
+  { slug: "manage_procedure_records",   name: "Manage Procedure Records",    scope: "org",    description: "Record and update parliamentary procedure documentation" },
+  { slug: "manage_motions",             name: "Manage Motions",              scope: "org",    description: "Record and track motions and votes" },
+  { slug: "manage_parliamentary_rulings", name: "Manage Parliamentary Rulings", scope: "org", description: "Document and publish parliamentary rulings" },
+  // ── Archive documents ────────────────────────────────────────────────────
+  { slug: "manage_archives",            name: "Manage Archives",             scope: "org",    description: "Manage chapter history and media archives" },
+  { slug: "upload_archive_material",    name: "Upload Archive Material",     scope: "org",    description: "Upload photos, videos, and documents to the archive" },
+  { slug: "manage_chapter_timeline",    name: "Manage Chapter Timeline",     scope: "org",    description: "Create and edit chapter history timeline entries" },
+  { slug: "view_archives",              name: "View Archives",               scope: "org",    description: "Read chapter archive and history records" },
+  // ── Reports (split by domain) ────────────────────────────────────────────
+  { slug: "view_chapter_overview",      name: "View Chapter Overview",       scope: "org",    description: "Chapter-wide participation, events, and committee dashboard" },
+  { slug: "view_financial_reports",     name: "View Financial Reports",      scope: "org",    description: "Dues collection, budget, and financial summary reports" },
+  { slug: "view_eligibility_reports",   name: "View Eligibility Reports",    scope: "org",    description: "Scholarship, conference, and awards eligibility reports" },
+  { slug: "view_committee_reports",     name: "View Committee Reports",      scope: "org",    description: "Per-committee participation and activity reports" },
+  { slug: "view_governance_reports",    name: "View Governance Reports",     scope: "org",    description: "Bylaws, amendments, and governance history reports" },
+  { slug: "view_archive_reports",       name: "View Archive Reports",        scope: "org",    description: "Chapter history, media, and documentation reports" },
+  { slug: "view_conduct_reports",       name: "View Conduct Reports",        scope: "org",    description: "Member conduct standing and procedural records" },
+  // ── System ───────────────────────────────────────────────────────────────
   { slug: "manage_system_settings",     name: "Manage System Settings",      scope: "system", description: "Platform-level configuration, integrations, and feature flags" },
   { slug: "manage_roles",               name: "Manage Roles",                scope: "system", description: "Assign and remove system and org roles for any member" },
   { slug: "manage_permissions",         name: "Manage Permissions",          scope: "system", description: "Configure permission group assignments to roles" },
   { slug: "impersonate_users",          name: "Impersonate Users",           scope: "system", description: "Assume any org role for testing and administration" },
   { slug: "view_audit_logs",            name: "View Audit Logs",             scope: "system", description: "Read the full system audit log" },
   { slug: "deploy_desktop",             name: "Deploy Desktop",              scope: "system", description: "Publish desktop application releases and manage update channels" },
+  // ── Technology Chair (technical-only) ────────────────────────────────────
+  { slug: "view_system_diagnostics",    name: "View System Diagnostics",     scope: "system", description: "Read platform health, error rates, and diagnostic information" },
+  { slug: "manage_system_configuration",name: "Manage System Configuration", scope: "system", description: "Update platform configuration settings and feature toggles" },
+  { slug: "view_release_information",   name: "View Release Information",    scope: "system", description: "Read release notes, changelogs, and deployment history" },
+  { slug: "manage_update_configuration",name: "Manage Update Configuration", scope: "system", description: "Configure auto-update channels and rollout policies" },
+  { slug: "troubleshoot_authentication",name: "Troubleshoot Authentication", scope: "system", description: "Diagnose and resolve member authentication and session issues" },
+  { slug: "view_technical_audit_logs",  name: "View Technical Audit Logs",   scope: "system", description: "Read detailed technical audit log entries and system events" },
+  { slug: "manage_integrations",        name: "Manage Integrations",         scope: "system", description: "Configure and manage third-party platform integrations" },
+  { slug: "impersonate_for_support",    name: "Impersonate for Support",     scope: "system", description: "Temporarily assume a member view for technical support (logged)" },
 ] as const;
 
 // Permissions within each group — slug: "<resource>:<action>"
 const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>> = {
   manage_members: [
-    { slug: "members:read",    name: "View members" },
-    { slug: "members:write",   name: "Create and update members" },
+    { slug: "members:read",       name: "View members" },
+    { slug: "members:write",      name: "Create and update members" },
     { slug: "members:deactivate", name: "Deactivate member accounts" },
-    { slug: "members:import",  name: "Bulk import members" },
+    { slug: "members:import",     name: "Bulk import members" },
   ],
   manage_attendance: [
     { slug: "attendance:read",    name: "View attendance records" },
@@ -153,11 +189,6 @@ const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>
     { slug: "finances:write",  name: "Manage budget and transactions" },
     { slug: "finances:report", name: "Generate financial reports" },
   ],
-  manage_documents: [
-    { slug: "documents:read",   name: "View documents" },
-    { slug: "documents:write",  name: "Upload and publish documents" },
-    { slug: "documents:delete", name: "Remove documents" },
-  ],
   manage_executive_dashboard: [
     { slug: "exec_dashboard:read", name: "View executive dashboard" },
   ],
@@ -165,9 +196,87 @@ const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>
     { slug: "org_settings:read",  name: "View org settings" },
     { slug: "org_settings:write", name: "Update org settings" },
   ],
-  view_reports: [
-    { slug: "reports:read", name: "Access eligibility and chapter reports" },
+  // Secretary documents
+  manage_minutes:  [
+    { slug: "minutes:read",  name: "View meeting minutes" },
+    { slug: "minutes:write", name: "Create and publish minutes" },
   ],
+  manage_agendas: [
+    { slug: "agendas:read",  name: "View meeting agendas" },
+    { slug: "agendas:write", name: "Create and distribute agendas" },
+  ],
+  manage_official_correspondence: [
+    { slug: "correspondence:read",  name: "View official correspondence" },
+    { slug: "correspondence:write", name: "Draft and publish correspondence" },
+  ],
+  view_official_records: [
+    { slug: "official_records:read", name: "Read official records" },
+  ],
+  // Governance documents
+  manage_governance_documents: [
+    { slug: "governance_docs:read",  name: "View governance documents" },
+    { slug: "governance_docs:write", name: "Edit governance documents" },
+  ],
+  upload_governance_documents: [
+    { slug: "governance_docs:upload", name: "Upload governance document files" },
+  ],
+  version_governance_documents: [
+    { slug: "governance_docs:version", name: "Publish official document versions" },
+  ],
+  view_governance_documents: [
+    { slug: "governance_docs:view", name: "Read published governance documents" },
+  ],
+  // Parliamentary documents
+  manage_procedure_records: [
+    { slug: "procedure_records:read",  name: "View procedure records" },
+    { slug: "procedure_records:write", name: "Record procedure documentation" },
+  ],
+  manage_motions: [
+    { slug: "motions:read",  name: "View motions and votes" },
+    { slug: "motions:write", name: "Record motions and votes" },
+  ],
+  manage_parliamentary_rulings: [
+    { slug: "rulings:read",  name: "View parliamentary rulings" },
+    { slug: "rulings:write", name: "Document and publish rulings" },
+  ],
+  // Archive documents
+  manage_archives: [
+    { slug: "archives:read",  name: "View archive records" },
+    { slug: "archives:write", name: "Manage archive records" },
+  ],
+  upload_archive_material: [
+    { slug: "archives:upload", name: "Upload archive files" },
+  ],
+  manage_chapter_timeline: [
+    { slug: "timeline:read",  name: "View chapter timeline" },
+    { slug: "timeline:write", name: "Edit chapter timeline entries" },
+  ],
+  view_archives: [
+    { slug: "archives:view", name: "Read chapter archive and history" },
+  ],
+  // Reports (split by domain)
+  view_chapter_overview: [
+    { slug: "reports:chapter_overview", name: "View chapter overview report" },
+  ],
+  view_financial_reports: [
+    { slug: "reports:financial", name: "View financial reports" },
+  ],
+  view_eligibility_reports: [
+    { slug: "reports:eligibility", name: "View scholarship and conference eligibility" },
+  ],
+  view_committee_reports: [
+    { slug: "reports:committees", name: "View committee activity reports" },
+  ],
+  view_governance_reports: [
+    { slug: "reports:governance", name: "View governance and bylaws reports" },
+  ],
+  view_archive_reports: [
+    { slug: "reports:archives", name: "View archive and history reports" },
+  ],
+  view_conduct_reports: [
+    { slug: "reports:conduct", name: "View member conduct reports" },
+  ],
+  // System
   manage_system_settings: [
     { slug: "system:read",  name: "View system settings" },
     { slug: "system:write", name: "Update system configuration" },
@@ -191,6 +300,37 @@ const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>
   deploy_desktop: [
     { slug: "desktop:publish", name: "Publish desktop application release" },
     { slug: "desktop:channel", name: "Manage update channels" },
+  ],
+  // Technology Chair (technical-only)
+  view_system_diagnostics: [
+    { slug: "diagnostics:read", name: "View platform diagnostics and health" },
+  ],
+  manage_system_configuration: [
+    { slug: "system_config:read",  name: "View system configuration" },
+    { slug: "system_config:write", name: "Update system configuration settings" },
+  ],
+  view_release_information: [
+    { slug: "releases:read", name: "View release notes and deployment history" },
+  ],
+  manage_update_configuration: [
+    { slug: "updates:read",  name: "View update channels" },
+    { slug: "updates:write", name: "Configure update rollout policies" },
+  ],
+  troubleshoot_authentication: [
+    { slug: "auth:diagnose", name: "Diagnose authentication issues" },
+    { slug: "auth:resolve",  name: "Resolve session and token problems" },
+  ],
+  view_technical_audit_logs: [
+    { slug: "tech_audit:read", name: "View technical audit log entries" },
+  ],
+  manage_integrations: [
+    { slug: "integrations:read",   name: "View integration configurations" },
+    { slug: "integrations:write",  name: "Configure integrations" },
+    { slug: "integrations:toggle", name: "Enable/disable integrations" },
+  ],
+  impersonate_for_support: [
+    { slug: "support_impersonate:start", name: "Start support impersonation (logged)" },
+    { slug: "support_impersonate:end",   name: "End support impersonation" },
   ],
 };
 
@@ -418,7 +558,27 @@ export async function seedRbac() {
     console.log("[seed-rbac] platform_admin stale perms removed");
   }
 
-  // b) Consolidate bylaws_officer → bylaws_chair (migrate members, delete role)
+  // c) Remove legacy broad permission groups that have been split into
+  //    domain-specific permissions. Any remaining role→permission assignments
+  //    for these slugs are stale and must be deleted.
+  const LEGACY_PERM_GROUPS_TO_REMOVE = ["manage_documents", "view_reports"];
+  for (const slug of LEGACY_PERM_GROUPS_TO_REMOVE) {
+    const [pgRow] = await db
+      .select({ id: permissionGroupsTable.id })
+      .from(permissionGroupsTable)
+      .where(eq(permissionGroupsTable.slug, slug));
+    if (pgRow) {
+      await db
+        .delete(orgRolePermissionsTable)
+        .where(eq(orgRolePermissionsTable.permGroupId, pgRow.id));
+      await db
+        .delete(systemRolePermissionsTable)
+        .where(eq(systemRolePermissionsTable.permGroupId, pgRow.id));
+      console.log(`[seed-rbac] removed legacy perm group: ${slug}`);
+    }
+  }
+
+  // d) Consolidate bylaws_officer → bylaws_chair (migrate members, delete role)
   const bylawsChairId = orgRoleMap.get("bylaws_chair");
   const [bylawsOfficerRow] = await db
     .select({ id: orgRolesTable.id })

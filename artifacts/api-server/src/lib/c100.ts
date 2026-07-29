@@ -341,11 +341,11 @@ export function requireRole(...roles: Role[]) {
       if (roles.includes(req.member.role as Role)) {
         return handler(req, res, next);
       }
-      // Allow platform admins and technology chairs to pass any role gate.
-      const rbac = await resolveRbacContext(req.member.id);
-      if (hasSystemRole(rbac, "platform_admin", "technology_chair")) {
-        return handler(req, res, next);
-      }
+      // No blanket bypass for system roles. Platform Admin and Technology Chair
+      // only pass this gate when their legacy `role` field is included in the
+      // allowed list, or when they have been explicitly granted the permission
+      // via requirePermGroup. Removing the bypass ensures that Tech Chair and
+      // Platform Admin cannot silently access officer workspaces or APIs.
       res.status(403).json({ error: "Insufficient role" });
     });
 }
@@ -354,16 +354,17 @@ export function requireRole(...roles: Role[]) {
  * Like requireRole but authorizes by RBAC permission-group slug instead of
  * the legacy role string.  Includes its own auth + approval gate.
  *
- * Only Technology Chair bypasses the permission check (blanket superuser).
- * Platform Admin must hold the permission group explicitly.
+ * No system-role bypass: every caller — including Technology Chair and
+ * Platform Admin — must hold the named permission group explicitly.
+ * Access is determined solely by the RBAC matrix in rbac-matrix.ts.
  *
- * Usage: requirePermGroup("view_reports")(async (req, res) => { … })
+ * Usage: requirePermGroup("view_eligibility_reports")(async (req, res) => { … })
  */
 export function requirePermGroup(slug: string) {
   return (handler: AuthedHandler): ReturnType<typeof requireAuth> =>
     requireAuth(async (req, res, next) => {
       const ctx = await resolveRbacContext(req.member.id);
-      if (!hasSystemRole(ctx, "technology_chair") && !hasPermissionGroup(ctx, slug)) {
+      if (!hasPermissionGroup(ctx, slug)) {
         res.status(403).json({ error: "Insufficient permissions" });
         return;
       }

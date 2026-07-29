@@ -153,7 +153,7 @@ function respondEligibility(
 
 router.get(
   "/reports/scholarship-eligibility",
-  requirePermGroup("view_reports")(async (req, res) => {
+  requirePermGroup("view_eligibility_reports")(async (req, res) => {
     const records = await buildEligibilityList();
     respondEligibility(
       req,
@@ -167,7 +167,7 @@ router.get(
 
 router.get(
   "/reports/conference-eligibility",
-  requirePermGroup("view_reports")(async (req, res) => {
+  requirePermGroup("view_eligibility_reports")(async (req, res) => {
     const records = await buildEligibilityList();
     const ranked = [...records]
       .sort((a, b) => b.systemScore - a.systemScore)
@@ -246,7 +246,7 @@ const OVERVIEW_ACTIVITY_COLUMNS: ReportColumn<AdminOverviewActivity>[] = [
 
 router.get(
   "/reports/admin-overview",
-  requirePermGroup("view_reports")(async (req, res) => {
+  requirePermGroup("view_chapter_overview")(async (req, res) => {
     const overview = await buildAdminOverview();
     const format = req.query.format;
     if (isExportFormat(format)) {

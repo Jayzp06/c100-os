@@ -17,19 +17,20 @@
 import { db, committeesTable, type Member as MemberRow, type Role } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { resolvePermissions } from "./c100";
-import { hasSystemRole } from "./rbac";
 
-/** Roles that can see any committee's roster/report, any event, any member. */
+/**
+ * Roles that can see any committee's roster/report, any event, any member.
+ * Technology Chair is technical-only and must not receive automatic access to
+ * private committee records. Only Executive Board and Platform Admin (Admin)
+ * may view chapter-wide data unconditionally.
+ */
 export const CHAPTER_WIDE_REPORT_ROLES: Role[] = [
   "ExecutiveBoard",
   "Admin",
-  "TechnologyChair",
 ];
 
 export async function isChapterWideReporter(member: MemberRow): Promise<boolean> {
-  if (CHAPTER_WIDE_REPORT_ROLES.includes(member.role as Role)) return true;
-  const perms = await resolvePermissions(member);
-  return perms.isTechChair || hasSystemRole(perms.rbac, "platform_admin");
+  return CHAPTER_WIDE_REPORT_ROLES.includes(member.role as Role);
 }
 
 export async function canAccessCommitteeReport(

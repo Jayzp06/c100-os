@@ -1,0 +1,218 @@
+# C100 OS — Final Executive Suite Permission Foundation
+
+Finalize Executive Suite permissions after the Nudges feature has been removed.
+
+Do not build new officer tools during this task. The goal is to create a stable, least-privilege permission foundation for subsequent Executive Suite development.
+
+## 1. Remove obsolete Nudge permissions
+
+Confirm the previous removal eliminated:
+
+- `manage_nudges`
+- Nudge-viewing permissions
+- Nudge API guards
+- Nudge permissions from every organizational and system role
+- Nudge-related role-matrix tests
+
+Sergeant-at-Arms may retain `manage_conduct` for future conduct tools, but it must not reference the removed Nudge feature.
+
+## 2. Restrict Technology Chair
+
+Remove any blanket `isTechSuperuser()` or equivalent bypass that grants Technology Chair automatic access to nontechnical workspaces or APIs.
+
+Technology Chair should receive explicit technical permissions only:
+
+- `view_system_diagnostics`
+- `manage_system_configuration`
+- `view_release_information`
+- `manage_update_configuration`
+- `troubleshoot_authentication`
+- `view_technical_audit_logs`
+- `manage_integrations`
+- `impersonate_for_support`, only if the action is logged and clearly displayed
+
+Technology Chair must not automatically access:
+
+- Financial records
+- Dues and expenses
+- Secretary minutes or correspondence
+- Bylaws document administration
+- Parliamentarian rulings
+- Historian archives
+- Conduct records
+- President-only reports
+- Private committee records
+
+If technical troubleshooting requires temporary access to protected data, design a future separately logged break-glass process. Do not implement permanent invisible access.
+
+## 3. Restrict Platform Administrator
+
+Platform Administrator should also be technical-only.
+
+It may receive the technical permissions necessary to administer accounts, configuration and system operations, but it must not automatically receive Executive Suite access.
+
+Platform Administrator must not be treated as:
+
+- President
+- Executive Board
+- Treasurer
+- Secretary
+- Bylaws Chair
+- Parliamentarian
+- Historian
+- Sergeant-at-Arms
+- Committee Chair
+
+Remove any `isAdmin` frontend or backend bypass that exposes officer workspaces solely because the user has `platform_admin`.
+
+## 4. Split document permissions
+
+Remove generic `manage_documents` as a broad Executive Suite authorization mechanism.
+
+Create narrowly scoped permissions:
+
+### Secretary
+
+- `manage_minutes`
+- `manage_agendas`
+- `manage_official_correspondence`
+- `view_official_records`
+
+### Bylaws Chair
+
+- `manage_governance_documents`
+- `upload_governance_documents`
+- `version_governance_documents`
+- `view_governance_documents`
+
+### Parliamentarian
+
+- `view_governance_documents`
+- `manage_procedure_records`
+- `manage_motions`
+- `manage_parliamentary_rulings`
+
+Parliamentarian may use approved governance documents but cannot publish, replace or supersede an official Bylaws version unless also assigned Bylaws Chair.
+
+### Historian
+
+- `manage_archives`
+- `upload_archive_material`
+- `manage_chapter_timeline`
+- `view_archives`
+
+Historian must not receive Secretary, Bylaws or financial permissions merely because those tools all involve documents.
+
+## 5. Split reporting permissions
+
+Replace broad `view_reports` authorization where it exposes unrelated information.
+
+Create or use narrowly scoped permissions:
+
+- `view_chapter_overview` — President and Vice President
+- `view_financial_reports` — Treasurer and President
+- `view_eligibility_reports` — President and authorized membership leadership
+- `view_committee_reports` — President, Vice President and the relevant Committee Chair
+- `view_official_records` — President and Secretary
+- `view_governance_reports` — President, Bylaws Chair and Parliamentarian
+- `view_archive_reports` — President and Historian
+- `view_conduct_reports` — President and Sergeant-at-Arms
+
+Committee Chairs must only see data for committees they are authorized to manage.
+
+## 6. President access
+
+President may access the complete Executive Suite, but access must be granted through an explicit list of organizational permission groups.
+
+Do not implement President access through:
+
+- `isAdmin`
+- Technology Chair bypass
+- Platform Administrator bypass
+- Legacy `ExecutiveBoard` blanket authorization
+
+The permission resolver should clearly show why the President has each capability.
+
+## 7. Multiple positions
+
+Members may hold multiple positions.
+
+Effective permissions must be the union of their assigned organizational positions and system roles.
+
+Examples:
+
+- Treasurer plus Committee Chair receives Treasurer tools and their Committee workspace.
+- Bylaws Chair plus Parliamentarian receives both document-versioning and procedure tools.
+- President plus Platform Administrator receives President tools and technical tools.
+- Platform Administrator alone receives no officer workspace.
+- Technology Chair alone receives only the Technology workspace.
+
+Removing one position must remove only that position’s permissions.
+
+## 8. Frontend and backend alignment
+
+Update:
+
+- Executive Suite hub
+- Workspace cards
+- Navigation
+- Experience switcher
+- Individual workspace route gates
+- API middleware
+- Permission resolver
+- Seed data
+- Role-management interface
+- OpenAPI definitions where applicable
+
+Hiding a card is not authorization. Every protected API must enforce the same permission required by its corresponding workspace.
+
+Deny access by default when no matching permission exists.
+
+## 9. Canonical Bylaws role
+
+Confirm only `bylaws_chair` remains.
+
+- It must be categorized as an appointed/officer position, not committee leadership.
+- `bylaws_officer` must not return.
+- Bylaws Chair must not create or imply a participating Bylaws committee.
+
+## 10. Required tests
+
+Add positive and negative tests for every role.
+
+Verify:
+
+- President has explicitly assigned complete Executive Suite access.
+- Vice President cannot access finances, minutes editing or technical tools.
+- Treasurer cannot access Secretary, Bylaws, Historian, conduct or technical tools.
+- Secretary cannot access finances, Bylaws versioning, archives or technical tools.
+- Bylaws Chair cannot access finances, minutes, archives or technical tools.
+- Parliamentarian cannot publish official governance-document versions.
+- Historian cannot access finances, minutes, governance administration or technical tools.
+- Sergeant-at-Arms cannot access finances, minutes, governance documents, archives or technical tools.
+- Platform Administrator cannot access officer workspaces.
+- Technology Chair cannot access officer workspaces.
+- Committee Chairs cannot access Executive Suite workspaces.
+- Members cannot see Executive Suite navigation.
+- Multiple-role users receive only the proper union of permissions.
+- Removed roles immediately lose corresponding access.
+- Legacy `ExecutiveBoard` values cannot bypass the new permissions.
+
+Run all existing tests, typecheck and code generation.
+
+## Final report
+
+Return:
+
+- Final organizational role-to-permission matrix
+- Final system role-to-permission matrix
+- Every blanket bypass removed
+- Frontend route guards changed
+- Backend API guards changed
+- Seed or database changes
+- Positive and negative tests added
+- Typecheck and test results
+- Any route still depending on a legacy role and why
+- Confirmation that no new Executive Suite features were implemented
+
+Do not begin document uploads, financial tools, minutes, archives or AI functionality during this task.

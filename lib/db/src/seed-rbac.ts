@@ -112,7 +112,8 @@ const PERM_GROUPS = [
   { slug: "manage_committees",          name: "Manage Committees",           scope: "org",    description: "Create and manage committees and assignments" },
   { slug: "manage_events",              name: "Manage Events",               scope: "org",    description: "Create, edit, and cancel chapter events" },
   { slug: "manage_finances",            name: "Manage Finances",             scope: "org",    description: "Financial dashboard, budget, dues, and reporting" },
-  { slug: "manage_executive_dashboard", name: "Manage Executive Dashboard",  scope: "org",    description: "Access executive overview and cross-committee analytics" },
+  { slug: "manage_executive_dashboard",    name: "Manage Executive Dashboard",    scope: "org",    description: "Access executive overview and cross-committee analytics" },
+  { slug: "manage_executive_operations",  name: "Manage Executive Operations",   scope: "org",    description: "Create and track executive action items and assignments (Chief of Staff workspace)" },
   { slug: "manage_org_settings",        name: "Manage Org Settings",         scope: "org",    description: "Update chapter name, branding, and eligibility thresholds" },
   // ── Secretary documents ──────────────────────────────────────────────────
   { slug: "manage_minutes",             name: "Manage Minutes",              scope: "org",    description: "Create, edit, and publish meeting minutes" },

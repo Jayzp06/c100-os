@@ -611,8 +611,9 @@ export function MemberPortalShell({
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))] pb-16 sm:pb-0">
-      {/* Simple top header */}
+      {/* Top header */}
       <header className="sticky top-0 z-40 border-b bg-[hsl(var(--card))]/95 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--card))]/80">
+        {/* Brand row */}
         <div className="flex h-14 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
             <span className="relative inline-flex h-7 w-7 items-center justify-center rounded bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
@@ -628,6 +629,35 @@ export function MemberPortalShell({
             <LogoutButton className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1" />
           </div>
         </div>
+
+        {/* Desktop tab nav — hidden on mobile (bottom bar handles it) */}
+        <nav className="hidden sm:flex border-t px-2 h-10 items-stretch gap-0.5">
+          {MEMBER_TABS.map((tab) => {
+            const active =
+              tab.href === "/"
+                ? location === "/"
+                : location === tab.href || location.startsWith(tab.href + "/");
+            const Icon = tab.icon;
+            return (
+              <Link
+                key={tab.label}
+                href={tab.href}
+                className={cn(
+                  "relative flex items-center gap-1.5 px-3 text-xs font-medium transition-colors",
+                  active
+                    ? "text-[hsl(var(--foreground))]"
+                    : "text-muted-foreground hover:text-[hsl(var(--foreground))]",
+                )}
+              >
+                <Icon className={cn("h-3.5 w-3.5", active && "text-[hsl(var(--secondary))]")} />
+                {tab.label}
+                {active && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-[hsl(var(--secondary))]" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </header>
 
       <main>

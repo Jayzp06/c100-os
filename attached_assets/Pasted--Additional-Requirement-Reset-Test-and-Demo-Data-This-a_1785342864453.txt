@@ -1,0 +1,113 @@
+# Additional Requirement — Reset Test and Demo Data
+
+This application is transitioning from testing to real chapter use. Remove test/demo operational data so the chapter can begin with a clean system.
+
+Before deleting anything, create a database backup or restorable snapshot. Perform the cleanup in a database transaction where practical.
+
+## Delete all test events
+
+Remove every currently visible event.
+
+Also remove dependent test data associated with those events, including:
+
+- Attendance records
+- Check-ins and check-in codes
+- Event registrations
+- Event reminders
+- Event-generated points
+- Event-linked nudge deliveries
+- Test eligibility or participation calculations derived from those events
+
+Do not leave orphaned records or broken foreign-key references.
+
+## Delete all nudges
+
+Remove every existing nudge and its associated delivery/read-history records.
+
+After cleanup:
+
+- No member should see an old nudge.
+- Unread counts must be zero.
+- Administrators should be able to create new real nudges normally.
+
+## Remove fake members and committee assignments
+
+Identify accounts created by seed scripts, demo fixtures or documented test-data generation.
+
+Remove confirmed fake/demo members and their associated:
+
+- Committee memberships
+- Committee Chair assignments
+- Officer-position tags
+- System-role tags
+- Attendance and check-in records
+- Nudge delivery logs
+- Point transactions
+- Progress records
+- Test profile information
+
+Do not automatically delete an account merely because its name looks unusual.
+
+If an account cannot be conclusively identified as seeded or fake, do not delete it. Include it in the final report for manual review.
+
+Preserve:
+
+- Real chapter-member accounts
+- The real administrator/owner account
+- Real officer assignments
+- Authentication records needed by legitimate users
+
+Remove fake names displayed as committee chairs. A committee without a confirmed real chair should display “No chair assigned,” not a placeholder person.
+
+## Reset all member and committee progress
+
+The system should begin real operation with zero progress.
+
+Reset or remove all test-derived:
+
+- Member points
+- Committee points
+- Attendance totals
+- Event-participation totals
+- Leaderboard scores
+- Eligibility progress
+- Scholarship progress
+- Conference progress
+- Milestones, streaks or achievements
+- Cached leaderboard or report totals
+- Manual test awards and point adjustments
+
+Do not reset profile information or role assignments for confirmed real members.
+
+After cleanup:
+
+- Every real member starts at zero participation progress.
+- Every participating committee starts at zero.
+- The member leaderboard contains no test points.
+- The committee leaderboard contains no test points.
+- Reports show no historical test participation.
+- Newly created real events and attendance begin calculating progress normally.
+
+## Committee structure
+
+Continue the previously requested changes:
+
+- Bylaws must not exist as a participating committee.
+- Preserve the single `bylaws_chair` officer-position tag.
+- Merge Economic Empowerment and Economic Development into **Economic Empowerment & Development**.
+- Since progress is being reset, do not carry test leaderboard points from the legacy committee records into the merged committee.
+- Preserve only legitimate organizational assignments and confirmed real members.
+
+## Required safeguards and report
+
+Before cleanup, report counts for:
+
+- Events to delete
+- Nudges to delete
+- Attendance/check-in records to delete
+- Point/progress records to reset
+- Confirmed seeded/demo members to delete
+- Ambiguous member accounts preserved for review
+- Real accounts being preserved
+
+Then execute the cleanup only after a backup exists.

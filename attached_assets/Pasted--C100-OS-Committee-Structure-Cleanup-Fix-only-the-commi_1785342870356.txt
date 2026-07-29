@@ -1,0 +1,116 @@
+# C100 OS — Committee Structure Cleanup
+
+Fix only the committee-structure issues below. Do not begin Executive Suite work or modify unrelated features.
+
+## 1. Remove Bylaws as a participating committee
+
+Bylaws is not a chapter committee and must not participate in committee-based tracking.
+
+There is only one Bylaws Chair. That person is represented through the existing `bylaws_chair` organizational role tag.
+
+Remove Bylaws from:
+
+- Committee directory and committee-management views
+- Member-facing committee views
+- Committee leaderboard
+- Committee rankings and calculations
+- Committee participation filters
+- Committee assignment options
+- Committee dashboard cards
+- Reports that list participating committees
+- Seed data that creates Bylaws as a committee
+
+Do not remove the `bylaws_chair` officer-position tag.
+
+Do not delete historical events, attendance records or other legitimate chapter records merely because they were previously associated with Bylaws. Preserve historical data safely while ensuring Bylaws no longer appears or participates as an active committee.
+
+Prevent administrators from accidentally recreating `Bylaws` as a participating committee when the intent is to assign the Bylaws Chair position.
+
+If a Bylaws committee database record currently exists:
+
+- Remove active member assignments from that committee safely.
+- Preserve or migrate historical references as appropriate.
+- Archive or deactivate the record before deleting anything that would break references.
+- Confirm the Bylaws Chair’s `bylaws_chair` role tag remains intact.
+
+## 2. Merge Economic Empowerment and Economic Development
+
+“Economic Empowerment” and “Economic Development” currently appear as separate committees. They are one committee.
+
+Use this canonical name:
+
+**Economic Empowerment & Development**
+
+Safely merge both existing committee records into one canonical committee.
+
+The merged committee must retain:
+
+- All assigned members
+- Committee-chair assignments
+- Events
+- Attendance and participation data
+- Points and leaderboard totals
+- Reports
+- Historical records
+- Any committee workspace content
+
+If the same member belongs to both records, create only one membership in the merged committee.
+
+If both records have chairs, do not silently remove either assignment. Preserve the data and report the conflict so an administrator can choose the official chair if the schema only permits one.
+
+After migration:
+
+- Only “Economic Empowerment & Development” should appear in committee views.
+- Only one leaderboard entry should exist.
+- Its leaderboard total must include qualifying activity from both previous records.
+- Filters and reports must use the canonical committee.
+- Old names must no longer appear as selectable active committees.
+- Prevent duplicate committees from being recreated through spelling or capitalization variations.
+
+## 3. Check all committee-dependent functionality
+
+Audit and update:
+
+- Database records and foreign-key references
+- Seed data
+- Committee creation validation
+- Member assignments
+- Committee Chair experience
+- Leaderboard calculations
+- Events and attendance
+- Reports and exports
+- Dashboard statistics
+- API responses
+- Frontend labels, filters and routes
+
+Use stable committee IDs for calculations where possible instead of comparing display names.
+
+## Verification
+
+Test and report:
+
+1. Bylaws does not appear anywhere as a participating committee.
+2. Bylaws Chair remains assignable as an officer position.
+3. The current Bylaws Chair retains that role.
+4. Economic Empowerment and Economic Development are replaced by one canonical committee.
+5. All memberships from both committees remain associated with the merged committee.
+6. Historical events and attendance remain accessible.
+7. Leaderboard points are combined correctly without duplication.
+8. Reports and exports show the canonical committee name.
+9. Committee creation cannot recreate either duplicate legacy name.
+10. Typecheck and automated tests pass.
+
+## Final report
+
+Return:
+
+- Root cause
+- Database migration performed
+- Records merged, archived or deactivated
+- Number of memberships and historical records migrated
+- Any duplicate-chair conflict found
+- Files changed
+- Tests performed and results
+- Any manual decision still required
+
+Do not begin Executive Suite permission changes during this task.

@@ -180,7 +180,7 @@ router.get(
 async function buildAdminOverview() {
   const members = await db.select().from(membersTable);
   const events = await db.select().from(eventsTable);
-  const committees = await db.select().from(committeesTable);
+  const committees = await db.select().from(committeesTable).where(eq(committeesTable.active, true));
   const aggregates = await Promise.all(
     committees.map((c) => buildCommitteeAggregate(c)),
   );

@@ -1,0 +1,55 @@
+# C100 OS Executive Suite — Tool-Level Permission Audit
+
+Perform a diagnosis and planning audit only. Do not modify code yet.
+
+The current Executive Suite must be changed from broad Executive Board access to tool-level authorization.
+
+A member receiving an officer position must not automatically receive every Executive Suite tool. For example, assigning the Treasurer position should grant financial tools but must not grant unrestricted access to Secretary, Parliamentarian, Historian, presidential, or technical-administration tools.
+
+## Inspect
+
+Inventory:
+
+- Every current Executive Suite page, card, route and component
+- Every Executive Suite API endpoint
+- Current navigation and route guards
+- Current `org_role_slugs` and `system_role_slugs`
+- Permission records and RBAC-resolution logic
+- Legacy `ExecutiveBoard` and `Admin` authorization checks
+- Experience-switching logic
+- All places that grant broad Executive Suite access
+- Any existing financial, minutes, governance, archive, approval or system tools
+
+## Proposed default access model
+
+- President: full Executive Suite and executive approvals
+- Vice President: committee/program oversight and designated shared executive tools
+- Treasurer: budgets, dues, expenses, financial reports and financial exports
+- Secretary: agendas, minutes, official records and correspondence
+- Parliamentarian: bylaws, motions, parliamentary procedure and compliance
+- Historian: chapter archives, accomplishments and historical records
+- Platform Administrator: technical diagnostics, application settings and platform administration only
+- Committee Chair: assigned committee workspace only
+- Member: no Executive Suite access
+
+Platform Administrator must not automatically receive confidential financial or executive-record access unless that person also holds the corresponding organizational position.
+
+Users with multiple positions must receive the union of those positions’ permissions.
+
+## Deliverable
+
+Return:
+
+1. Complete inventory of existing Executive Suite tools
+2. Current access rule for each tool and API endpoint
+3. Every place broad `ExecutiveBoard` access is used
+4. Proposed granular permission slugs
+5. Recommended role-to-permission matrix
+6. Frontend routes/components requiring changes
+7. Backend endpoints requiring server-side guards
+8. Database or seed changes required
+9. Migration plan that preserves existing assignments
+10. Automated role-matrix tests required
+11. Suggested implementation order
+
+Do not implement anything. Stop after the audit so the permission matrix can be reviewed before access rules change.

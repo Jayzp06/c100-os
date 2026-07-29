@@ -27,7 +27,7 @@ import { hasSystemRole } from "../lib/rbac";
 const router: IRouter = Router();
 
 async function buildLeaderboard() {
-  const all = await db.select().from(committeesTable);
+  const all = await db.select().from(committeesTable).where(eq(committeesTable.active, true));
   const aggregates = await Promise.all(all.map((c) => buildCommitteeAggregate(c)));
   return [...aggregates]
     .sort((a, b) => b.totalImpactPoints - a.totalImpactPoints)
@@ -49,7 +49,7 @@ router.get("/committees/leaderboard", async (_req, res) => {
 
 router.get("/committees", async (_req, res) => {
   const [all, sem] = await Promise.all([
-    db.select().from(committeesTable),
+    db.select().from(committeesTable).where(eq(committeesTable.active, true)),
     getActiveSemester(),
   ]);
   const aggregates = await Promise.all(all.map((c) => buildCommitteeAggregate(c)));
@@ -95,7 +95,7 @@ router.get(
 
     const [agg, all, sem, myStats] = await Promise.all([
       buildCommitteeAggregate(committeeRow),
-      db.select().from(committeesTable),
+      db.select().from(committeesTable).where(eq(committeesTable.active, true)),
       getActiveSemester(),
       buildMemberDto(req.member),
     ]);

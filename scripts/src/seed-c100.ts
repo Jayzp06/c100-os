@@ -29,7 +29,7 @@ const COMMITTEES = [
     fourForFutureAlignment: "Educate",
   },
   {
-    name: "Economic Empowerment",
+    name: "Economic Empowerment & Development",
     description:
       "Hosts financial-literacy series, professional development clinics, and chapter fundraising for community partners and scholarship funding.",
     fourForFutureAlignment: "Empower",
@@ -143,7 +143,7 @@ const SEED_MEMBERS = [
     email: "roland.carter@fvsu.edu",
     studentId: "FV2024-1006",
     role: "CommitteeChair" as const,
-    committeeName: "Economic Empowerment",
+    committeeName: "Economic Empowerment & Development",
     gpa: "3.27",
     graduationYear: 2027,
     duesPaid: true,
@@ -224,7 +224,7 @@ const SEED_MEMBERS = [
     email: "brandon.sims@fvsu.edu",
     studentId: "FV2024-1010",
     role: "Member" as const,
-    committeeName: "Economic Empowerment",
+    committeeName: "Economic Empowerment & Development",
     gpa: "2.89",
     graduationYear: 2027,
     duesPaid: true,
@@ -487,15 +487,24 @@ async function main() {
   const allCommitteesPreRename = await db.select().from(committeesTable);
   const preRenameByName = new Map(allCommitteesPreRename.map((c) => [c.name, c]));
 
-  if (!preRenameByName.has("Economic Empowerment")) {
+  // Phase 0: rename legacy "Economic Development" → current canonical name
+  if (!preRenameByName.has("Economic Empowerment") && !preRenameByName.has("Economic Empowerment & Development")) {
     await db
       .update(committeesTable)
       .set({
-        name: "Economic Empowerment",
+        name: "Economic Empowerment & Development",
         description:
           "Hosts financial-literacy series, professional development clinics, and chapter fundraising for community partners and scholarship funding.",
       })
       .where(eq(committeesTable.name, "Economic Development"));
+  }
+
+  // Phase 1: rename intermediate "Economic Empowerment" → canonical "Economic Empowerment & Development"
+  if (preRenameByName.has("Economic Empowerment") && !preRenameByName.has("Economic Empowerment & Development")) {
+    await db
+      .update(committeesTable)
+      .set({ name: "Economic Empowerment & Development" })
+      .where(eq(committeesTable.name, "Economic Empowerment"));
   }
 
   if (!preRenameByName.has("Leadership Development")) {
@@ -571,7 +580,7 @@ async function main() {
   const chairAssignments: Array<{ committeeName: string; authId: string }> = [
     { committeeName: "Mentoring", authId: "seed-chair-mentoring-004" },
     { committeeName: "Education", authId: "seed-chair-education-005" },
-    { committeeName: "Economic Empowerment", authId: "seed-chair-econ-006" },
+    { committeeName: "Economic Empowerment & Development", authId: "seed-chair-econ-006" },
     { committeeName: "Health & Wellness", authId: "seed-chair-health-007" },
     { committeeName: "Community Service", authId: "seed-chair-service-008" },
     { committeeName: "Leadership Development", authId: "seed-admin-001" },

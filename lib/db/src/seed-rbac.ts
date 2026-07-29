@@ -89,7 +89,7 @@ const ORG_ROLES = [
   // Committee Leadership
   { slug: "mentoring_chair",              name: "Mentoring Chair",               tier: "committee_leadership", sortOrder: 30 },
   { slug: "education_chair",              name: "Education Chair",               tier: "committee_leadership", sortOrder: 31 },
-  { slug: "economic_empowerment_chair",   name: "Economic Empowerment Chair",    tier: "committee_leadership", sortOrder: 32 },
+  { slug: "economic_empowerment_chair",   name: "Economic Empowerment & Development Chair", tier: "committee_leadership", sortOrder: 32 },
   { slug: "leadership_development_chair", name: "Leadership Development Chair",  tier: "committee_leadership", sortOrder: 33 },
   { slug: "health_wellness_chair",        name: "Health & Wellness Chair",       tier: "committee_leadership", sortOrder: 34 },
   { slug: "community_service_chair",      name: "Community Service Chair",       tier: "committee_leadership", sortOrder: 35 },

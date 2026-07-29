@@ -32,8 +32,8 @@ function CommitteesList() {
     <AppShell>
       <PageHeader
         eyebrow="Committees"
-        title="Five committees, one chapter"
-        description="Each Trailblazer belongs to one of the five committees. The committees compete on participation and impact, never individual scores."
+        title="Six committees, one chapter"
+        description="Each Trailblazer belongs to one of the six committees. The committees compete on participation and impact, never individual scores."
       />
 
       {list.isLoading ? (

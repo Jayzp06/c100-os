@@ -36,6 +36,7 @@ import {
   membersTable,
   orgSettingsTable,
 } from "./schema/index.js";
+import { SYSTEM_ROLE_PERMS, ORG_ROLE_PERMS } from "./rbac-matrix.js";
 
 const { Pool } = pg;
 
@@ -85,7 +86,7 @@ const ORG_ROLES = [
   { slug: "communications_director",name: "Communications & Marketing Director", tier: "appointed_officer",    sortOrder: 21 },
   { slug: "parliamentarian",        name: "Parliamentarian",                     tier: "appointed_officer",    sortOrder: 22 },
   { slug: "historian",              name: "Historian",                           tier: "appointed_officer",    sortOrder: 23 },
-  { slug: "bylaws_officer",         name: "Bylaws Officer",                      tier: "appointed_officer",    sortOrder: 24 },
+  // bylaws_officer removed — consolidated into bylaws_chair
   // Committee Leadership
   { slug: "mentoring_chair",              name: "Mentoring Chair",               tier: "committee_leadership", sortOrder: 30 },
   { slug: "education_chair",              name: "Education Chair",               tier: "committee_leadership", sortOrder: 31 },
@@ -199,67 +200,8 @@ const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>
   ],
 };
 
-// System role → permission groups
-const SYSTEM_ROLE_PERMS: Record<string, string[]> = {
-  platform_admin: [
-    "manage_members", "manage_attendance", "manage_committees", "manage_events",
-    "manage_finances", "manage_documents", "manage_executive_dashboard",
-    "manage_org_settings", "manage_nudges", "view_reports",
-    "manage_system_settings", "manage_roles", "manage_permissions",
-    "impersonate_users", "view_audit_logs", "deploy_desktop",
-  ],
-  technology_chair: [
-    "manage_members", "manage_org_settings",
-    "manage_system_settings", "manage_roles", "manage_permissions",
-    "impersonate_users", "view_audit_logs", "deploy_desktop",
-  ],
-  developer: [
-    "manage_members", "manage_attendance", "manage_committees", "manage_events",
-    "manage_org_settings", "view_reports",
-    "manage_system_settings", "manage_roles",
-    "impersonate_users", "view_audit_logs",
-  ],
-  system_auditor: [
-    "manage_members", "manage_attendance", "manage_committees", "manage_events",
-    "manage_org_settings", "view_reports", "view_audit_logs",
-  ],
-  readonly_auditor: [
-    "manage_committees", "manage_events", "view_reports",
-  ],
-};
-
-// Org role → permission groups
-const ORG_ROLE_PERMS: Record<string, string[]> = {
-  // Executive Board — shared base set
-  president:    ["manage_members", "manage_attendance", "manage_committees", "manage_events", "manage_finances", "manage_documents", "manage_executive_dashboard", "manage_org_settings", "manage_nudges", "view_reports", "committees:roster" as any],
-  vice_president: ["manage_committees", "manage_events", "manage_executive_dashboard", "manage_nudges", "view_reports"],
-  secretary:    ["manage_documents", "manage_executive_dashboard", "view_reports"],
-  treasurer:    ["manage_finances", "manage_executive_dashboard", "view_reports"],
-  chief_of_staff: ["manage_members", "manage_executive_dashboard", "manage_nudges", "view_reports"],
-  sergeant_at_arms: ["manage_events", "manage_attendance", "manage_executive_dashboard"],
-  // Appointed Officers
-  membership_director: ["manage_members", "manage_committees"],
-  communications_director: ["manage_documents"],
-  parliamentarian: ["manage_documents", "view_reports"],
-  historian: ["manage_documents", "view_reports"],
-  bylaws_officer: ["manage_documents", "view_reports"],
-  // Committee Leadership
-  mentoring_chair:              ["manage_committees", "manage_events", "manage_attendance"],
-  education_chair:              ["manage_committees", "manage_events", "manage_attendance"],
-  economic_empowerment_chair:   ["manage_committees", "manage_events", "manage_attendance"],
-  leadership_development_chair: ["manage_committees", "manage_events", "manage_attendance"],
-  health_wellness_chair:        ["manage_committees", "manage_events", "manage_attendance"],
-  community_service_chair:      ["manage_committees", "manage_events", "manage_attendance"],
-  special_events_chair:         ["manage_committees", "manage_events", "manage_attendance"],
-  // Committee Leadership (generic)
-  committee_chair: ["manage_committees", "manage_events", "manage_attendance"],
-  bylaws_chair:    ["manage_documents", "view_reports"],
-  // General
-  committee_member: [],
-  general_member:   [],
-  advisor:          ["view_reports", "manage_executive_dashboard"],
-  parent_chapter_rep: ["view_reports"],
-};
+// System role → permission groups (imported from rbac-matrix.ts)
+// Org role → permission groups (imported from rbac-matrix.ts)
 
 // Incompatible org role pairs (both directions are enforced)
 const INCOMPATIBLE_PAIRS = [
@@ -456,6 +398,50 @@ export async function seedRbac() {
     backfilled++;
   }
   console.log(`[seed-rbac] ${backfilled} members back-filled`);
+
+  // 12. Cleanup migrations — idempotent, safe to re-run
+  //
+  // a) Remove manage_finances / manage_documents / manage_executive_dashboard /
+  //    manage_nudges from platform_admin — those are executive-only permissions.
+  const PLATFORM_ADMIN_REMOVED_PERMS = [
+    "manage_finances", "manage_documents", "manage_executive_dashboard", "manage_nudges",
+  ];
+  const platformAdminSysId = sysRoleMap.get("platform_admin");
+  if (platformAdminSysId) {
+    for (const slug of PLATFORM_ADMIN_REMOVED_PERMS) {
+      const pgId = pgroupMap.get(slug);
+      if (pgId) {
+        await db
+          .delete(systemRolePermissionsTable)
+          .where(
+            and(
+              eq(systemRolePermissionsTable.systemRoleId, platformAdminSysId),
+              eq(systemRolePermissionsTable.permGroupId, pgId),
+            ),
+          );
+      }
+    }
+    console.log("[seed-rbac] platform_admin stale perms removed");
+  }
+
+  // b) Consolidate bylaws_officer → bylaws_chair (migrate members, delete role)
+  const bylawsChairId = orgRoleMap.get("bylaws_chair");
+  const [bylawsOfficerRow] = await db
+    .select({ id: orgRolesTable.id })
+    .from(orgRolesTable)
+    .where(eq(orgRolesTable.slug, "bylaws_officer"));
+  if (bylawsOfficerRow && bylawsChairId) {
+    await db
+      .update(memberOrgRolesTable)
+      .set({ orgRoleId: bylawsChairId })
+      .where(eq(memberOrgRolesTable.orgRoleId, bylawsOfficerRow.id));
+    await db
+      .delete(orgRolePermissionsTable)
+      .where(eq(orgRolePermissionsTable.orgRoleId, bylawsOfficerRow.id));
+    await db.delete(orgRolesTable).where(eq(orgRolesTable.id, bylawsOfficerRow.id));
+    console.log("[seed-rbac] bylaws_officer merged into bylaws_chair");
+  }
+
   console.log("[seed-rbac] RBAC seed complete");
 }
 

@@ -3,21 +3,20 @@ import { ListNudgesQueryParams } from "@workspace/api-zod";
 import { db, membersTable, nudgeLogsTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
 import {
-  EXEC_OR_ADMIN,
   computeNudgeTier,
   eventsEligibleForMember,
   getActiveSemester,
   getParticipationThreshold,
   nudgeMessageFor,
   requireAuth,
-  requireRole,
+  requirePermGroup,
 } from "../lib/c100";
 
 const router: IRouter = Router();
 
 router.get(
   "/nudges",
-  requireRole(...EXEC_OR_ADMIN)(async (req, res) => {
+  requirePermGroup("manage_nudges")(async (req, res) => {
     const parsed = ListNudgesQueryParams.safeParse(req.query);
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid query" });
@@ -55,7 +54,7 @@ router.get(
 
 router.post(
   "/nudges/run",
-  requireRole(...EXEC_OR_ADMIN)(async (_req, res) => {
+  requirePermGroup("manage_nudges")(async (_req, res) => {
     const [members, goalPct] = await Promise.all([
       db.select().from(membersTable),
       getParticipationThreshold(),

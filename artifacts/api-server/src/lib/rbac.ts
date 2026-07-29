@@ -148,7 +148,20 @@ export function hasPermissionGroup(ctx: RbacContext, slug: string): boolean {
   return ctx.permissionGroups.has(slug);
 }
 
-/** True if the member holds a system role with full platform access. */
+/**
+ * True if the member is the Technology Chair — the only role that bypasses
+ * all permission-group checks (blanket technical superuser).
+ * Platform Admin does NOT bypass checks; it uses explicit permission groups.
+ */
+export function isTechSuperuser(ctx: RbacContext): boolean {
+  return hasSystemRole(ctx, "technology_chair");
+}
+
+/**
+ * True if the member holds any system-level administrative role
+ * (platform_admin OR technology_chair).  Used to grant the
+ * operations_console experience — does NOT bypass permission checks.
+ */
 export function isPlatformAdmin(ctx: RbacContext): boolean {
   return hasSystemRole(ctx, "platform_admin", "technology_chair");
 }
@@ -377,16 +390,22 @@ export async function setMemberSystemRoleTags(
 
 /**
  * Requires the authenticated member to hold the given permission group slug.
- * Platform admins and technology chairs always pass.
+ * Technology Chair always passes (blanket superuser).
+ * Platform Admin must hold the permission group explicitly.
  *
- * Usage:
- *   requirePermissionGroup("manage_members")(handler)
+ * Note: does not include its own auth check — must be used inside requireAuth
+ * or requirePermGroup (c100.ts) which handles auth + member resolution.
+ *
+ * Usage (inside requireAuth):
+ *   requireAuth(requirePermissionGroup("manage_members")(handler))
+ * Or prefer the self-contained requirePermGroup from c100.ts:
+ *   requirePermGroup("manage_members")(handler)
  */
 export function requirePermissionGroup(permGroupSlug: string) {
   return (handler: AuthedHandler) =>
     async (req: Request & { user: any; member: MemberRow }, res: Response, next: NextFunction) => {
       const ctx = await resolveRbacContext(req.member.id);
-      if (!isPlatformAdmin(ctx) && !hasPermissionGroup(ctx, permGroupSlug)) {
+      if (!isTechSuperuser(ctx) && !hasPermissionGroup(ctx, permGroupSlug)) {
         res.status(403).json({ error: "Insufficient permissions" });
         return;
       }

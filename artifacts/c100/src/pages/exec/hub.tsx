@@ -15,11 +15,12 @@ export default function ExecutiveSuiteHubPage() {
   if (me.isLoading) return null;
   if (!me.isAuthenticated) return <LoginPage />;
 
+  // Tech Chair is included via the technology workspace (orgRole === null branch)
   const hasAnyAccess = EXEC_WORKSPACES.some((w) =>
-    w.orgRole ? me.orgRoles.includes(w.orgRole) : me.isTechChair,
+    w.orgRole ? me.orgRoles.includes(w.orgRole) : me.isTechChair || me.isAdmin,
   );
 
-  if (!hasAnyAccess && !me.isAdmin && !me.isTechChair) {
+  if (!hasAnyAccess) {
     return (
       <AppShell>
         <PageHeader eyebrow="Executive Suite" title="Executive Suite" />

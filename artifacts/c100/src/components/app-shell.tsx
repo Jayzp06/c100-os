@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useGetOrgSettings } from "@workspace/api-client-react";
 import { useMe } from "@/lib/me";
+import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { IS_TAURI, desktopLogout } from "@/lib/desktop-auth";
@@ -362,7 +363,14 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     isExecOrAdmin: me.isExecOrAdmin,
     isTechChair: me.isTechChair,
     isChair: me.isChair,
-    hasExecWorkspace: me.isAdmin || me.isTechChair || me.orgRoles.length > 0,
+    // Show Executive Suite nav only when the member holds a qualifying position:
+    // a specific exec/appointed-officer org role, or is Tech Chair / Platform Admin
+    // (both of whom can access the Technology workspace).
+    // "general_member" alone must NOT qualify — every member has that role.
+    hasExecWorkspace:
+      me.isTechChair ||
+      me.isAdmin ||
+      EXEC_WORKSPACES.some((w) => w.orgRole !== null && me.orgRoles.includes(w.orgRole)),
   };
   const items = NAV.filter((n) => n.show(ctx));
 

@@ -8,7 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node /home/runner/workspace/node_modules/.pnpm/tsx@4.22.4/node_modules/tsx/dist/cli.mjs --test src/__tests__/validation.test.ts"
+    "test": "node /home/runner/workspace/node_modules/.pnpm/tsx@4.22.4/node_modules/tsx/dist/cli.mjs --test src/__tests__/validation.test.ts src/__tests__/rbac-permissions.test.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

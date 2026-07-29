@@ -24,6 +24,7 @@ import {
   deriveExperience,
   computeAvailableExperiences,
   hasSystemRole,
+  hasPermissionGroup,
   type RbacContext,
 } from "./rbac";
 import { generateCheckInCode, isValidCheckInCode } from "@workspace/checkin-codes/server";
@@ -346,6 +347,27 @@ export function requireRole(...roles: Role[]) {
         return handler(req, res, next);
       }
       res.status(403).json({ error: "Insufficient role" });
+    });
+}
+
+/**
+ * Like requireRole but authorizes by RBAC permission-group slug instead of
+ * the legacy role string.  Includes its own auth + approval gate.
+ *
+ * Only Technology Chair bypasses the permission check (blanket superuser).
+ * Platform Admin must hold the permission group explicitly.
+ *
+ * Usage: requirePermGroup("manage_nudges")(async (req, res) => { … })
+ */
+export function requirePermGroup(slug: string) {
+  return (handler: AuthedHandler): ReturnType<typeof requireAuth> =>
+    requireAuth(async (req, res, next) => {
+      const ctx = await resolveRbacContext(req.member.id);
+      if (!hasSystemRole(ctx, "technology_chair") && !hasPermissionGroup(ctx, slug)) {
+        res.status(403).json({ error: "Insufficient permissions" });
+        return;
+      }
+      return handler(req, res, next);
     });
 }
 

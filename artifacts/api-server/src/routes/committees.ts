@@ -11,6 +11,32 @@ import {
   attendanceTable,
   type Role,
 } from "@workspace/db";
+
+// ─── Reserved committee names ──────────────────────────────────────────────────
+
+/**
+ * Committee names that are permanently reserved and may not be used for new
+ * or renamed committees.  Add a name here whenever a committee is deactivated
+ * and its name should not be recycled.  Matching is case-insensitive.
+ */
+export const RESERVED_COMMITTEE_NAMES = ["Bylaws"] as const;
+
+/**
+ * Validates a proposed committee name against length rules and the reserved
+ * names list.  Returns an error string on failure, or null when valid.
+ *
+ * Apply this to every committee create/update route that accepts a name.
+ */
+export function validateCommitteeName(name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return "Committee name cannot be empty.";
+  if (trimmed.length < 2) return "Committee name must be at least 2 characters.";
+  if (trimmed.length > 100) return "Committee name must be 100 characters or fewer.";
+  const lower = trimmed.toLowerCase();
+  const hit = RESERVED_COMMITTEE_NAMES.find((n) => n.toLowerCase() === lower);
+  if (hit) return `"${hit}" is a reserved committee name and cannot be reused.`;
+  return null;
+}
 import { and, desc, eq } from "drizzle-orm";
 import {
   buildCommitteeAggregate,

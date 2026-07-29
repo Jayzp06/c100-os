@@ -13,7 +13,6 @@ import {
 } from "@workspace/db";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
-  EXEC_OR_ADMIN,
   attendanceToDto,
   buildCommitteeAggregate,
   buildMemberDto,
@@ -24,7 +23,7 @@ import {
   memberPointsAndImpact,
   recentChapterAttendance,
   requireAuth,
-  requireRole,
+  requirePermGroup,
 } from "../lib/c100";
 import {
   canAccessCommitteeReport,
@@ -154,7 +153,7 @@ function respondEligibility(
 
 router.get(
   "/reports/scholarship-eligibility",
-  requireRole(...EXEC_OR_ADMIN)(async (req, res) => {
+  requirePermGroup("view_reports")(async (req, res) => {
     const records = await buildEligibilityList();
     respondEligibility(
       req,
@@ -168,7 +167,7 @@ router.get(
 
 router.get(
   "/reports/conference-eligibility",
-  requireRole(...EXEC_OR_ADMIN)(async (req, res) => {
+  requirePermGroup("view_reports")(async (req, res) => {
     const records = await buildEligibilityList();
     const ranked = [...records]
       .sort((a, b) => b.systemScore - a.systemScore)
@@ -250,7 +249,7 @@ const OVERVIEW_ACTIVITY_COLUMNS: ReportColumn<AdminOverviewActivity>[] = [
 
 router.get(
   "/reports/admin-overview",
-  requireRole(...EXEC_OR_ADMIN)(async (req, res) => {
+  requirePermGroup("view_reports")(async (req, res) => {
     const overview = await buildAdminOverview();
     const format = req.query.format;
     if (isExportFormat(format)) {

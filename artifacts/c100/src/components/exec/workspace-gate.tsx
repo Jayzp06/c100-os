@@ -6,16 +6,21 @@ import type { ExecWorkspaceConfig } from "@/lib/exec-workspaces";
 
 /**
  * Gates an Executive Suite workspace behind the matching org role (or, for
- * Technology, the Technology Chair system role). Admins always retain
- * oversight access so they can review any workspace without holding the
- * underlying officer position.
+ * Technology, the Technology Chair / Platform Admin system role).
+ *
+ * Non-technology workspaces require the exact officer position.
+ * Platform Admin (isAdmin) does NOT get automatic access to executive-content
+ * workspaces (treasurer, secretary, etc.) — those hold confidential records.
+ * Tech Chair retains oversight access to all workspaces for technical support.
  */
 export function useExecWorkspaceAccess(workspace: ExecWorkspaceConfig) {
   const me = useMe();
   if (workspace.orgRole === null) {
+    // Technology workspace: Tech Chair and Platform Admin both qualify
     return me.isTechChair || me.isAdmin;
   }
-  return me.orgRoles.includes(workspace.orgRole) || me.isAdmin || me.isTechChair;
+  // All other workspaces: only the specific position holder or Tech Chair
+  return me.orgRoles.includes(workspace.orgRole) || me.isTechChair;
 }
 
 export function ExecWorkspaceShell({

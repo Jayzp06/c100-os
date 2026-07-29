@@ -201,11 +201,10 @@ router.get(
             eligible > 0 ? Math.round((attended / eligible) * 1000) / 10 : 0,
           totalPoints,
           impactPoints,
-          nudgeStatus: m.nudgeStatus,
         };
       }),
     );
-    const followUpMembers = roster.filter((m) => m.nudgeStatus !== "Active");
+    const followUpMembers = roster.filter((m) => m.participationPct < 100);
 
     const activityRows = await db
       .select({ a: attendanceTable, memberName: membersTable.fullName, eventTitle: eventsTable.title })

@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { useMe } from "@/lib/me";
 import {
   useGetMyDashboard,
-  useListMyNudges,
   useListEvents,
 } from "@workspace/api-client-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -20,7 +19,6 @@ import {
 import LoginPage from "@/pages/login";
 import {
   EventStatusBadge,
-  NudgeBadge,
   Pill,
   RoleBadge,
   eventTypeLabel,
@@ -29,7 +27,6 @@ import {
   ArrowRight,
   CalendarDays,
   Flame,
-  Mail,
   TrendingUp,
 } from "lucide-react";
 
@@ -193,7 +190,6 @@ export default function HomePage() {
 function Dashboard() {
   const me = useMe();
   const dashboard = useGetMyDashboard();
-  const nudges = useListMyNudges();
   const upcomingEvents = useListEvents({ status: "Upcoming" });
   const activeEvents = useListEvents({ status: "Active" });
 
@@ -217,7 +213,6 @@ function Dashboard() {
   const goal = data.participationGoalPct;
   const part = member.participationPct;
   const onTrack = part >= goal;
-  const unreadNudges = (nudges.data ?? []).filter((n) => !n.read);
 
   return (
     <AppShell>
@@ -226,7 +221,7 @@ function Dashboard() {
         title={`Welcome, ${member.fullName.split(" ")[0]}.`}
         description={
           <>
-            Your chapter snapshot, your nudges, and what&apos;s next. Stay above{" "}
+            Your chapter snapshot and what&apos;s next. Stay above{" "}
             <span className="font-medium text-foreground">
               {goal.toFixed(0)}% participation
             </span>{" "}
@@ -236,7 +231,6 @@ function Dashboard() {
         actions={
           <div className="flex items-center gap-2">
             <RoleBadge role={member.role} />
-            <NudgeBadge status={member.nudgeStatus} />
           </div>
         }
       />
@@ -335,43 +329,6 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="font-serif">Active nudges</CardTitle>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/nudges">
-                View all <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {nudges.isLoading ? (
-              <CardSkeleton rows={3} />
-            ) : unreadNudges.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No active nudges. Keep it up.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {unreadNudges.slice(0, 4).map((n) => (
-                  <li
-                    key={n.id}
-                    className="rounded-md border bg-[hsl(var(--muted)/0.4)] p-3"
-                    data-testid={`nudge-${n.id}`}
-                  >
-                    <div className="mb-1 flex items-center gap-2">
-                      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                        {n.nudgeType}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-snug">{n.messageContent}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">

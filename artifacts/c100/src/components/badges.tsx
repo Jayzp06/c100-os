@@ -57,22 +57,6 @@ export function RoleBadge({ role }: { role: string | null | undefined }) {
   return <Pill tone={tone}>{ROLE_LABEL[role] ?? role}</Pill>;
 }
 
-export function NudgeBadge({ status }: { status: string | null | undefined }) {
-  if (!status) return null;
-  const tone: Tone =
-    status === "Active"
-      ? "success"
-      : status === "Warning"
-        ? "warning"
-        : status === "AtRisk"
-          ? "warning"
-          : status === "Critical"
-            ? "danger"
-            : "neutral";
-  const label =
-    status === "AtRisk" ? "At risk" : status === "Critical" ? "Critical" : status;
-  return <Pill tone={tone}>{label}</Pill>;
-}
 
 export function MembershipBadge({
   status,

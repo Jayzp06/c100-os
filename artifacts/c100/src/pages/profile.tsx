@@ -16,7 +16,6 @@ import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
 import {
   MembershipBadge,
-  NudgeBadge,
   Pill,
   RoleBadge,
 } from "@/components/badges";
@@ -263,10 +262,6 @@ function ProfileInner() {
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Membership</span>
               <MembershipBadge status={m.membershipStatus} />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Nudge status</span>
-              <NudgeBadge status={m.nudgeStatus} />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Committee</span>

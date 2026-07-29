@@ -9,7 +9,6 @@ import type { ImpersonationState } from './impersonationState';
 import type { MemberAvailableExperiencesItem } from './memberAvailableExperiencesItem';
 import type { MemberExperience } from './memberExperience';
 import type { MemberMembershipStatus } from './memberMembershipStatus';
-import type { MemberNudgeStatus } from './memberNudgeStatus';
 import type { MemberRole } from './memberRole';
 
 export interface Member {
@@ -40,7 +39,6 @@ export interface Member {
   impactPoints: number;
   participationPct: number;
   streakCount: number;
-  nudgeStatus: MemberNudgeStatus;
   accountActive: boolean;
   /**
      * Set when a member has been soft-deleted. Null for active members.

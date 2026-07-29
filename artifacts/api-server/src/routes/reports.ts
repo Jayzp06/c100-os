@@ -208,9 +208,6 @@ async function buildAdminOverview() {
   const activeSem = await getActiveSemester();
   return {
     totalMembers: members.length,
-    activeMembers: members.filter((m) => m.nudgeStatus === "Active").length,
-    atRiskMembers: members.filter((m) => m.nudgeStatus === "AtRisk").length,
-    criticalMembers: members.filter((m) => m.nudgeStatus === "Critical").length,
     totalEvents: events.length,
     upcomingEvents: events.filter(
       (e) => e.status === "Upcoming" && e.semester === activeSem,
@@ -260,8 +257,6 @@ router.get(
         summary: [
           { label: "Total Members", value: overview.totalMembers },
           { label: "Chapter Participation", value: `${overview.chapterParticipationPct}%` },
-          { label: "At Risk", value: overview.atRiskMembers },
-          { label: "Critical", value: overview.criticalMembers },
         ],
       };
       if (format === "csv") {

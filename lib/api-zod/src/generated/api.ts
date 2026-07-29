@@ -125,7 +125,6 @@ export const GetMyProfileResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -192,7 +191,6 @@ export const UpdateMyProfileResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -240,7 +238,6 @@ export const SwitchMyExperienceResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -284,7 +281,6 @@ export const ResetMyExperienceResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -329,7 +325,6 @@ export const GetMyDashboardResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -392,19 +387,6 @@ export const GetMyDashboardResponse = zod.object({
   "totalEventsHosted": zod.number(),
   "memberCount": zod.number()
 })),
-  "activeNudges": zod.array(zod.object({
-  "id": zod.number(),
-  "userId": zod.number(),
-  "userName": zod.string().nullish(),
-  "nudgeType": zod.enum(['ActiveEncouragement', 'Milestone', 'GentleReminder', 'AtRiskWarning', 'CriticalAlert', 'ChairInactivityAlert', 'ChairParticipationAlert']),
-  "messageContent": zod.string(),
-  "sentAt": zod.coerce.date(),
-  "deliveryChannel": zod.enum(['InApp', 'Email', 'Both']),
-  "triggerReason": zod.string(),
-  "memberStatusAtSend": zod.string(),
-  "responseAction": zod.string().nullish(),
-  "read": zod.boolean().optional()
-})),
   "recentAttendance": zod.array(zod.object({
   "id": zod.number(),
   "userId": zod.number(),
@@ -420,25 +402,6 @@ export const GetMyDashboardResponse = zod.object({
 })),
   "participationGoalPct": zod.number()
 })
-
-
-/**
- * @summary List nudges for the current member
- */
-export const ListMyNudgesResponseItem = zod.object({
-  "id": zod.number(),
-  "userId": zod.number(),
-  "userName": zod.string().nullish(),
-  "nudgeType": zod.enum(['ActiveEncouragement', 'Milestone', 'GentleReminder', 'AtRiskWarning', 'CriticalAlert', 'ChairInactivityAlert', 'ChairParticipationAlert']),
-  "messageContent": zod.string(),
-  "sentAt": zod.coerce.date(),
-  "deliveryChannel": zod.enum(['InApp', 'Email', 'Both']),
-  "triggerReason": zod.string(),
-  "memberStatusAtSend": zod.string(),
-  "responseAction": zod.string().nullish(),
-  "read": zod.boolean().optional()
-})
-export const ListMyNudgesResponse = zod.array(ListMyNudgesResponseItem)
 
 
 /**
@@ -468,7 +431,6 @@ export const ListMembersResponseItem = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -527,7 +489,6 @@ export const CreateMemberResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -602,7 +563,6 @@ export const GetMemberResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -666,7 +626,6 @@ export const UpdateMemberResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -714,7 +673,6 @@ export const DeleteMemberResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -762,7 +720,6 @@ export const RestoreMemberResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -853,7 +810,6 @@ export const GetCommitteeRosterResponseItem = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -876,7 +832,7 @@ export const GetCommitteeRosterResponse = zod.array(GetCommitteeRosterResponseIt
 
 
 /**
- * Chairs get the full private roster with per-member participation, impact points, and nudge status, plus upcoming events, recent activity, and a follow-up list of members below the participation goal. Plain members get their own stats and the committee's aggregate stats only — never a peer roster, preserving the chapter's privacy rule that individual standings are visible to leadership only.
+ * Chairs get the full private roster with per-member participation, impact points, plus upcoming events, recent activity, and a follow-up list of members below the participation goal. Plain members get their own stats and the committee's aggregate stats only — never a peer roster, preserving the chapter's privacy rule that individual standings are visible to leadership only.
  * @summary My Committee — chair or member view of their own committee
  */
 export const GetMyCommitteeResponse = zod.object({
@@ -915,7 +871,6 @@ export const GetMyCommitteeResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -940,8 +895,7 @@ export const GetMyCommitteeResponse = zod.object({
   "role": zod.string(),
   "participationPct": zod.number(),
   "totalPoints": zod.number(),
-  "impactPoints": zod.number(),
-  "nudgeStatus": zod.string()
+  "impactPoints": zod.number()
 })).optional().describe('Full private roster — present only when the caller is this committee\'s chair (or chapter-wide leadership).'),
   "followUpMembers": zod.array(zod.object({
   "id": zod.number(),
@@ -949,8 +903,7 @@ export const GetMyCommitteeResponse = zod.object({
   "role": zod.string(),
   "participationPct": zod.number(),
   "totalPoints": zod.number(),
-  "impactPoints": zod.number(),
-  "nudgeStatus": zod.string()
+  "impactPoints": zod.number()
 })).optional().describe('Roster members below the participation goal — chair view only.'),
   "upcomingEvents": zod.array(zod.object({
   "id": zod.number(),
@@ -1310,7 +1263,6 @@ export const CheckInToEventResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -1392,60 +1344,6 @@ export const DeleteEventAttendanceParams = zod.object({
 })
 
 export const DeleteEventAttendanceResponse = zod.void()
-
-
-/**
- * @summary List nudge log entries (Executive Board / Admin)
- */
-export const ListNudgesQueryParams = zod.object({
-  "userId": zod.coerce.number().optional(),
-  "tier": zod.coerce.string().optional()
-})
-
-export const ListNudgesResponseItem = zod.object({
-  "id": zod.number(),
-  "userId": zod.number(),
-  "userName": zod.string().nullish(),
-  "nudgeType": zod.enum(['ActiveEncouragement', 'Milestone', 'GentleReminder', 'AtRiskWarning', 'CriticalAlert', 'ChairInactivityAlert', 'ChairParticipationAlert']),
-  "messageContent": zod.string(),
-  "sentAt": zod.coerce.date(),
-  "deliveryChannel": zod.enum(['InApp', 'Email', 'Both']),
-  "triggerReason": zod.string(),
-  "memberStatusAtSend": zod.string(),
-  "responseAction": zod.string().nullish(),
-  "read": zod.boolean().optional()
-})
-export const ListNudgesResponse = zod.array(ListNudgesResponseItem)
-
-
-/**
- * @summary Recompute every member's nudge tier and emit messages
- */
-export const RunNudgeEvaluationResponse = zod.object({
-  "evaluated": zod.number(),
-  "nudgesSent": zod.number(),
-  "ranAt": zod.coerce.date()
-})
-
-
-/**
- * @summary Mark a single nudge as read (current member only)
- */
-export const MarkNudgeReadParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const MarkNudgeReadResponse = zod.object({
-  "ok": zod.boolean()
-})
-
-
-/**
- * @summary Mark all nudges for the current member as read
- */
-export const MarkAllNudgesReadResponse = zod.object({
-  "ok": zod.boolean()
-})
 
 
 /**
@@ -1582,7 +1480,6 @@ export const GetCommitteeReportResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -1702,7 +1599,6 @@ export const GetMemberReportResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -1903,7 +1799,6 @@ export const StartImpersonationResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),
@@ -1947,7 +1842,6 @@ export const EndImpersonationResponse = zod.object({
   "impactPoints": zod.number(),
   "participationPct": zod.number(),
   "streakCount": zod.number(),
-  "nudgeStatus": zod.enum(['Active', 'Warning', 'AtRisk', 'Critical']),
   "accountActive": zod.boolean(),
   "deletedAt": zod.coerce.date().nullish().describe('Set when a member has been soft-deleted. Null for active members.'),
   "lastLogin": zod.coerce.date().nullish(),

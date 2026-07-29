@@ -45,7 +45,6 @@ import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
 import {
   MembershipBadge,
-  NudgeBadge,
   Pill,
   RoleBadge,
 } from "@/components/badges";
@@ -256,7 +255,6 @@ function MemberDetail({ id }: { id: number }) {
           <div className="flex items-center gap-2">
             <RoleBadge role={m.role} />
             <MembershipBadge status={m.membershipStatus} />
-            <NudgeBadge status={m.nudgeStatus} />
             {me.isExecOrAdmin || me.committeeChairId === m.committeeId ? (
               <ReportExportMenu endpoint={`/api/reports/member/${id}`} />
             ) : null}

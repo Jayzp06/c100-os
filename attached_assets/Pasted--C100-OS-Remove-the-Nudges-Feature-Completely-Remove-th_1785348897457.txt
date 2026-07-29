@@ -1,0 +1,118 @@
+# C100 OS — Remove the Nudges Feature Completely
+
+Remove the Nudges feature from the entire application. It is no longer part of the product.
+
+Members primarily use C100 OS for event check-in, event information, meetings and participation progress. Do not replace Nudges with another messaging system during this task.
+
+## Remove from frontend
+
+Remove:
+
+- Member Nudges page
+- Executive/administrative Nudges page
+- Nudges navigation items
+- Dashboard nudge cards and unread counts
+- “Mark as read” and “Mark all as read”
+- Nudge badges, indicators and notifications
+- Nudge-related empty states
+- Nudge links from Executive Suite workspaces
+- Any nudge controls in the Sergeant-at-Arms workspace
+- Generated frontend hooks and types that exist only for Nudges
+
+Update member navigation so spacing and tab counts remain correct after removal.
+
+Do not leave dead routes that display blank pages.
+
+## Remove from backend
+
+Remove:
+
+- Nudge API routes
+- Nudge generation or processing services
+- Scheduled nudge jobs
+- Nudge delivery logic
+- Read/unread endpoints
+- Nudge-related authorization guards
+- Nudge-specific request and response schemas
+- Nudge code from the OpenAPI specification
+- Generated API clients and Zod schemas that exist only for Nudges
+
+Run code generation after updating the API specification.
+
+## Remove permissions
+
+Remove:
+
+- `manage_nudges`
+- Any nudge-viewing permission
+- Nudge permissions assigned to Executive Board positions
+- Nudge permissions assigned to system roles
+- Nudge permission checks and role-matrix assertions
+
+Sergeant-at-Arms may retain a future `manage_conduct` permission, but it must not contain or imply Nudge functionality.
+
+Platform Administrator and Technology Chair must not retain obsolete Nudge permissions.
+
+## Database cleanup
+
+Inspect all nudge-related tables and foreign-key dependencies.
+
+Because test nudge data has already been cleared:
+
+- Remove obsolete nudge tables through a proper migration if they are used only by this feature.
+- Remove nudge-related columns, indexes and constraints that have no remaining purpose.
+- Do not affect events, attendance, members, roles, audit logs or unrelated notifications.
+- Make the migration safe for development and production databases.
+- Do not manually delete unrelated data.
+
+## Remove from reports and documentation
+
+Remove Nudge references from:
+
+- Reports and exports
+- Dashboard statistics
+- Seed scripts
+- Tests
+- Executive Suite descriptions
+- User-facing documentation
+- Internal product copy
+- Release notes templates where applicable
+
+Search the entire repository case-insensitively for:
+
+- `nudge`
+- `nudges`
+- `nudgeLogs`
+- `manage_nudges`
+
+Classify and remove every obsolete reference. Preserve unrelated uses of the ordinary English word only if they are not connected to the removed feature.
+
+## Verification
+
+Confirm:
+
+1. No Nudge navigation item appears for any role.
+2. No Nudge page or API route remains accessible.
+3. Member navigation displays correctly.
+4. Executive Suite navigation displays correctly.
+5. No scheduled Nudge process runs.
+6. No obsolete Nudge permissions remain.
+7. OpenAPI code generation succeeds.
+8. Database migration succeeds.
+9. Typecheck passes.
+10. All remaining automated tests pass.
+11. Event check-in and attendance remain unaffected.
+12. Repository-wide search finds no functional Nudge references.
+
+Return:
+
+- Files removed
+- Files modified
+- Database migration created
+- Tables or columns removed
+- Permissions removed
+- Tests updated
+- Typecheck and test results
+- Any intentionally preserved occurrence of the word “nudge”
+
+Do not add announcements, messaging, push notifications or unrelated features.

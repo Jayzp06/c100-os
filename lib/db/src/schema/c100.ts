@@ -32,14 +32,6 @@ export const MEMBERSHIP_STATUS_VALUES = [
 ] as const;
 export type MembershipStatus = (typeof MEMBERSHIP_STATUS_VALUES)[number];
 
-export const NUDGE_STATUS_VALUES = [
-  "Active",
-  "Warning",
-  "AtRisk",
-  "Critical",
-] as const;
-export type NudgeStatus = (typeof NUDGE_STATUS_VALUES)[number];
-
 export const EVENT_TYPE_VALUES = [
   "GeneralBodyMeeting",
   "CommitteeMeeting",
@@ -66,20 +58,6 @@ export const ATTENDANCE_METHOD_VALUES = [
   "Corrected",
 ] as const;
 export type AttendanceMethod = (typeof ATTENDANCE_METHOD_VALUES)[number];
-
-export const NUDGE_TYPE_VALUES = [
-  "ActiveEncouragement",
-  "Milestone",
-  "GentleReminder",
-  "AtRiskWarning",
-  "CriticalAlert",
-  "ChairInactivityAlert",
-  "ChairParticipationAlert",
-] as const;
-export type NudgeType = (typeof NUDGE_TYPE_VALUES)[number];
-
-export const NUDGE_CHANNEL_VALUES = ["InApp", "Email", "Both"] as const;
-export type NudgeChannel = (typeof NUDGE_CHANNEL_VALUES)[number];
 
 export const EXPERIENCE_TYPE_VALUES = [
   "operations_console",
@@ -143,9 +121,6 @@ export const membersTable = pgTable(
     dateJoined: timestamp("date_joined", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    nudgeStatus: varchar("nudge_status", { length: 16 })
-      .notNull()
-      .default("Active"),
     streakCount: integer("streak_count").notNull().default(0),
     accountActive: boolean("account_active").notNull().default(true),
     lastLogin: timestamp("last_login", { withTimezone: true }),
@@ -248,35 +223,6 @@ export const attendanceTable = pgTable(
   (table) => [
     index("attendance_user_idx").on(table.userId),
     index("attendance_event_idx").on(table.eventId),
-  ],
-);
-
-export const nudgeLogsTable = pgTable(
-  "nudge_logs",
-  {
-    id: serial("id").primaryKey(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => membersTable.id, { onDelete: "cascade" }),
-    nudgeType: varchar("nudge_type", { length: 40 }).notNull(),
-    messageContent: text("message_content").notNull(),
-    sentAt: timestamp("sent_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    deliveryChannel: varchar("delivery_channel", { length: 16 })
-      .notNull()
-      .default("InApp"),
-    triggerReason: text("trigger_reason").notNull().default(""),
-    memberStatusAtSend: varchar("member_status_at_send", { length: 16 })
-      .notNull()
-      .default("Active"),
-    responseAction: text("response_action"),
-    read: boolean("read").notNull().default(false),
-    semester: varchar("semester", { length: 24 }).notNull(),
-  },
-  (table) => [
-    index("nudge_logs_user_idx").on(table.userId),
-    index("nudge_logs_sent_idx").on(table.sentAt),
   ],
 );
 
@@ -496,7 +442,6 @@ export type Committee = typeof committeesTable.$inferSelect;
 export type Member = typeof membersTable.$inferSelect;
 export type EventRow = typeof eventsTable.$inferSelect;
 export type AttendanceRow = typeof attendanceTable.$inferSelect;
-export type NudgeLogRow = typeof nudgeLogsTable.$inferSelect;
 export type SemesterConfig = typeof semesterConfigTable.$inferSelect;
 export type OfficerTerm = typeof officerTermsTable.$inferSelect;
 export type CommitteeAssignment = typeof committeeAssignmentsTable.$inferSelect;

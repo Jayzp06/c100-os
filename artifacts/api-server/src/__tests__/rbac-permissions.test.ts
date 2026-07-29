@@ -44,7 +44,6 @@ describe("treasurer permissions", () => {
 
   // Negative — treasurer must not hold other positions' exclusive tools
   test("does NOT have manage_documents (Secretary)", () => assertLacks(p, "manage_documents", "treasurer"));
-  test("does NOT have manage_nudges (Exec leadership)", () => assertLacks(p, "manage_nudges", "treasurer"));
   test("does NOT have manage_members", () => assertLacks(p, "manage_members", "treasurer"));
   test("does NOT have manage_committees", () => assertLacks(p, "manage_committees", "treasurer"));
   test("does NOT have manage_events", () => assertLacks(p, "manage_events", "treasurer"));
@@ -60,7 +59,6 @@ describe("secretary permissions", () => {
 
   // Negative
   test("does NOT have manage_finances (Treasurer)", () => assertLacks(p, "manage_finances", "secretary"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "secretary"));
   test("does NOT have manage_members", () => assertLacks(p, "manage_members", "secretary"));
   test("does NOT have manage_events", () => assertLacks(p, "manage_events", "secretary"));
 });
@@ -76,7 +74,6 @@ describe("sergeant-at-arms permissions", () => {
   test("does NOT have view_reports", () => assertLacks(p, "view_reports", "sergeant_at_arms"));
   test("does NOT have manage_finances", () => assertLacks(p, "manage_finances", "sergeant_at_arms"));
   test("does NOT have manage_documents", () => assertLacks(p, "manage_documents", "sergeant_at_arms"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "sergeant_at_arms"));
 });
 
 describe("historian permissions", () => {
@@ -87,7 +84,6 @@ describe("historian permissions", () => {
 
   // Negative — historian is appointed, not executive board
   test("does NOT have manage_finances", () => assertLacks(p, "manage_finances", "historian"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "historian"));
   test("does NOT have manage_executive_dashboard", () => assertLacks(p, "manage_executive_dashboard", "historian"));
   test("does NOT have manage_members", () => assertLacks(p, "manage_members", "historian"));
 });
@@ -99,7 +95,6 @@ describe("parliamentarian permissions", () => {
   test("has view_reports", () => assertHas(p, "view_reports", "parliamentarian"));
 
   test("does NOT have manage_finances", () => assertLacks(p, "manage_finances", "parliamentarian"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "parliamentarian"));
   test("does NOT have manage_executive_dashboard", () => assertLacks(p, "manage_executive_dashboard", "parliamentarian"));
 });
 
@@ -111,7 +106,6 @@ describe("bylaws_chair permissions", () => {
 
   // Negative
   test("does NOT have manage_finances", () => assertLacks(p, "manage_finances", "bylaws_chair"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "bylaws_chair"));
   test("does NOT have manage_executive_dashboard", () => assertLacks(p, "manage_executive_dashboard", "bylaws_chair"));
 });
 
@@ -127,7 +121,6 @@ describe("committee chair permissions", () => {
   test("does NOT have manage_documents", () => assertLacks(p, "manage_documents", "committee_chair"));
   test("does NOT have manage_executive_dashboard", () => assertLacks(p, "manage_executive_dashboard", "committee_chair"));
   test("does NOT have view_reports", () => assertLacks(p, "view_reports", "committee_chair"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "committee_chair"));
 });
 
 describe("president permissions (broad access is by design)", () => {
@@ -135,7 +128,7 @@ describe("president permissions (broad access is by design)", () => {
   const ALL_EXEC = [
     "manage_members", "manage_attendance", "manage_committees", "manage_events",
     "manage_finances", "manage_documents", "manage_executive_dashboard",
-    "manage_org_settings", "manage_nudges", "view_reports",
+    "manage_org_settings", "view_reports",
   ];
   for (const perm of ALL_EXEC) {
     test(`has ${perm}`, () => assertHas(p, perm, "president"));
@@ -182,7 +175,6 @@ describe("platform_admin permissions (technical-only)", () => {
   test("does NOT have manage_finances", () => assertLacks(p, "manage_finances", "platform_admin"));
   test("does NOT have manage_documents", () => assertLacks(p, "manage_documents", "platform_admin"));
   test("does NOT have manage_executive_dashboard", () => assertLacks(p, "manage_executive_dashboard", "platform_admin"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "platform_admin"));
 });
 
 describe("technology_chair permissions (technical superuser)", () => {
@@ -197,7 +189,6 @@ describe("technology_chair permissions (technical superuser)", () => {
   // from the isTechSuperuser() bypass in the route middleware, not from perms.
   test("does NOT have manage_finances", () => assertLacks(p, "manage_finances", "technology_chair"));
   test("does NOT have manage_executive_dashboard", () => assertLacks(p, "manage_executive_dashboard", "technology_chair"));
-  test("does NOT have manage_nudges", () => assertLacks(p, "manage_nudges", "technology_chair"));
 });
 
 // ── Cross-role isolation ──────────────────────────────────────────────────────
@@ -218,7 +209,7 @@ describe("cross-role isolation: committee chairs denied executive tools", () => 
     "leadership_development_chair", "health_wellness_chair",
     "community_service_chair", "special_events_chair", "committee_chair",
   ];
-  const execOnly = ["manage_finances", "manage_documents", "manage_executive_dashboard", "manage_nudges"];
+  const execOnly = ["manage_finances", "manage_documents", "manage_executive_dashboard"];
 
   for (const chair of chairs) {
     for (const perm of execOnly) {

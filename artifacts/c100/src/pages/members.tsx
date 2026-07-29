@@ -48,7 +48,6 @@ import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
 import {
   MembershipBadge,
-  NudgeBadge,
   RoleBadge,
 } from "@/components/badges";
 import { Search, Upload, CheckCircle, AlertCircle, UserPlus } from "lucide-react";
@@ -526,7 +525,6 @@ function MembersList({ isAdmin }: { isAdmin: boolean }) {
                     <TableHead>Committee</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Membership</TableHead>
-                    <TableHead>Nudge</TableHead>
                     <TableHead className="text-right">Participation</TableHead>
                     <TableHead className="text-right">Points</TableHead>
                   </TableRow>
@@ -559,9 +557,6 @@ function MembersList({ isAdmin }: { isAdmin: boolean }) {
                       </TableCell>
                       <TableCell>
                         <MembershipBadge status={m.membershipStatus} />
-                      </TableCell>
-                      <TableCell>
-                        <NudgeBadge status={m.nudgeStatus} />
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {m.participationPct.toFixed(0)}%

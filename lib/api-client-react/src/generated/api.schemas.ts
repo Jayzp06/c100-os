@@ -113,16 +113,6 @@ export const MemberMembershipStatus = {
   Inactive: 'Inactive',
 } as const;
 
-export type MemberNudgeStatus = typeof MemberNudgeStatus[keyof typeof MemberNudgeStatus];
-
-
-export const MemberNudgeStatus = {
-  Active: 'Active',
-  Warning: 'Warning',
-  AtRisk: 'AtRisk',
-  Critical: 'Critical',
-} as const;
-
 export type MemberExperience = typeof MemberExperience[keyof typeof MemberExperience];
 
 
@@ -174,7 +164,6 @@ export interface Member {
   impactPoints: number;
   participationPct: number;
   streakCount: number;
-  nudgeStatus: MemberNudgeStatus;
   accountActive: boolean;
   /**
      * Set when a member has been soft-deleted. Null for active members.
@@ -373,7 +362,6 @@ export interface MyCommitteeMember {
   participationPct: number;
   totalPoints: number;
   impactPoints: number;
-  nudgeStatus: string;
 }
 
 export interface MyCommitteeActivity {
@@ -650,50 +638,6 @@ export interface ManualAttendanceInput {
   method?: ManualAttendanceInputMethod;
 }
 
-export type NudgeLogEntryNudgeType = typeof NudgeLogEntryNudgeType[keyof typeof NudgeLogEntryNudgeType];
-
-
-export const NudgeLogEntryNudgeType = {
-  ActiveEncouragement: 'ActiveEncouragement',
-  Milestone: 'Milestone',
-  GentleReminder: 'GentleReminder',
-  AtRiskWarning: 'AtRiskWarning',
-  CriticalAlert: 'CriticalAlert',
-  ChairInactivityAlert: 'ChairInactivityAlert',
-  ChairParticipationAlert: 'ChairParticipationAlert',
-} as const;
-
-export type NudgeLogEntryDeliveryChannel = typeof NudgeLogEntryDeliveryChannel[keyof typeof NudgeLogEntryDeliveryChannel];
-
-
-export const NudgeLogEntryDeliveryChannel = {
-  InApp: 'InApp',
-  Email: 'Email',
-  Both: 'Both',
-} as const;
-
-export interface NudgeLogEntry {
-  id: number;
-  userId: number;
-  /** @nullable */
-  userName?: string | null;
-  nudgeType: NudgeLogEntryNudgeType;
-  messageContent: string;
-  sentAt: string;
-  deliveryChannel: NudgeLogEntryDeliveryChannel;
-  triggerReason: string;
-  memberStatusAtSend: string;
-  /** @nullable */
-  responseAction?: string | null;
-  read?: boolean;
-}
-
-export interface NudgeRunResult {
-  evaluated: number;
-  nudgesSent: number;
-  ranAt: string;
-}
-
 export interface EligibilityRecord {
   userId: number;
   fullName: string;
@@ -761,7 +705,6 @@ export interface MemberDashboard {
   upcomingEvents: Event[];
   committee: Committee | null;
   committeeLeaderboard: CommitteeLeaderboardEntry[];
-  activeNudges: NudgeLogEntry[];
   recentAttendance: AttendanceRecord[];
   participationGoalPct: number;
 }
@@ -896,19 +839,6 @@ export const ListEventsStatus = {
   Completed: 'Completed',
   Cancelled: 'Cancelled',
 } as const;
-
-export type ListNudgesParams = {
-userId?: number;
-tier?: string;
-};
-
-export type MarkNudgeRead200 = {
-  ok: boolean;
-};
-
-export type MarkAllNudgesRead200 = {
-  ok: boolean;
-};
 
 export type GetScholarshipEligibilityParams = {
 /**

@@ -22,8 +22,6 @@ tags:
     description: Chapter events and QR check-in
   - name: Attendance
     description: Member attendance records
-  - name: Nudges
-    description: Behavioral nudge messages
   - name: Reports
     description: Eligibility, leaderboards, and dashboards
   - name: OrgSettings
@@ -242,21 +240,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MemberDashboard'
-
-  /me/nudges:
-    get:
-      tags: [Nudges]
-      operationId: listMyNudges
-      summary: List nudges for the current member
-      responses:
-        '200':
-          description: Nudge list.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NudgeLogEntry'
 
   /members:
     get:
@@ -503,7 +486,7 @@ paths:
       summary: My Committee — chair or member view of their own committee
       description: >
         Chairs get the full private roster with per-member participation,
-        impact points, and nudge status, plus upcoming events, recent
+        impact points, plus upcoming events, recent
         activity, and a follow-up list of members below the participation
         goal. Plain members get their own stats and the committee's
         aggregate stats only — never a peer roster, preserving the
@@ -828,96 +811,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
 
-  /nudges:
-    get:
-      tags: [Nudges]
-      operationId: listNudges
-      summary: List nudge log entries (Executive Board / Admin)
-      parameters:
-        - name: userId
-          in: query
-          required: false
-          schema:
-            type: integer
-        - name: tier
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Nudge log.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NudgeLogEntry'
-
-  /nudges/run:
-    post:
-      tags: [Nudges]
-      operationId: runNudgeEvaluation
-      summary: Recompute every member's nudge tier and emit messages
-      responses:
-        '200':
-          description: Nudge run complete.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NudgeRunResult'
-
-  /nudges/{id}/read:
-    patch:
-      tags: [Nudges]
-      operationId: markNudgeRead
-      summary: Mark a single nudge as read (current member only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Nudge marked read.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [ok]
-                properties:
-                  ok:
-                    type: boolean
-        '403':
-          description: Not your nudge.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '404':
-          description: Nudge not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-  /nudges/read-all:
-    post:
-      tags: [Nudges]
-      operationId: markAllNudgesRead
-      summary: Mark all nudges for the current member as read
-      responses:
-        '200':
-          description: All nudges marked read.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [ok]
-                properties:
-                  ok:
-                    type: boolean
 
   /reports/scholarship-eligibility:
     get:
@@ -1446,7 +1339,6 @@ components:
         - impactPoints
         - participationPct
         - streakCount
-        - nudgeStatus
         - accountActive
         - eventsAttended
         - eventsEligible
@@ -1494,9 +1386,6 @@ components:
           type: number
         streakCount:
           type: integer
-        nudgeStatus:
-          type: string
-          enum: [Active, Warning, AtRisk, Critical]
         accountActive:
           type: boolean
         deletedAt:
@@ -1711,7 +1600,6 @@ components:
         - participationPct
         - totalPoints
         - impactPoints
-        - nudgeStatus
       properties:
         id:
           type: integer
@@ -1725,8 +1613,6 @@ components:
           type: integer
         impactPoints:
           type: integer
-        nudgeStatus:
-          type: string
 
     MyCommitteeActivity:
       type: object
@@ -2074,48 +1960,6 @@ components:
           type: string
           enum: [Manual, Corrected]
 
-    NudgeLogEntry:
-      type: object
-      required: [id, userId, nudgeType, messageContent, sentAt, deliveryChannel, triggerReason, memberStatusAtSend]
-      properties:
-        id:
-          type: integer
-        userId:
-          type: integer
-        userName:
-          type: [string, 'null']
-        nudgeType:
-          type: string
-          enum: [ActiveEncouragement, Milestone, GentleReminder, AtRiskWarning, CriticalAlert, ChairInactivityAlert, ChairParticipationAlert]
-        messageContent:
-          type: string
-        sentAt:
-          type: string
-          format: date-time
-        deliveryChannel:
-          type: string
-          enum: [InApp, Email, Both]
-        triggerReason:
-          type: string
-        memberStatusAtSend:
-          type: string
-        responseAction:
-          type: [string, 'null']
-        read:
-          type: boolean
-
-    NudgeRunResult:
-      type: object
-      required: [evaluated, nudgesSent, ranAt]
-      properties:
-        evaluated:
-          type: integer
-        nudgesSent:
-          type: integer
-        ranAt:
-          type: string
-          format: date-time
-
     EligibilityRecord:
       type: object
       required:
@@ -2288,7 +2132,6 @@ components:
         - upcomingEvents
         - committee
         - committeeLeaderboard
-        - activeNudges
         - recentAttendance
         - participationGoalPct
       properties:
@@ -2306,10 +2149,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CommitteeLeaderboardEntry'
-        activeNudges:
-          type: array
-          items:
-            $ref: '#/components/schemas/NudgeLogEntry'
         recentAttendance:
           type: array
           items:

@@ -6,7 +6,6 @@ import profileRouter from "./profile";
 import membersRouter from "./members";
 import committeesRouter from "./committees";
 import eventsRouter from "./events";
-import nudgesRouter from "./nudges";
 import reportsRouter from "./reports";
 import orgRouter from "./org";
 import techRouter from "./tech";
@@ -26,7 +25,6 @@ router.use(profileRouter);
 router.use(membersRouter);
 router.use(committeesRouter);
 router.use(eventsRouter);
-router.use(nudgesRouter);
 router.use(reportsRouter);
 
 export default router;

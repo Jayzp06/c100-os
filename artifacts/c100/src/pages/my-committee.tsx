@@ -7,7 +7,6 @@ import { ErrorBlock, LoadingBlock } from "@/components/page-states";
 import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
 import {
-  NudgeBadge,
   Pill,
   RoleBadge,
   eventTypeLabel,
@@ -121,10 +120,6 @@ function MyCommittee() {
               label="Participation"
               value={`${myStats.participationPct.toFixed(0)}%`}
             />
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Nudge status</span>
-              <NudgeBadge status={myStats.nudgeStatus} />
-            </div>
           </CardContent>
         </Card>
 
@@ -203,7 +198,6 @@ function MyCommittee() {
                       <TableRow>
                         <TableHead>Member</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Nudge</TableHead>
                         <TableHead className="text-right">Points</TableHead>
                         <TableHead className="text-right">Impact</TableHead>
                         <TableHead className="text-right">
@@ -224,9 +218,6 @@ function MyCommittee() {
                           </TableCell>
                           <TableCell>
                             <RoleBadge role={m.role} />
-                          </TableCell>
-                          <TableCell>
-                            <NudgeBadge status={m.nudgeStatus} />
                           </TableCell>
                           <TableCell className="text-right">
                             {m.totalPoints}

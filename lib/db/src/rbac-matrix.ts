@@ -11,9 +11,8 @@
  *  - Technology Chair is the only role that bypasses permission checks
  *    entirely (all-access superuser for technical administration).
  *  - Platform Admin is technical-only: it does NOT auto-receive
- *    manage_finances, manage_documents, manage_executive_dashboard,
- *    or manage_nudges.  Those belong exclusively to their respective
- *    executive positions.
+ *    manage_finances, manage_documents, or manage_executive_dashboard.
+ *    Those belong exclusively to their respective executive positions.
  *  - bylaws_officer is consolidated into bylaws_chair (removed).
  */
 
@@ -21,7 +20,7 @@ export const SYSTEM_ROLE_PERMS: Record<string, string[]> = {
   /**
    * Technical + member administration only.
    * Does NOT include executive-board tools (finances, documents,
-   * executive dashboard, nudges).
+   * executive dashboard).
    */
   platform_admin: [
     "manage_members", "manage_attendance", "manage_committees", "manage_events",
@@ -55,11 +54,11 @@ export const ORG_ROLE_PERMS: Record<string, string[]> = {
   president: [
     "manage_members", "manage_attendance", "manage_committees", "manage_events",
     "manage_finances", "manage_documents", "manage_executive_dashboard",
-    "manage_org_settings", "manage_nudges", "view_reports",
+    "manage_org_settings", "view_reports",
   ],
   vice_president: [
     "manage_committees", "manage_events",
-    "manage_executive_dashboard", "manage_nudges", "view_reports",
+    "manage_executive_dashboard", "view_reports",
   ],
   secretary: [
     "manage_documents", "manage_executive_dashboard", "view_reports",
@@ -68,7 +67,7 @@ export const ORG_ROLE_PERMS: Record<string, string[]> = {
     "manage_finances", "manage_executive_dashboard", "view_reports",
   ],
   chief_of_staff: [
-    "manage_members", "manage_executive_dashboard", "manage_nudges", "view_reports",
+    "manage_members", "manage_executive_dashboard", "view_reports",
   ],
   sergeant_at_arms: [
     "manage_events", "manage_attendance", "manage_executive_dashboard",

@@ -48,7 +48,7 @@ const VIEW_OPTIONS: {
   {
     value: "CommitteeChair",
     label: "Committee Chair",
-    description: "Top-nav portal — committee management, events, nudges",
+    description: "Top-nav portal — committee management, events, profile",
     experience: "Committee Portal",
   },
   {
@@ -60,7 +60,7 @@ const VIEW_OPTIONS: {
   {
     value: "ExecutiveBoard",
     label: "Executive Board",
-    description: "Operations console with sidebar — dashboard, members, reports, nudges",
+    description: "Operations console with sidebar — dashboard, members, committees, reports",
     experience: "Operations Console",
   },
   {
@@ -109,7 +109,7 @@ function RoleViewSwitcher() {
       onSuccess: (data: Member) => {
         queryClient.setQueryData(getGetMyProfileQueryKey(), data);
         // Impersonation swaps the entire RBAC context, so every cached query
-        // (dashboard, events, members, committees, nudges, reports) can now
+        // (dashboard, events, members, committees, reports) can now
         // resolve to different data or a different permission set. A full
         // invalidation is the only safe option here — this is a rare,
         // Tech-Chair-only QA action, not a hot path.

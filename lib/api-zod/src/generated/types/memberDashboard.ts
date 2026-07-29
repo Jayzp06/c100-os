@@ -10,14 +10,12 @@ import type { Committee } from './committee';
 import type { CommitteeLeaderboardEntry } from './committeeLeaderboardEntry';
 import type { Event } from './event';
 import type { Member } from './member';
-import type { NudgeLogEntry } from './nudgeLogEntry';
 
 export interface MemberDashboard {
   member: Member;
   upcomingEvents: Event[];
   committee: Committee | null;
   committeeLeaderboard: CommitteeLeaderboardEntry[];
-  activeNudges: NudgeLogEntry[];
   recentAttendance: AttendanceRecord[];
   participationGoalPct: number;
 }

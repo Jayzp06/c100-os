@@ -114,7 +114,6 @@ const PERM_GROUPS = [
   { slug: "manage_documents",           name: "Manage Documents",            scope: "org",    description: "Upload, version, and publish chapter documents" },
   { slug: "manage_executive_dashboard", name: "Manage Executive Dashboard",  scope: "org",    description: "Access executive overview and cross-committee analytics" },
   { slug: "manage_org_settings",        name: "Manage Org Settings",         scope: "org",    description: "Update chapter name, branding, and eligibility thresholds" },
-  { slug: "manage_nudges",              name: "Manage Nudges",               scope: "org",    description: "Review, send, and configure member accountability nudges" },
   { slug: "view_reports",               name: "View Reports",                scope: "org",    description: "Access scholarship, conference, and chapter eligibility reports" },
   { slug: "manage_system_settings",     name: "Manage System Settings",      scope: "system", description: "Platform-level configuration, integrations, and feature flags" },
   { slug: "manage_roles",               name: "Manage Roles",                scope: "system", description: "Assign and remove system and org roles for any member" },
@@ -165,11 +164,6 @@ const PERMISSIONS_BY_GROUP: Record<string, Array<{ slug: string; name: string }>
   manage_org_settings: [
     { slug: "org_settings:read",  name: "View org settings" },
     { slug: "org_settings:write", name: "Update org settings" },
-  ],
-  manage_nudges: [
-    { slug: "nudges:read",  name: "View nudges" },
-    { slug: "nudges:send",  name: "Send nudges" },
-    { slug: "nudges:run",   name: "Run automated nudge cycle" },
   ],
   view_reports: [
     { slug: "reports:read", name: "Access eligibility and chapter reports" },
@@ -401,10 +395,10 @@ export async function seedRbac() {
 
   // 12. Cleanup migrations — idempotent, safe to re-run
   //
-  // a) Remove manage_finances / manage_documents / manage_executive_dashboard /
-  //    manage_nudges from platform_admin — those are executive-only permissions.
+  // a) Remove manage_finances / manage_documents / manage_executive_dashboard
+  //    from platform_admin — those are executive-only permissions.
   const PLATFORM_ADMIN_REMOVED_PERMS = [
-    "manage_finances", "manage_documents", "manage_executive_dashboard", "manage_nudges",
+    "manage_finances", "manage_documents", "manage_executive_dashboard",
   ];
   const platformAdminSysId = sysRoleMap.get("platform_admin");
   if (platformAdminSysId) {

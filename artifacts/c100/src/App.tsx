@@ -22,7 +22,6 @@ import EventsPage from "@/pages/events";
 import NewEventPage from "@/pages/event-new";
 import EventDetailPage from "@/pages/event-detail";
 import EventQrPage from "@/pages/event-qr";
-import NudgesPage from "@/pages/nudges";
 import ReportsPage from "@/pages/reports";
 import TechConsolePage from "@/pages/tech-console";
 import AboutPage from "@/pages/about";
@@ -97,7 +96,6 @@ function Router() {
       <Route path="/events/new" component={NewEventPage} />
       <Route path="/events/:id" component={EventDetailPage} />
       <Route path="/events/:id/qr" component={EventQrPage} />
-      <Route path="/nudges" component={NudgesPage} />
       <Route path="/reports" component={ReportsPage} />
       <Route path="/tech" component={TechConsolePage} />
       <Route path="/about" component={AboutPage} />

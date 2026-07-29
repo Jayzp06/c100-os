@@ -357,7 +357,7 @@ export function requireRole(...roles: Role[]) {
  * Only Technology Chair bypasses the permission check (blanket superuser).
  * Platform Admin must hold the permission group explicitly.
  *
- * Usage: requirePermGroup("manage_nudges")(async (req, res) => { … })
+ * Usage: requirePermGroup("view_reports")(async (req, res) => { … })
  */
 export function requirePermGroup(slug: string) {
   return (handler: AuthedHandler): ReturnType<typeof requireAuth> =>
@@ -689,7 +689,6 @@ export async function buildMemberDto(member: MemberRow): Promise<unknown> {
     impactPoints,
     participationPct,
     streakCount: member.streakCount,
-    nudgeStatus: member.nudgeStatus,
     accountActive: member.accountActive,
     deletedAt: member.deletedAt ? member.deletedAt.toISOString() : null,
     lastLogin: member.lastLogin ? member.lastLogin.toISOString() : null,
@@ -776,52 +775,6 @@ export function isValidQrToken(eventId: number, token: string): boolean {
   return isValidCheckInCode(eventId, token, qrSecret(), QR_ROTATE_SECONDS);
 }
 
-export function computeNudgeTier(
-  participationPct: number,
-  goalPct = PARTICIPATION_THRESHOLD,
-): {
-  status: "Active" | "Warning" | "AtRisk" | "Critical";
-} {
-  if (participationPct >= goalPct) return { status: "Active" };
-  // Warning at 80 % of goal (e.g. 60 when goal = 75)
-  if (participationPct >= goalPct * 0.8) return { status: "Warning" };
-  // AtRisk at ~53 % of goal (e.g. 40 when goal = 75)
-  if (participationPct >= goalPct * 0.533) return { status: "AtRisk" };
-  return { status: "Critical" };
-}
-
-export function nudgeMessageFor(
-  status: "Active" | "Warning" | "AtRisk" | "Critical",
-  participationPct: number,
-  fullName: string,
-): { type: string; message: string; channel: "InApp" | "Email" | "Both" } {
-  switch (status) {
-    case "Active":
-      return {
-        type: "ActiveEncouragement",
-        message: `You're at ${participationPct}% participation this semester. Keep showing up — your committee is counting on you.`,
-        channel: "InApp",
-      };
-    case "Warning":
-      return {
-        type: "GentleReminder",
-        message: `Hey ${fullName.split(" ")[0]}, you're at ${participationPct}%. A couple more events this month and you'll be back above the chapter standard.`,
-        channel: "InApp",
-      };
-    case "AtRisk":
-      return {
-        type: "AtRiskWarning",
-        message: `${fullName.split(" ")[0]}, your participation is ${participationPct}%. You're at risk of losing scholarship and conference eligibility this semester.`,
-        channel: "Both",
-      };
-    case "Critical":
-      return {
-        type: "CriticalAlert",
-        message: `Critical: participation is ${participationPct}%. Reach out to your committee chair this week — your standing in the chapter is at stake.`,
-        channel: "Both",
-      };
-  }
-}
 
 export async function recentChapterAttendance(limit = 10) {
   const rows = await db

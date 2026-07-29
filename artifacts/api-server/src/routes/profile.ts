@@ -6,7 +6,6 @@ import {
   membersTable,
   eventsTable,
   attendanceTable,
-  nudgeLogsTable,
   committeesTable,
 } from "@workspace/db";
 import { and, desc, eq, gte } from "drizzle-orm";
@@ -312,26 +311,6 @@ router.get(
         memberCount: agg.memberCount,
       }));
 
-    const activeNudgeRows = await db
-      .select()
-      .from(nudgeLogsTable)
-      .where(eq(nudgeLogsTable.userId, member.id))
-      .orderBy(desc(nudgeLogsTable.sentAt))
-      .limit(5);
-    const activeNudges = activeNudgeRows.map((n) => ({
-      id: n.id,
-      userId: n.userId,
-      userName: member.fullName,
-      nudgeType: n.nudgeType,
-      messageContent: n.messageContent,
-      sentAt: n.sentAt.toISOString(),
-      deliveryChannel: n.deliveryChannel,
-      triggerReason: n.triggerReason,
-      memberStatusAtSend: n.memberStatusAtSend,
-      responseAction: n.responseAction,
-      read: n.read,
-    }));
-
     const recentRows = await db
       .select({ a: attendanceTable, eventTitle: eventsTable.title })
       .from(attendanceTable)
@@ -348,36 +327,9 @@ router.get(
       upcomingEvents: upcoming,
       committee: committeeDto,
       committeeLeaderboard: ranked,
-      activeNudges,
       recentAttendance,
       participationGoalPct: await getParticipationThreshold(),
     });
-  }),
-);
-
-router.get(
-  "/me/nudges",
-  requireAuth(async (req, res) => {
-    const rows = await db
-      .select()
-      .from(nudgeLogsTable)
-      .where(eq(nudgeLogsTable.userId, req.member.id))
-      .orderBy(desc(nudgeLogsTable.sentAt));
-    res.json(
-      rows.map((n) => ({
-        id: n.id,
-        userId: n.userId,
-        userName: req.member.fullName,
-        nudgeType: n.nudgeType,
-        messageContent: n.messageContent,
-        sentAt: n.sentAt.toISOString(),
-        deliveryChannel: n.deliveryChannel,
-        triggerReason: n.triggerReason,
-        memberStatusAtSend: n.memberStatusAtSend,
-        responseAction: n.responseAction,
-        read: n.read,
-      })),
-    );
   }),
 );
 

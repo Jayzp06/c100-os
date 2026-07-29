@@ -67,7 +67,7 @@ const SEED_MEMBERS = [
     graduationYear: 2026,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 8,
     officerPosition: "president" as const,
     positionType: "elected" as const,
@@ -83,7 +83,7 @@ const SEED_MEMBERS = [
     graduationYear: 2026,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 6,
     officerPosition: "vice_president" as const,
     positionType: "elected" as const,
@@ -100,7 +100,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 5,
     officerPosition: "treasurer" as const,
     positionType: "elected" as const,
@@ -116,7 +116,7 @@ const SEED_MEMBERS = [
     graduationYear: 2026,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 4,
     officerPosition: null,
     positionType: null,
@@ -132,7 +132,7 @@ const SEED_MEMBERS = [
     graduationYear: 2026,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 7,
     officerPosition: null,
     positionType: null,
@@ -148,7 +148,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 3,
     officerPosition: null,
     positionType: null,
@@ -164,7 +164,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 5,
     officerPosition: null,
     positionType: null,
@@ -181,7 +181,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 4,
     officerPosition: null,
     positionType: null,
@@ -197,7 +197,7 @@ const SEED_MEMBERS = [
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 4,
     officerPosition: null,
     positionType: null,
@@ -213,7 +213,7 @@ const SEED_MEMBERS = [
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Warning",
+
     streakCount: 2,
     officerPosition: null,
     positionType: null,
@@ -229,7 +229,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "AtRisk",
+
     streakCount: 1,
     officerPosition: null,
     positionType: null,
@@ -245,7 +245,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 3,
     officerPosition: null,
     positionType: null,
@@ -261,7 +261,7 @@ const SEED_MEMBERS = [
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 5,
     officerPosition: null,
     positionType: null,
@@ -277,7 +277,7 @@ const SEED_MEMBERS = [
     graduationYear: 2027,
     duesPaid: false,
     membershipStatus: "Probationary",
-    nudgeStatus: "Critical",
+
     streakCount: 0,
     officerPosition: null,
     positionType: null,
@@ -293,7 +293,7 @@ const SEED_MEMBERS = [
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Active",
+
     streakCount: 6,
     officerPosition: null,
     positionType: null,
@@ -309,7 +309,7 @@ const SEED_MEMBERS = [
     graduationYear: 2028,
     duesPaid: true,
     membershipStatus: "Active",
-    nudgeStatus: "Warning",
+
     streakCount: 2,
     officerPosition: null,
     positionType: null,
@@ -555,7 +555,6 @@ async function main() {
         committeeId: committee?.id ?? null,
         membershipStatus: m.membershipStatus,
         duesPaid: m.duesPaid,
-        nudgeStatus: m.nudgeStatus,
         streakCount: m.streakCount,
       })
       .onConflictDoUpdate({
@@ -567,7 +566,6 @@ async function main() {
           committeeId: committee?.id ?? null,
           membershipStatus: m.membershipStatus,
           duesPaid: m.duesPaid,
-          nudgeStatus: m.nudgeStatus,
           streakCount: m.streakCount,
           updatedAt: new Date(),
         },
@@ -683,14 +681,7 @@ async function main() {
     const memberId = memberIdByAuthId.get(m.authId);
     if (!memberId) continue;
 
-    const attendRate =
-      m.nudgeStatus === "Critical"
-        ? 0.25
-        : m.nudgeStatus === "AtRisk"
-          ? 0.5
-          : m.nudgeStatus === "Warning"
-            ? 0.7
-            : 0.95;
+    const attendRate = m.streakCount > 5 ? 0.95 : m.streakCount > 2 ? 0.7 : 0.5;
 
     for (const title of completedEventTitles) {
       const eventId = eventIdByTitle.get(title);

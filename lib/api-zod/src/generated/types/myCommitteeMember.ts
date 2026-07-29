@@ -13,5 +13,4 @@ export interface MyCommitteeMember {
   participationPct: number;
   totalPoints: number;
   impactPoints: number;
-  nudgeStatus: string;
 }

@@ -23,13 +23,27 @@
 
 export const SYSTEM_ROLE_PERMS: Record<string, string[]> = {
   /**
-   * Technical account-administration only.
+   * Technical account-administration + full technical platform operations.
+   * Holds the same technical permission set as technology_chair, plus the
+   * account-administration permissions needed to manage members and system
+   * configuration. Platform Admin can access the Technology workspace in the
+   * Executive Suite via view_system_diagnostics.
    * Does NOT include executive-board, document, finance, or reporting tools.
    */
   platform_admin: [
+    // Account administration
     "manage_members",
     "manage_system_settings", "manage_roles", "manage_permissions",
     "impersonate_users", "view_audit_logs", "deploy_desktop",
+    // Technical platform operations (same as technology_chair)
+    "view_system_diagnostics",
+    "manage_system_configuration",
+    "view_release_information",
+    "manage_update_configuration",
+    "troubleshoot_authentication",
+    "view_technical_audit_logs",
+    "manage_integrations",
+    "impersonate_for_support",
   ],
   /**
    * Technical platform operations only.

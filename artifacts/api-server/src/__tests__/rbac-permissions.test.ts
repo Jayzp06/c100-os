@@ -162,18 +162,32 @@ describe("technology_chair permissions — technical-only", () => {
 
 // ── Platform Admin: technical account-administration only ─────────────────────
 
-describe("platform_admin permissions — technical account-admin only", () => {
+describe("platform_admin permissions — account-admin + full technical platform ops", () => {
   const p = sysPerms("platform_admin");
 
-  // Should have these account/system-admin perms
-  const ADMIN_PERMS = [
+  // Account-administration perms
+  const ACCOUNT_PERMS = [
     "manage_members",
     "manage_system_settings", "manage_roles", "manage_permissions",
     "impersonate_users", "view_audit_logs", "deploy_desktop",
   ];
-
-  for (const perm of ADMIN_PERMS) {
+  for (const perm of ACCOUNT_PERMS) {
     test(`has ${perm}`, () => assertHas(p, perm, "platform_admin"));
+  }
+
+  // Technical platform ops (same set as technology_chair)
+  const TECH_PERMS = [
+    "view_system_diagnostics",
+    "manage_system_configuration",
+    "view_release_information",
+    "manage_update_configuration",
+    "troubleshoot_authentication",
+    "view_technical_audit_logs",
+    "manage_integrations",
+    "impersonate_for_support",
+  ];
+  for (const perm of TECH_PERMS) {
+    test(`has ${perm} (same as technology_chair)`, () => assertHas(p, perm, "platform_admin"));
   }
 
   // Must NOT have executive-suite tools
@@ -187,11 +201,7 @@ describe("platform_admin permissions — technical account-admin only", () => {
     "view_committee_reports", "view_governance_reports", "view_archive_reports",
     "view_conduct_reports",
     "manage_documents", "view_reports",
-    "view_system_diagnostics", "manage_system_configuration", "view_release_information",
-    "manage_update_configuration", "troubleshoot_authentication", "view_technical_audit_logs",
-    "manage_integrations", "impersonate_for_support",
   ];
-
   for (const perm of DENIED) {
     test(`does NOT have ${perm}`, () => assertLacks(p, perm, "platform_admin"));
   }
@@ -641,10 +651,19 @@ describe("workspace permission matrix — president holds all officer workspace 
   });
 });
 
-describe("workspace permission matrix — platform_admin holds no exec-suite workspace permissions", () => {
+describe("workspace permission matrix — platform_admin has technology workspace access only", () => {
   const p = sysPerms("platform_admin");
-  for (const [workspace, perm] of Object.entries(WORKSPACE_PERMISSION_MAP)) {
-    test(`platform_admin lacks workspace permission for "${workspace}" (${perm})`, () =>
+
+  test("platform_admin has view_system_diagnostics (technology workspace access)", () =>
+    assertHas(p, "view_system_diagnostics", "platform_admin"));
+
+  // Must NOT have any officer workspace permissions
+  const officerWorkspacePerms = Object.entries(WORKSPACE_PERMISSION_MAP)
+    .filter(([slug]) => slug !== "technology")
+    .map(([, perm]) => perm);
+
+  for (const perm of officerWorkspacePerms) {
+    test(`platform_admin lacks officer workspace permission "${perm}"`, () =>
       assertLacks(p, perm, "platform_admin"));
   }
 });

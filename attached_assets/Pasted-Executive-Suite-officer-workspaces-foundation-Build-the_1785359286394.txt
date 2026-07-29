@@ -1,0 +1,316 @@
+Executive Suite officer workspaces foundation
+Build the feature foundation for six officer workspaces (Bylaws, Secretary, Treasurer, Historian, Sergeant-at-Arms, Parliamentarian), restore the missing Bylaws Officer tag and workspace, clarify the Platform Administrator tag UI, and wire every workspace's frontend and backend to the RBAC permission gates established in prior work.
+
+This delivers the first real CRUD layer for chapter governance, financial recordkeeping, archiving, conduct records, and parliamentary procedure — replacing all placeholder "coming soon" cards with working screens backed by new database tables and API routes.
+
+Web app
+Analyzing the codebase structure
+
+Analyzing the codebase structure
+I'll start by exploring the codebase to understand the current state before implementing the changes.
+
+
+18 actions
+Let me read a few more key files in parallel before I start implementing.
+
+
+10 actions
+Let me read a few more files I need before starting the implementation, then I'll work in parallel batches.
+
+
+5 actions
+Now I have a comprehensive picture. Let me start implementing in parallel batches. First, provision object storage while writing the schema and other foundational files.
+
+
+11 actions
+Now I'll implement in large parallel batches. Starting with all the schema files, RBAC updates, and frontend config changes simultaneously.
+
+
+7 actions
+Now I'll implement the remaining foundational files in parallel — governance schema extension, finance schema extension, RBAC updates, exec-workspaces, member-detail, migration SQL, and object storage files.
+
+
+5 actions
+Now let me add manage_conduct_records to the seed, update exec-workspaces, member-detail, write the migration SQL, and create object storage files — all in parallel.
+
+
+14 actions
+Good progress. Now creating the object storage files, updating member-detail, and writing the backend route files — all in parallel.
+
+
+5 actions
+Now writing the backend route files and updating member-detail in parallel. Let me also check if the GCS package is installed.
+
+
+8 actions
+Let me install the GCS package, update routes/index.ts, member-detail, App.tsx, and create the frontend pages — all in parallel.
+
+
+8 actions
+Now I'll update member-detail.tsx, App.tsx, and all the remaining exec workspace pages in parallel, plus update the OpenAPI spec.
+
+
+6 actions
+Let me update member-detail.tsx, App.tsx, build.mjs, and the remaining exec pages all in parallel, then write tests and run the check sequence.
+
+
+3 actions
+The writeAuditLog signature requires targetType. Let me fix all route files and continue with the remaining work simultaneously.
+
+
+11 actions
+Good, warning tone exists. Now updating App.tsx and all 5 remaining exec pages simultaneously.
+
+
+8 actions
+Now let me write the tests and the OpenAPI spec additions simultaneously, then run all the checks.
+
+
+3 actions
+Let me check the test file structure and the RBAC matrix to write the new tests correctly.
+
+
+6 actions
+The sergeant-at-arms workspace currently uses view_conduct_reports but the task requires manage_conduct_records. Let me fix that and proceed with all remaining items.
+
+
+15 actions
+Now I'll write the tests, update the test command, add the OpenAPI spec additions, and then run all the checks.
+
+
+6 actions
+Now I'll append the new RBAC tests, write workspace-isolation.test.ts, add OpenAPI spec additions, and update the test command — all in parallel.
+
+
+3 actions
+Now I'll update the test command to include the new test file and add the OpenAPI spec additions simultaneously.
+
+
+3 actions
+Python3 isn't available. Let me add tags and schemas via node instead, then run all the checks.
+
+
+3 actions
+Let me check what's already in the components section and then add missing tags and schemas via node.
+
+
+3 actions
+Let me add the new tags/schemas to the spec and run all checks in parallel.
+
+
+6 actions
+I need to add the missing component refs (IdParam, Forbidden, etc.) and new schemas + tags. Let me do this efficiently.
+
+
+3 actions
+Now I'll add the missing schemas and components to the spec, then run all the checks.
+
+
+3 actions
+Let me find the end of the components/schemas section to properly append all missing schemas and components.
+
+
+5 actions
+Now let me run all the checks in sequence starting with migration and generation.
+
+
+3 actions
+The api-zod generate script name is different. Let me find it and run the remaining checks.
+
+
+3 actions
+Seed ran successfully. Let me find the correct script names and continue with all remaining checks.
+
+
+11 actions
+The generate script is codegen in @workspace/api-spec. Let me run it along with the typechecks.
+
+
+2 actions
+The new paths were appended after the components: section instead of before it. I need to move them to the correct position.
+
+
+2 actions
+The paths are misplaced (after components:). Let me fix the YAML structure and also run the typechecks in parallel.
+
+
+5 actions
+I have two categories of errors: missing db exports and missing zod module. Let me investigate and fix in parallel.
+
+
+15 actions
+Let me check how the db index exports new tables and understand the zod import pattern.
+
+
+3 actions
+The schema exports and zod import need fixing. Let me check the table names in the schema files and fix the route imports.
+
+
+3 actions
+Let me check the actual schema content and the route file imports to understand the TypeScript errors precisely.
+
+
+3 actions
+The issue is zod isn't a direct dependency of api-server. Let me add it, then run the full typecheck to catch all errors at once.
+
+
+5 actions
+The @workspace/api-zod missing exports are a pre-existing state — codegen hasn't run yet. Let me fix the spec validation and run codegen, while also debugging the db export issue.
+
+
+3 actions
+The spec is still failing validation. Let me investigate both issues — the OpenAPI spec structure and why the db exports aren't resolving — and fix them in parallel.
+
+
+3 actions
+Two clear issues: spec missing Forbidden/NotFound responses and QuorumRecordCreate, plus the db package needs compilation. Let me fix both.
+
+
+3 actions
+I need to build the db package (for TypeScript project references) and fix the missing spec components. Let me do both.
+
+
+3 actions
+Let me build the db package (it uses composite: true for project references) and fix the missing spec components simultaneously.
+
+
+9 actions
+The codegen succeeded but found duplicate exported type names. Let me fix the spec by converting inline request bodies to named schemas.
+
+
+2 actions
+Let me run the codegen and db build simultaneously, then tackle the typechecks.
+
+
+3 actions
+Codegen and db build both succeeded. Now running the full typechecks.
+
+
+3 actions
+One remaining TypeScript error in objectStorage.ts. Let me fix it and run the tests.
+
+
+6 actions
+Both typechecks pass cleanly. Now running the test suite.
+
+
+2 actions
+All 605 tests pass. Let me now read the follow-up-tasks skill and then mark the task complete.
+
+
+2 actions
+All tests pass (605/605). Now I'll update memory, propose follow-up tasks, and mark complete.
+
+
+7 actions
+
+Task #2 review rejected
+Fixing access control and API schema
+
+Fixing access control and API schema
+Two clear issues to fix: private object download needs authorization enforcement, and the upload response field names need to match the spec. Let me read the relevant files in parallel.
+
+
+4 actions
+I need to fix two things: enforce RBAC on private object downloads, and normalize the upload response to match the spec (uploadUrl + expiresAt). Let me read the auth/session helpers to understand how to get the current member in a route.
+
+
+6 actions
+Now I have everything I need. I'll fix both issues simultaneously:
+
+Enforce RBAC on GET /storage/objects/* — require at least one officer workspace permission
+Normalize the upload response (uploadURL → uploadUrl, add expiresAt)
+
+3 actions
+Let me fix both issues in parallel — storage RBAC enforcement and upload response normalization.
+
+
+4 actions
+Now I need to update the OpenAPI spec to match the normalized response, then run typecheck + codegen and mark complete.
+
+
+6 actions
+resolveRbacContext isn't re-exported from c100.ts. Let me check where it comes from and fix the storage route import.
+
+
+3 actions
+resolveRbacContext lives in lib/rbac.ts. Let me fix the storage route import and also check what requireAuth exports from c100.
+
+
+4 actions
+Now I need to update hasOfficerStorageAccess to use hasPermissionGroup correctly. Let me check the RbacContext structure.
+
+
+3 actions
+Now I can simplify the storage access check correctly — ctx.permissionGroups is a Set<string>. Let me update the function.
+
+
+5 actions
+Both typechecks pass. Let me run the test suite and codegen in parallel to verify everything is clean.
+
+
+3 actions
+605/605 tests pass, both typechecks clean, codegen successful. Marking complete.
+
+
+3 actions
+
+Task #2 review rejected
+Identifying authorization and validation gaps
+
+Identifying authorization and validation gaps
+Three clear fixes needed: (1) workspace-scoped object paths for per-workspace authorization, (2) ACL policy written at upload time, (3) bylaws_chair added to ASSIGNABLE_ORG_ROLE_SLUGS. Let me read the relevant code sections first.
+
+
+3 actions
+Now I'll implement all three fixes in parallel: workspace-scoped object paths (path = ACL), bylaws_chair in assignable roles, and the updated upload/download flow.
+
+
+2 actions
+Now I'll update the storage route (workspace-scoped auth), fix ASSIGNABLE_ORG_ROLE_SLUGS, and update the frontend upload hook — all in parallel.
+
+
+3 actions
+Now let me implement all three fixes simultaneously.
+
+
+4 actions
+Now I need to update the exec pages that use useFileUpload to pass the required workspace parameter.
+
+
+3 actions
+Now running typechecks and tests in parallel.
+
+
+3 actions
+Two routes call getObjectEntityUploadURL() without the workspace argument. Let me fix them.
+
+
+9 actions
+All clean. 605/605 tests pass, both typechecks clean. Marking complete.
+
+
+3 actions
+
+Marked task #2 complete
+Confirming task completion
+
+Confirming task completion
+Task #2 is complete. Here's what was delivered:
+
+Schema & Database
+
+Migration 0004 — five new schema files (governance, secretary, historian, conduct, procedure) plus extensions to finance; applied and journaled
+RBAC
+
+manage_conduct_records added for sergeant_at_arms + president
+bylaws_chair added to ASSIGNABLE_ORG_ROLE_SLUGS so admins can actually assign the role
+Bylaws Officer tag + workspace wired to manage_governance_documents
+Platform Administrator visually separated into its own "Platform Access" section
+Backend routes — governance, secretary, treasurer, historian, conduct, procedure — each enforcing the correct requirePermGroup permission. Approved meeting records block PATCH (must use /revise). Financial amounts enforced as integer cents.
+
+Object storage — workspace-scoped paths (/objects/{workspace}/{uuid}) so download authorization is enforced per-workspace: a Treasurer cannot read a Conduct file.
+
+Frontend — all six exec workspace pages replaced with real UIs (list/create/edit/archive/restore flows). useFileUpload hook requires a workspace parameter matching the caller's permissions.
+
+Tests — 605 passing; permission isolation matrix covers all role combinations and the new workspaces.

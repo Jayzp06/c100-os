@@ -253,11 +253,13 @@ export function computeAvailableExperiences(
 export const ASSIGNABLE_ORG_ROLE_SLUGS = [
   "president",
   "vice_president",
+  "chief_of_staff",
   "secretary",
   "treasurer",
   "parliamentarian",
   "historian",
   "bylaws_chair",
+  "sergeant_at_arms",
   "committee_chair",
 ] as const;
 
@@ -286,10 +288,12 @@ export function deriveLegacyRole(
   const EXEC_SLUGS = new Set([
     "president",
     "vice_president",
+    "chief_of_staff",
     "secretary",
     "treasurer",
     "parliamentarian",
     "historian",
+    "sergeant_at_arms",
   ]);
   if (orgRoleSlugs.some((s) => EXEC_SLUGS.has(s))) return "ExecutiveBoard";
   if (orgRoleSlugs.includes("committee_chair") || orgRoleSlugs.includes("bylaws_chair")) return "CommitteeChair";

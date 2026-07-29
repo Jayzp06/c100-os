@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Crown,
   Users2,
+  ClipboardList,
   NotebookPen,
   Landmark,
   Camera,
@@ -14,6 +15,7 @@ import {
 export type ExecWorkspaceSlug =
   | "president"
   | "vice-president"
+  | "chief-of-staff"
   | "secretary"
   | "treasurer"
   | "historian"
@@ -59,6 +61,15 @@ export const EXEC_WORKSPACES: ExecWorkspaceConfig[] = [
     icon: Users2,
     eyebrow: "Executive Board",
     description: "Committee oversight and cross-committee coordination.",
+  },
+  {
+    slug: "chief-of-staff",
+    label: "Chief of Staff",
+    // manage_executive_operations: Chief of Staff + President.
+    requiredPermission: "manage_executive_operations",
+    icon: ClipboardList,
+    eyebrow: "Executive Board",
+    description: "Executive action items, assignments, and officer follow-through.",
   },
   {
     slug: "secretary",

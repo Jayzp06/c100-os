@@ -82,6 +82,8 @@ export const ORG_ROLE_PERMS: Record<string, string[]> = {
     // Operational
     "manage_members", "manage_attendance", "manage_committees", "manage_events",
     "manage_finances", "manage_executive_dashboard", "manage_org_settings",
+    // Chief of Staff domain (President coordinates across all workspaces)
+    "manage_executive_operations",
     // Secretary domain
     "manage_minutes", "manage_agendas", "manage_official_correspondence",
     // Governance domain
@@ -112,8 +114,14 @@ export const ORG_ROLE_PERMS: Record<string, string[]> = {
     "manage_finances", "manage_executive_dashboard",
     "view_financial_reports",
   ],
+  /**
+   * Chief of Staff coordinates executive task follow-through and action items.
+   * Must NOT access confidential finances, conduct, governance docs, minutes,
+   * archives, procedures, or technical tooling — those remain domain-isolated.
+   */
   chief_of_staff: [
-    "manage_members", "manage_executive_dashboard",
+    "manage_executive_operations",
+    "manage_executive_dashboard",
     "view_chapter_overview",
   ],
   sergeant_at_arms: [

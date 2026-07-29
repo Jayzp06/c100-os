@@ -56,13 +56,15 @@ import { invalidateAggregates } from "@/lib/query-invalidation";
 const STATUSES = ["Active", "Probationary", "Suspended", "Inactive"];
 
 const ORG_ROLE_TAGS: { slug: string; label: string }[] = [
-  { slug: "president", label: "President" },
-  { slug: "vice_president", label: "VP" },
-  { slug: "secretary", label: "Secretary" },
-  { slug: "treasurer", label: "Treasurer" },
+  { slug: "president",       label: "President" },
+  { slug: "vice_president",  label: "VP" },
+  { slug: "chief_of_staff",  label: "Chief of Staff" },
+  { slug: "secretary",       label: "Secretary" },
+  { slug: "treasurer",       label: "Treasurer" },
   { slug: "parliamentarian", label: "Parliamentarian" },
-  { slug: "historian", label: "Historian" },
-  { slug: "bylaws_chair", label: "Bylaws Officer" },
+  { slug: "historian",       label: "Historian" },
+  { slug: "bylaws_chair",    label: "Bylaws Officer" },
+  { slug: "sergeant_at_arms",label: "Sergeant-at-Arms" },
   { slug: "committee_chair", label: "Committee Chair" },
 ];
 const SYSTEM_ROLE_TAGS: { slug: string; label: string }[] = [

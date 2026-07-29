@@ -31,6 +31,7 @@ import DiagnosticsPage from "@/pages/diagnostics";
 import ExecutiveSuiteHubPage from "@/pages/exec/hub";
 import PresidentWorkspacePage from "@/pages/exec/president";
 import VicePresidentWorkspacePage from "@/pages/exec/vice-president";
+import ChiefOfStaffWorkspacePage from "@/pages/exec/chief-of-staff";
 import SecretaryWorkspacePage from "@/pages/exec/secretary";
 import TreasurerWorkspacePage from "@/pages/exec/treasurer";
 import HistorianWorkspacePage from "@/pages/exec/historian";
@@ -106,6 +107,7 @@ function Router() {
       <Route path="/exec" component={ExecutiveSuiteHubPage} />
       <Route path="/exec/president" component={PresidentWorkspacePage} />
       <Route path="/exec/vice-president" component={VicePresidentWorkspacePage} />
+      <Route path="/exec/chief-of-staff" component={ChiefOfStaffWorkspacePage} />
       <Route path="/exec/secretary" component={SecretaryWorkspacePage} />
       <Route path="/exec/treasurer" component={TreasurerWorkspacePage} />
       <Route path="/exec/historian" component={HistorianWorkspacePage} />

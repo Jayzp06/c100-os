@@ -18,6 +18,7 @@ import treasurerRouter from "./treasurer";
 import historianRouter from "./historian";
 import conductRouter from "./conduct";
 import procedureRouter from "./procedure";
+import chiefOfStaffRouter from "./chief-of-staff";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(treasurerRouter);
 router.use(historianRouter);
 router.use(conductRouter);
 router.use(procedureRouter);
+router.use(chiefOfStaffRouter);
 
 export default router;

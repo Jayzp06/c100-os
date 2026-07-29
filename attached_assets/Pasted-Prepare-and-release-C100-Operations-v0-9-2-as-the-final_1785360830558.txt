@@ -1,0 +1,380 @@
+Prepare and release **C100 Operations v0.9.2** as the final stabilization release for this development cycle.
+
+Do not add new features. This work order is only for verification, production migration/deployment preparation, versioning, GitHub release creation, and in-app updater validation.
+
+Preserve:
+
+- Existing authentication
+- Current RBAC architecture
+- Chief of Staff and Sergeant-at-Arms corrections
+- All six Executive Suite workspaces
+- Permission-based workspace gates
+- Workspace-scoped private file storage
+- Transactional governance publishing
+- Server-side upload validation
+- Secretary revision flow
+- Treasurer exports
+- Platform Administrator assignment security
+- Existing updater signing key and public key
+
+## 1. Confirm the working tree and release scope
+
+Before changing versions:
+
+- Inspect `git status`.
+- Confirm all intended Executive Suite, Chief of Staff, Sergeant-at-Arms, and permission changes are committed.
+- Preserve unrelated user changes.
+- Confirm no unresolved merge conflicts.
+- Confirm no destructive cleanup scripts are pending.
+- Identify the commits included since `v0.9.1`.
+- Produce concise release notes from actual completed changes only.
+- Do not claim unfinished President, VP, AI, Clerk, or advanced Technology features.
+
+## 2. Final access verification
+
+Verify the final assignment-tag interface includes:
+
+### Officer Positions
+
+- President
+- VP
+- Chief of Staff
+- Secretary
+- Treasurer
+- Parliamentarian
+- Historian
+- Bylaws Officer
+- Sergeant-at-Arms
+- Committee Chair, if still part of the assignment model
+
+### Platform Access
+
+- Platform Administrator
+
+Verify:
+
+- `bylaws_chair` is the only canonical Bylaws role slug.
+- `sergeant_at_arms` is assignable.
+- `chief_of_staff` is assignable.
+- `platform_admin` remains a system role.
+- Only callers with `manage_roles` can modify system roles.
+- Organization-role changes do not overwrite system-role assignments.
+- System-role changes do not overwrite organization-role assignments.
+- Multiple roles combine permissions.
+
+## 3. Final workspace verification
+
+Verify the President holds every explicit nontechnical officer-workspace permission.
+
+President must access:
+
+- President
+- Vice President
+- Chief of Staff
+- Secretary
+- Treasurer
+- Historian
+- Bylaws Officer
+- Parliamentarian
+- Sergeant-at-Arms
+
+President must pass the same:
+
+`me.can(workspace.requiredPermission)`
+
+check used by everyone else. Do not add a President bypass.
+
+Verify:
+
+- Sergeant-at-Arms workspace is enabled for Sergeant-at-Arms and President.
+- Chief of Staff workspace is enabled for Chief of Staff and President.
+- Platform Administrator receives Technology access but no confidential officer workspace automatically.
+- Technology Chair receives Technology access but no confidential officer workspace automatically.
+- Jaylin’s President + Platform Administrator combination resolves to all officer workspaces plus Technology.
+- General members and committee roles cannot access Executive Suite APIs.
+- Direct unauthorized URLs return a proper forbidden response without fetching protected data.
+- No workspace remains incorrectly gray or marked “coming soon” when its feature and permission are active.
+
+## 4. Regression verification
+
+Confirm all previously fixed behavior still works:
+
+- Events cannot be created in the past.
+- Duplicate check-in returns the already-checked-in message.
+- Member navigation works.
+- Removed Nudge functionality does not reappear.
+- CSV/XLSX/PDF exports work in the web and Tauri desktop environments.
+- Governance publishing transactionally supersedes the previous current version.
+- Parliamentarian can view/download current governance documents but cannot publish them.
+- Server-side upload MIME and size rules remain enforced.
+- Secretary approved records use the revision flow.
+- Treasurer exports use authenticated Tauri blob downloads.
+- Quorum calculations and motion results persist.
+- Conduct records remain confidential.
+- Chief of Staff cross-workspace links do not bypass source permissions.
+- Platform Administrator assignment still requires `manage_roles`.
+- Desktop About/System pages can reach the production backend.
+- Update checker still uses the existing GitHub updater endpoint.
+
+Do not seed fake members, events, transactions, documents, progress, tasks, decisions, or conduct records during testing.
+
+## 5. Database and production readiness
+
+- Validate every new migration.
+- Never modify an already-applied migration.
+- Confirm migrations are forward-only and safe on the current production database.
+- Confirm RBAC seeds are idempotent.
+- Confirm no migration deletes members, users, role assignments, uploads, or official records.
+- Back up or record the current production migration state before applying new migrations.
+- Apply pending migrations through the project’s normal safe production process.
+- Apply the RBAC seed through its normal idempotent production process.
+- Confirm Jaylin retains President and Platform Administrator.
+- Confirm existing production accounts remain intact.
+- Confirm object-storage configuration is present in production.
+- Confirm required production environment variables exist without printing their secret values.
+
+Deploy or republish the production web/API application before publishing the desktop release so v0.9.2 clients connect to a compatible backend.
+
+After deployment, verify:
+
+- Health endpoint
+- Authentication callback
+- `/me`
+- role/permission resolution
+- Executive Suite endpoints
+- file-upload URL creation
+- private file download authorization
+- export endpoints
+- `/api/system/info`
+- `/api/system/releases`
+- `/api/system/diagnostics`, with appropriate authorization
+
+Do not continue to the desktop tag if the production backend is unhealthy.
+
+## 6. Version bump
+
+Set the installer-compatible application version to:
+
+`0.9.2`
+
+Update every authoritative desktop version location, including at minimum:
+
+- Tauri configuration
+- Desktop package metadata
+- Any Rust/Cargo package version if used by this project
+- Any other file verified to participate in the desktop build
+
+Keep installer versions numeric only:
+
+`0.9.2`
+
+Do not use:
+
+`0.9.2-rc1`
+
+Do not change the updater public key or signing identity.
+
+If the application separately displays a release channel, set an appropriate stable label such as:
+
+`Release 0.9.2`
+
+Keep the display label separate from the numeric installer version.
+
+Search the repository for stale `0.9.1` references. Update only references that represent the current application version; preserve historical release notes and migrations.
+
+## 7. Updater configuration verification
+
+Confirm the Tauri configuration still contains:
+
+- Updater plugin enabled
+- Existing updater public key
+- Correct GitHub `latest.json` endpoint
+- `bundle.createUpdaterArtifacts: true`
+
+Confirm the GitHub Actions desktop-release workflow still:
+
+- Triggers on `v*` tags and manual dispatch
+- Does not create releases tagged `main`
+- Uses `v__VERSION__`
+- Uses `C100 Operations v__VERSION__`
+- Builds macOS and Windows
+- Produces signed updater artifacts
+- Produces `latest.json`
+- Fails when required signing configuration is unavailable
+- Fails if updater signature files are missing
+- Leaves the GitHub release as a draft for manual review
+- Uses `includeUpdaterJson: true`
+
+Do not rotate or regenerate the updater signing key. Existing v0.9.1 installations must be able to verify v0.9.2 with the same public key.
+
+Do not expose signing secrets in logs.
+
+## 8. Required checks before tagging
+
+Run and require success for:
+
+- Migration/schema validation
+- RBAC seed validation
+- OpenAPI validation and client generation
+- Database/package build if required by project references
+- Backend typecheck
+- Frontend typecheck
+- Complete automated test suite
+- Desktop frontend production build
+- Tauri configuration validation
+- Workflow YAML validation
+- Search for unresolved TODOs or disabled states affecting completed workspaces
+- Search for accidentally committed secrets
+- `git diff --check`
+
+Perform focused visual checks of:
+
+- Member permission-tag menu
+- Executive Suite hub
+- Sergeant-at-Arms enabled state
+- Chief of Staff enabled state
+- Bylaws upload/version screen
+- Secretary revision action
+- Treasurer export menu
+- Parliamentarian governance-document link
+- Platform Administrator separation
+- Software Updates page
+- About page
+
+Do not tag the release if any required check fails.
+
+## 9. Commit and push
+
+Create one final release-preparation commit with a clear message such as:
+
+`release: prepare C100 Operations v0.9.2`
+
+Push the current main branch to the existing GitHub repository.
+
+Use the already-configured working GitHub authentication method. Do not print, request, rotate, or embed credentials.
+
+If the normal Replit OAuth remote rejects a workflow-file update due to missing workflow scope, use the repository’s previously working direct authenticated Git URL/environment configuration. Do not place a token directly into shell history or the Git remote URL.
+
+Confirm the pushed commit exists on GitHub before tagging.
+
+## 10. Create and push the release tag
+
+Create an annotated tag from the exact verified main-branch commit:
+
+`v0.9.2`
+
+Tag message:
+
+`C100 Operations v0.9.2`
+
+Push that exact tag to GitHub.
+
+Do not move or recreate the tag after GitHub Actions begins. If a mistake is found, stop and report it instead of silently replacing the release tag.
+
+## 11. Monitor GitHub Actions
+
+Monitor the Desktop Release workflow triggered by `v0.9.2`.
+
+Require successful completion of:
+
+- macOS build
+- Windows build
+- updater signing checks
+- signature artifact assertions
+- `latest.json` creation
+- draft release upload
+
+Confirm the draft release contains the expected equivalents of:
+
+- macOS `.dmg`
+- macOS updater archive
+- macOS `.sig`
+- Windows `.msi`
+- Windows updater archive
+- Windows `.sig`
+- `latest.json`
+
+Confirm every artifact identifies version `0.9.2`.
+
+Inspect `latest.json` and verify:
+
+- Version is `0.9.2`
+- macOS updater URL points to the v0.9.2 release
+- Windows updater URL points to the v0.9.2 release
+- Signatures are populated
+- URLs resolve to the corresponding release assets
+- Release notes contain no secrets or false claims
+
+Do not publish a failed or incomplete release.
+
+## 12. Draft release notes
+
+Use concise release notes based on verified work:
+
+### C100 Operations v0.9.2
+
+This stabilization release expands the Executive Suite and strengthens role-based access across the chapter operating system.
+
+Highlights:
+
+- Working Bylaws Officer governance-document workspace
+- Secretary agendas, minutes, correspondence, approval, and revision tools
+- Treasurer budgets, transactions, dues tracking, receipts, and desktop-safe exports
+- Historian archive and chapter timeline tools
+- Sergeant-at-Arms conduct and meeting-order tools
+- Parliamentarian motions, rulings, quorum records, and governance-reference access
+- Chief of Staff action-item and executive decision tracking
+- Restored Bylaws Officer and Sergeant-at-Arms assignment tags
+- Explicit President access across officer workspaces
+- Clear separation between officer positions and Platform Administrator access
+- Stronger private-file authorization and server-side upload validation
+- Permission and regression-test expansion
+
+Do not advertise AI document analysis, Google/Clerk authentication, banking integration, or unfinished President/VP features.
+
+## 13. Manual publication boundary
+
+Keep the GitHub release as a draft after the automated builds finish.
+
+Stop and provide:
+
+1. Draft-release link
+2. GitHub Actions run link
+3. Commit SHA
+4. Tag SHA
+5. Complete artifact list
+6. Test totals
+7. Migration status
+8. Production deployment status
+9. `latest.json` verification result
+10. Any warnings or unfinished items
+
+Wait for manual confirmation before publishing the GitHub release.
+
+Once manually published, the existing installed v0.9.1 application should discover v0.9.2 through the Software Updates page. The release is not available to installed clients while it remains a draft.
+
+## 14. Final in-app updater test
+
+After the release is manually published:
+
+- Launch an installed v0.9.1 desktop application.
+- Open Software Updates.
+- Confirm it detects v0.9.2.
+- Confirm displayed version and release notes are correct.
+- Select Download and Install.
+- Confirm signature verification succeeds.
+- Confirm the application installs/relaunches successfully.
+- Confirm About reports installed version 0.9.2.
+- Confirm the updater then reports the application is current.
+- Perform one login and basic workspace-access smoke test.
+
+If the update fails, capture the exact error and updater logs. Do not tell users to delete and reinstall unless the signed updater path is proven unrecoverable.
+
+## 15. Development freeze
+
+After successful v0.9.2 updater verification:
+
+- Do not begin additional feature development.
+- Record remaining ideas as future backlog items.
+- Limit immediate changes to critical security, data-loss, authentication, deployment, or updater defects.
+- Treat v0.9.2 as the end-of-cycle stable release candidate for chapter use.

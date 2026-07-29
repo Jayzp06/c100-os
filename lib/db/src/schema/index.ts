@@ -8,3 +8,4 @@ export * from "./secretary";
 export * from "./historian";
 export * from "./conduct";
 export * from "./procedure";
+export * from "./chief-of-staff";

@@ -17,6 +17,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ORG_ROLE_PERMS, SYSTEM_ROLE_PERMS } from "../../../../lib/db/src/rbac-matrix.js";
 import { RESERVED_COMMITTEE_NAMES, validateCommitteeName } from "../routes/committees.js";
+import { ASSIGNABLE_ORG_ROLE_SLUGS, ASSIGNABLE_SYSTEM_ROLE_SLUGS } from "../lib/rbac.js";
 
 // ── Workspace permission matrix ───────────────────────────────────────────────
 // Mirror the EXEC_WORKSPACES entries from the frontend lib so the backend can
@@ -25,6 +26,7 @@ import { RESERVED_COMMITTEE_NAMES, validateCommitteeName } from "../routes/commi
 const WORKSPACE_PERMISSION_MAP: Record<string, string> = {
   president:          "manage_org_settings",
   "vice-president":   "view_committee_reports",
+  "chief-of-staff":   "manage_executive_operations",
   secretary:          "manage_minutes",
   treasurer:          "manage_finances",
   historian:          "manage_archives",
@@ -845,4 +847,315 @@ describe("multi-role combination: secretary + historian gets both permission set
   test("combined lacks manage_finances (neither role has it)", () => assertLacks(combined, "manage_finances", "secretary+historian"));
   test("combined lacks manage_governance_documents (neither role has it)", () => assertLacks(combined, "manage_governance_documents", "secretary+historian"));
   test("combined lacks manage_conduct_records (neither role has it)", () => assertLacks(combined, "manage_conduct_records", "secretary+historian"));
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Work Order: Chief of Staff + Sergeant-at-Arms + President matrix
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Assignable role catalog ───────────────────────────────────────────────────
+
+describe("assignable org-role catalog", () => {
+  test("sergeant_at_arms appears in ASSIGNABLE_ORG_ROLE_SLUGS", () => {
+    assert.ok(
+      (ASSIGNABLE_ORG_ROLE_SLUGS as readonly string[]).includes("sergeant_at_arms"),
+      "sergeant_at_arms must be assignable",
+    );
+  });
+
+  test("chief_of_staff appears in ASSIGNABLE_ORG_ROLE_SLUGS", () => {
+    assert.ok(
+      (ASSIGNABLE_ORG_ROLE_SLUGS as readonly string[]).includes("chief_of_staff"),
+      "chief_of_staff must be assignable",
+    );
+  });
+
+  test("bylaws_chair remains in ASSIGNABLE_ORG_ROLE_SLUGS", () => {
+    assert.ok(
+      (ASSIGNABLE_ORG_ROLE_SLUGS as readonly string[]).includes("bylaws_chair"),
+      "bylaws_chair must remain assignable",
+    );
+  });
+
+  test("platform_admin remains in ASSIGNABLE_SYSTEM_ROLE_SLUGS (system role, not org role)", () => {
+    assert.ok(
+      (ASSIGNABLE_SYSTEM_ROLE_SLUGS as readonly string[]).includes("platform_admin"),
+      "platform_admin must be assignable as a system role",
+    );
+    // Must NOT be in org roles
+    assert.ok(
+      !(ASSIGNABLE_ORG_ROLE_SLUGS as readonly string[]).includes("platform_admin"),
+      "platform_admin must NOT appear in org role slugs",
+    );
+  });
+});
+
+// ── Chief of Staff permission isolation ──────────────────────────────────────
+
+describe("chief_of_staff — manage_executive_operations only; no confidential domain access", () => {
+  const p = orgPerms("chief_of_staff");
+
+  test("chief_of_staff has manage_executive_operations", () => assertHas(p, "manage_executive_operations", "chief_of_staff"));
+  test("chief_of_staff has manage_executive_dashboard", () => assertHas(p, "manage_executive_dashboard", "chief_of_staff"));
+
+  // Confidentiality boundaries — spec §6
+  const CONFIDENTIAL = [
+    "manage_finances",
+    "manage_conduct_records",
+    "manage_governance_documents",
+    "upload_governance_documents",
+    "version_governance_documents",
+    "manage_minutes",
+    "manage_agendas",
+    "manage_archives",
+    "upload_archive_material",
+    "manage_procedure_records",
+    "manage_motions",
+    "manage_parliamentary_rulings",
+    // Technical
+    "view_system_diagnostics",
+    "manage_system_configuration",
+    "manage_roles",
+    "manage_permissions",
+    "impersonate_users",
+  ];
+  for (const perm of CONFIDENTIAL) {
+    test(`chief_of_staff lacks confidential perm "${perm}"`, () => assertLacks(p, perm, "chief_of_staff"));
+  }
+});
+
+// ── Sergeant-at-Arms ──────────────────────────────────────────────────────────
+
+describe("sergeant_at_arms — workspace access and isolation", () => {
+  const p = orgPerms("sergeant_at_arms");
+
+  test("sergeant_at_arms has manage_conduct_records", () => assertHas(p, "manage_conduct_records", "sergeant_at_arms"));
+
+  const DENIED_DOMAINS = [
+    "manage_finances",
+    "manage_governance_documents",
+    "manage_minutes",
+    "manage_archives",
+    "manage_procedure_records",
+    "manage_executive_operations",
+    "view_system_diagnostics",
+  ];
+  for (const perm of DENIED_DOMAINS) {
+    test(`sergeant_at_arms lacks "${perm}"`, () => assertLacks(p, perm, "sergeant_at_arms"));
+  }
+});
+
+// ── President — complete officer workspace coverage ───────────────────────────
+
+describe("president — holds every officer workspace's required permission explicitly", () => {
+  const p = orgPerms("president");
+
+  // Iterate over every officer workspace (excludes technology — intentionally separate)
+  const OFFICER_WORKSPACES = Object.entries(WORKSPACE_PERMISSION_MAP).filter(
+    ([ws]) => ws !== "technology",
+  );
+
+  for (const [ws, perm] of OFFICER_WORKSPACES) {
+    test(`president has "${perm}" (required for ${ws} workspace)`, () =>
+      assertHas(p, perm, `president→${ws}`),
+    );
+  }
+
+  test("president has manage_conduct_records explicitly", () =>
+    assertHas(p, "manage_conduct_records", "president"),
+  );
+
+  test("president has manage_executive_operations explicitly", () =>
+    assertHas(p, "manage_executive_operations", "president"),
+  );
+
+  // President must NOT have a blanket bypass — access is entirely permission-driven
+  test("president workspace access is explicit-permission-based (no bypass flag in matrix)", () => {
+    // The matrix defines an array of slugs — there are no boolean bypass flags.
+    // This test confirms every workspace above passed on its own explicit perm.
+    const covered = OFFICER_WORKSPACES.every(([, perm]) => p.has(perm));
+    assert.ok(covered, "President must pass every officer workspace gate through explicit permissions");
+  });
+
+  // President must NOT receive Technology automatically
+  test("president lacks view_system_diagnostics (Technology is separately permissioned)", () =>
+    assertLacks(p, "view_system_diagnostics", "president"),
+  );
+});
+
+// ── Jaylin: President + Platform Admin combination ────────────────────────────
+
+describe("Jaylin combo: president + platform_admin covers every workspace including Technology", () => {
+  const combined = new Set([...orgPerms("president"), ...sysPerms("platform_admin")]);
+
+  // All officer workspaces
+  for (const [ws, perm] of Object.entries(WORKSPACE_PERMISSION_MAP)) {
+    test(`president+platform_admin has "${perm}" (required for ${ws})`, () => {
+      assert.ok(combined.has(perm), `president+platform_admin should have "${perm}" for ${ws}`);
+    });
+  }
+});
+
+// ── Platform Admin: no officer permissions ────────────────────────────────────
+
+describe("platform_admin — Technology only; no officer workspace perms", () => {
+  const p = sysPerms("platform_admin");
+
+  test("platform_admin has view_system_diagnostics (Technology workspace)", () =>
+    assertHas(p, "view_system_diagnostics", "platform_admin"),
+  );
+
+  const OFFICER_PERMS = [
+    "manage_org_settings",
+    "manage_executive_operations",
+    "manage_minutes",
+    "manage_finances",
+    "manage_archives",
+    "manage_conduct_records",
+    "manage_procedure_records",
+    "manage_governance_documents",
+    "view_committee_reports",
+  ];
+  for (const perm of OFFICER_PERMS) {
+    test(`platform_admin lacks officer perm "${perm}"`, () =>
+      assertLacks(p, perm, "platform_admin"),
+    );
+  }
+});
+
+// ── Technology Chair: no officer permissions ──────────────────────────────────
+
+describe("technology_chair — Technology only; no officer workspace perms", () => {
+  const p = sysPerms("technology_chair");
+
+  test("technology_chair has view_system_diagnostics (Technology workspace)", () =>
+    assertHas(p, "view_system_diagnostics", "technology_chair"),
+  );
+
+  const OFFICER_PERMS = [
+    "manage_org_settings",
+    "manage_executive_operations",
+    "manage_minutes",
+    "manage_finances",
+    "manage_archives",
+    "manage_conduct_records",
+    "manage_procedure_records",
+    "manage_governance_documents",
+    "view_committee_reports",
+  ];
+  for (const perm of OFFICER_PERMS) {
+    test(`technology_chair lacks officer perm "${perm}"`, () =>
+      assertLacks(p, perm, "technology_chair"),
+    );
+  }
+});
+
+// ── General member / committee roles: no exec access ─────────────────────────
+
+describe("general members and committee roles — no executive access", () => {
+  const GENERAL_ROLES = ["general_member", "committee_member", "committee_chair", "mentoring_chair"];
+
+  const EXEC_PERMS = [
+    "manage_executive_operations",
+    "manage_conduct_records",
+    "manage_finances",
+    "manage_minutes",
+    "manage_governance_documents",
+    "manage_archives",
+    "manage_procedure_records",
+    "manage_org_settings",
+    "view_system_diagnostics",
+  ];
+
+  for (const role of GENERAL_ROLES) {
+    const p = orgPerms(role);
+    for (const perm of EXEC_PERMS) {
+      test(`${role} lacks "${perm}"`, () => assertLacks(p, perm, role));
+    }
+  }
+});
+
+// ── Multiple roles combine correctly ─────────────────────────────────────────
+
+describe("multi-role combination: chief_of_staff + treasurer gets both permission sets", () => {
+  const combined = union("chief_of_staff", "treasurer");
+
+  test("combined has manage_executive_operations (from chief_of_staff)", () =>
+    assertHas(combined, "manage_executive_operations", "cos+treasurer"),
+  );
+  test("combined has manage_finances (from treasurer)", () =>
+    assertHas(combined, "manage_finances", "cos+treasurer"),
+  );
+  test("combined lacks manage_conduct_records (neither role has it)", () =>
+    assertLacks(combined, "manage_conduct_records", "cos+treasurer"),
+  );
+  test("combined lacks manage_governance_documents (neither role has it)", () =>
+    assertLacks(combined, "manage_governance_documents", "cos+treasurer"),
+  );
+});
+
+describe("multi-role combination: sergeant_at_arms + historian", () => {
+  const combined = union("sergeant_at_arms", "historian");
+
+  test("combined has manage_conduct_records (from sergeant_at_arms)", () =>
+    assertHas(combined, "manage_conduct_records", "saa+historian"),
+  );
+  test("combined has manage_archives (from historian)", () =>
+    assertHas(combined, "manage_archives", "saa+historian"),
+  );
+  test("combined lacks manage_finances", () =>
+    assertLacks(combined, "manage_finances", "saa+historian"),
+  );
+  test("combined lacks manage_executive_operations (neither holds it)", () =>
+    assertLacks(combined, "manage_executive_operations", "saa+historian"),
+  );
+});
+
+// ── Linked source-record confidentiality ────────────────────────────────────
+
+describe("linked source-record boundary: chief_of_staff cannot access linked domain records directly", () => {
+  const p = orgPerms("chief_of_staff");
+
+  // Chief of Staff may store an opaque "finances:42" reference in a task,
+  // but possessing manage_executive_operations alone must NOT authorize the
+  // underlying financial, conduct, governance, or minute records.
+  const DOMAIN_PERMS: Array<[string, string]> = [
+    ["manage_finances",           "treasurer/finances records"],
+    ["manage_conduct_records",    "sergeant-at-arms/conduct records"],
+    ["manage_governance_documents","bylaws/governance documents"],
+    ["manage_minutes",            "secretary/meeting minutes"],
+    ["manage_archives",           "historian/archive entries"],
+    ["manage_procedure_records",  "parliamentarian/procedure records"],
+  ];
+
+  for (const [perm, domain] of DOMAIN_PERMS) {
+    test(`manage_executive_operations alone does not grant "${perm}" (${domain})`, () =>
+      assertLacks(p, perm, `chief_of_staff→${domain}`),
+    );
+  }
+});
+
+// ── Workspace ↔ permission consistency ───────────────────────────────────────
+
+describe("workspace permission map consistency: every workspace permission resolves in ORG_ROLE_PERMS", () => {
+  // Every non-technology workspace permission must be explicitly listed in at
+  // least one org role's permission set.  Technology uses a system role.
+  test("each officer workspace permission appears in at least one org role", () => {
+    const allOrgPerms = new Set(Object.values(ORG_ROLE_PERMS).flat());
+    for (const [ws, perm] of Object.entries(WORKSPACE_PERMISSION_MAP)) {
+      if (ws === "technology") continue; // system-role gated
+      assert.ok(
+        allOrgPerms.has(perm),
+        `Workspace "${ws}" requires permission "${perm}" — must appear in at least one ORG_ROLE_PERMS entry`,
+      );
+    }
+  });
+
+  test("technology workspace permission appears in at least one system role", () => {
+    const allSysPerms = new Set(Object.values(SYSTEM_ROLE_PERMS).flat());
+    assert.ok(
+      allSysPerms.has("view_system_diagnostics"),
+      "view_system_diagnostics must appear in at least one SYSTEM_ROLE_PERMS entry",
+    );
+  });
 });

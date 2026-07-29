@@ -1,0 +1,257 @@
+Implement the Chief of Staff workspace and correct the remaining Sergeant-at-Arms and President permission issues.
+
+Preserve the permission-based RBAC architecture. Do not introduce role-name authorization checks, legacy `ExecutiveBoard` gates, Platform Administrator bypasses, Technology Chair bypasses, or universal President bypasses.
+
+## 1. Restore the Sergeant-at-Arms assignment tag
+
+Sergeant-at-Arms is currently missing from the Officer Positions permission-tag menu.
+
+Fix it as follows:
+
+- Use the existing canonical organization-role slug `sergeant_at_arms`.
+- Display the label as **Sergeant-at-Arms** under Officer Positions.
+- Add it to `ASSIGNABLE_ORG_ROLE_SLUGS` and every validated list used by the member-detail tag interface.
+- Confirm assigning and removing the tag updates `member_org_roles`.
+- Do not create a duplicate role slug.
+- Ensure the RBAC seed assigns the correct conduct permissions to `sergeant_at_arms`.
+- Refresh/invalidate member and permission queries after saving tags so workspace access updates without requiring a new login.
+
+## 2. Fix the gray Sergeant-at-Arms workspace
+
+The Sergeant-at-Arms workspace currently appears gray or inaccessible for the President.
+
+Audit the complete permission chain:
+
+1. `EXEC_WORKSPACES` required permission
+2. RBAC permission seed
+3. live database role-permission assignments
+4. `/me` resolved permission groups
+5. `me.can(requiredPermission)`
+6. frontend workspace gate
+7. direct page route
+8. backend conduct endpoints
+
+Use one consistent write permission for this workspace: `manage_conduct_records`.
+
+Rules:
+
+- Sergeant-at-Arms receives `manage_conduct_records`.
+- President receives `manage_conduct_records` explicitly.
+- The workspace configuration uses `requiredPermission: "manage_conduct_records"`.
+- Conduct mutation endpoints require `manage_conduct_records`.
+- If `view_conduct_reports` remains useful, reserve it for read-only reporting and do not use it as the primary workspace gate.
+- Do not solve the gray state with CSS changes or a role-name exception.
+- A workspace must never appear enabled unless its required permission resolves true.
+- An authorized workspace must not remain gray, disabled, or blocked.
+
+## 3. President access to all officer workspaces
+
+The President must be able to access every officer workspace through an explicit permission set.
+
+Ensure the President holds the required permission for:
+
+- President
+- Vice President
+- Chief of Staff
+- Secretary
+- Treasurer
+- Historian
+- Bylaws Officer
+- Parliamentarian
+- Sergeant-at-Arms
+
+This must include at least:
+
+- `manage_org_settings`
+- `view_committee_reports`
+- `manage_executive_operations`
+- `manage_minutes`
+- `manage_finances`
+- `manage_archives`
+- `manage_governance_documents`
+- `view_governance_documents`
+- `manage_procedure_records`
+- `manage_conduct_records`
+- Any other permission that is actually declared as a required permission by an officer workspace
+
+Do not add a `President` bypass. The President must pass the same `me.can(workspace.requiredPermission)` checks as everyone else.
+
+Technology remains separately permissioned:
+
+- Technology Chair receives the technical permission set.
+- Platform Administrator receives the technical permission set.
+- President receives Technology access only if explicitly granted the Technology permission or separately assigned Platform Administrator/Technology Chair.
+- Jaylin’s current President + Platform Administrator combination should therefore show every officer workspace plus Technology.
+
+Add a matrix test that iterates over every officer workspace and proves that the President’s permission set contains its declared `requiredPermission`.
+
+## 4. Add Chief of Staff role and permission tag
+
+Create one canonical organization-role slug:
+
+`chief_of_staff`
+
+Display it as **Chief of Staff** under Officer Positions.
+
+Requirements:
+
+- Add it to the organization-role catalog.
+- Add it to `ASSIGNABLE_ORG_ROLE_SLUGS`.
+- Add it to the member-detail permission-tag menu.
+- Assign it the explicit permission `manage_executive_operations`.
+- Add Chief of Staff to `EXEC_WORKSPACES`.
+- Gate the workspace with `requiredPermission: "manage_executive_operations"`.
+- President also receives `manage_executive_operations`.
+- Platform Administrator and Technology Chair do not receive it automatically.
+- Multiple organization roles must continue combining permissions.
+
+## 5. Chief of Staff workspace
+
+Build an executive operations and follow-through workspace containing:
+
+- Executive action-item tracker
+- Tasks and assignments
+- Owners and collaborators
+- Due dates
+- Priority
+- Meeting follow-up items
+- Decision log
+- Deadline and overdue views
+- Notes
+- Supporting attachments
+- Audit history
+
+Task statuses:
+
+- not_started
+- in_progress
+- blocked
+- completed
+- cancelled
+- archived
+
+Required fields and metadata:
+
+- title
+- description
+- owner
+- optional collaborators
+- optional related meeting/event
+- optional related workspace
+- optional related source-record identifier
+- priority
+- due date
+- status
+- completion date
+- created by
+- updated by
+- created and updated timestamps
+
+Dashboard summaries:
+
+- Open
+- Due soon
+- Overdue
+- Blocked
+- Recently completed
+
+Filters:
+
+- Owner
+- Collaborator
+- Status
+- Priority
+- Related workspace
+- Meeting/event
+- Due-date range
+
+Support create, update, assign, reassign, complete, cancel, archive, and restore operations. Record each important mutation in the audit log.
+
+## 6. Confidentiality boundaries
+
+Chief of Staff coordinates officer work but must not become a backdoor into confidential records.
+
+Chief of Staff must not automatically receive:
+
+- `manage_finances`
+- `manage_conduct_records`
+- `manage_governance_documents`
+- `manage_minutes`
+- `manage_archives`
+- `manage_procedure_records`
+- technical diagnostic permissions
+
+Cross-workspace tasks may safely contain:
+
+- task title
+- assigned officer
+- due date
+- status
+- related workspace name
+- opaque source-record identifier or link
+
+Do not copy confidential financial, conduct, governance, or official-record content into Chief of Staff task responses.
+
+Opening a linked source record must separately check the source workspace permission. Possessing `manage_executive_operations` alone must not authorize the underlying record.
+
+## 7. Platform Administrator separation
+
+Keep Platform Administrator under the separate **Platform Access** section.
+
+- It remains the `platform_admin` system role.
+- It receives Technology permissions.
+- It does not automatically receive Chief of Staff, conduct, finance, governance, Secretary, Historian, or Parliamentarian permissions.
+- Assigning/removing Platform Administrator must update system-role assignments, not organization-role assignments.
+
+## 8. Database and migration safety
+
+- Create proper migrations for Chief of Staff data.
+- Make role and permission seed operations idempotent.
+- Do not delete or reset production members.
+- Do not delete existing role assignments.
+- Do not run cleanup scripts.
+- Do not seed fake tasks or names.
+- Preserve existing Executive Suite data.
+- Confirm Jaylin’s President and Platform Administrator assignments remain intact.
+
+## 9. Required tests
+
+Add positive and negative tests proving:
+
+- Sergeant-at-Arms appears in assignable organization roles.
+- Chief of Staff appears in assignable organization roles.
+- Bylaws Officer remains assignable.
+- Platform Administrator remains assignable separately as a system role.
+- Sergeant-at-Arms receives `manage_conduct_records`.
+- President receives `manage_conduct_records`.
+- President receives `manage_executive_operations`.
+- President can access every officer workspace.
+- President access succeeds through explicit required permissions, not a bypass.
+- Jaylin’s President + Platform Administrator permission combination can access every officer workspace and Technology.
+- Sergeant-at-Arms can access the conduct workspace.
+- Sergeant-at-Arms cannot access finances, governance publishing, minutes, archives, procedures, Chief of Staff, or Technology unless separately assigned.
+- Chief of Staff can manage executive tasks and decision logs.
+- Chief of Staff cannot access finances, private conduct records, governance publishing, official-minute approval, archives, procedures, or Technology unless separately assigned.
+- Platform Administrator can access Technology but receives no officer workspace automatically.
+- Technology Chair can access Technology but receives no officer workspace automatically.
+- General members and committee roles cannot access Chief of Staff or conduct APIs.
+- Multiple roles combine permissions.
+- Frontend workspace visibility and backend route authorization use the same permission slugs.
+- Linked source records require their own domain permission.
+- Tag changes invalidate cached member permissions correctly.
+
+Run the migration safely, RBAC seed, API generation, frontend typecheck, backend typecheck, and complete test suite.
+
+Before committing, report:
+
+1. Why Sergeant-at-Arms was missing from the tag list.
+2. Why the workspace appeared gray.
+3. The exact permission mismatch corrected.
+4. The final Officer Positions list.
+5. The final President permission-to-workspace matrix.
+6. Chief of Staff tables and API routes.
+7. Test totals and failures.
+8. Confirmation that no production members or assignments were deleted.
+9. Confirmation that Jaylin retains President and Platform Administrator.
+
+Commit only after all checks pass.

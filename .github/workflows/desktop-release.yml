@@ -58,27 +58,27 @@ jobs:
       - uses: actions/checkout@v4
 
       # ── Pre-flight: verify updater signing secrets are present ───────────────
-      # Fail immediately — before the expensive Rust compile — if either secret
-      # is missing.  Aliases (SIGN_KEY / SIGN_PASS) are used so that the secret
-      # names are not echoed in the log even if GitHub's masking is bypassed.
+      # Fail immediately — before the expensive Rust compile — if the private key
+      # is missing.  SIGN_KEY is an alias so the raw secret name is not echoed in
+      # the log.  TAURI_SIGNING_PRIVATE_KEY_PASSWORD is optional; leave it unset
+      # (GitHub passes an empty string) when the key was generated without a password.
       - name: Verify updater signing secrets
         run: |
-          missing=""
-          [ -z "$SIGN_KEY" ]  && missing="${missing}\n  - TAURI_SIGNING_PRIVATE_KEY"
-          [ -z "$SIGN_PASS" ] && missing="${missing}\n  - TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
-          if [ -n "$missing" ]; then
-            echo "ERROR: The following required GitHub repository secrets are not configured:"
-            printf "%b\n" "$missing"
+          if [ -z "$SIGN_KEY" ]; then
+            echo "ERROR: Required GitHub repository secret is not configured:"
+            echo "  - TAURI_SIGNING_PRIVATE_KEY"
             echo ""
-            echo "These secrets are needed to sign updater artifacts (.sig files)."
-            echo "Without them the installed application cannot verify update authenticity."
-            echo "Add them at: GitHub → Settings → Secrets and variables → Actions"
+            echo "This secret is needed to sign updater artifacts (.sig files)."
+            echo "Without it the installed application cannot verify update authenticity."
+            echo "Add it at: GitHub → Settings → Secrets and variables → Actions"
+            echo ""
+            echo "Note: TAURI_SIGNING_PRIVATE_KEY_PASSWORD is optional."
+            echo "Leave it unset (or set it to an empty string) when the key has no password."
             exit 1
           fi
-          echo "Updater signing secrets are present."
+          echo "Updater signing secrets are present (password is optional — absent means no password)."
         env:
-          SIGN_KEY:  ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          SIGN_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SIGN_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -190,22 +190,21 @@ jobs:
       - name: Verify updater signing secrets
         shell: pwsh
         run: |
-          $missing = @()
-          if ([string]::IsNullOrEmpty($env:SIGN_KEY))  { $missing += "TAURI_SIGNING_PRIVATE_KEY" }
-          if ([string]::IsNullOrEmpty($env:SIGN_PASS)) { $missing += "TAURI_SIGNING_PRIVATE_KEY_PASSWORD" }
-          if ($missing.Count -gt 0) {
-            Write-Host "ERROR: The following required GitHub repository secrets are not configured:"
-            $missing | ForEach-Object { Write-Host "  - $_" }
+          if ([string]::IsNullOrEmpty($env:SIGN_KEY)) {
+            Write-Host "ERROR: Required GitHub repository secret is not configured:"
+            Write-Host "  - TAURI_SIGNING_PRIVATE_KEY"
             Write-Host ""
-            Write-Host "These secrets are needed to sign updater artifacts (.sig files)."
-            Write-Host "Without them the installed application cannot verify update authenticity."
-            Write-Host "Add them at: GitHub → Settings → Secrets and variables → Actions"
+            Write-Host "This secret is needed to sign updater artifacts (.sig files)."
+            Write-Host "Without it the installed application cannot verify update authenticity."
+            Write-Host "Add it at: GitHub -> Settings -> Secrets and variables -> Actions"
+            Write-Host ""
+            Write-Host "Note: TAURI_SIGNING_PRIVATE_KEY_PASSWORD is optional."
+            Write-Host "Leave it unset (or set it to an empty string) when the key has no password."
             exit 1
           }
-          Write-Host "Updater signing secrets are present."
+          Write-Host "Updater signing secrets are present (password is optional — absent means no password)."
         env:
-          SIGN_KEY:  ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          SIGN_PASS: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SIGN_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - uses: pnpm/action-setup@v4
         with:

@@ -1,0 +1,267 @@
+Implement the next Executive Suite work order. Work only on these six officer workspaces:
+
+1. Bylaws Officer
+2. Secretary
+3. Treasurer
+4. Historian
+5. Sergeant-at-Arms
+6. Parliamentarian
+
+President, Vice President, and Technology feature development can wait. Do not expand their workspaces during this work order.
+
+First inspect the current schema, RBAC seed, member permission-tag UI, Executive Suite configuration, file-storage capabilities, API conventions, generated client, and tests. Preserve the permission-based workspace gates completed in commits `54f6d7c`, `db29335`, and `c06edec`.
+
+## 1. Restore the Bylaws Officer assignment tag
+
+The Bylaws role was unintentionally removed from the available permission tags and Executive Suite.
+
+Restore it with these rules:
+
+- Use one canonical database slug only: `bylaws_chair`.
+- Display its user-facing label as **Bylaws Officer**.
+- Do not recreate the deleted `bylaws_officer` slug.
+- Add Bylaws Officer to the assignable officer-position permission tags on the member-detail page.
+- A user assigned `bylaws_chair` must receive the Bylaws workspace permissions.
+- Add the Bylaws workspace back to `EXEC_WORKSPACES`.
+- Gate it through an explicit permission such as `manage_governance_documents`, never through a hardcoded role-name check.
+- President may access it only if the President’s explicit permission set includes that permission.
+- Platform Administrator and Technology Chair must not automatically access confidential Bylaws documents.
+
+If stale `bylaws_officer` assignments can still exist, retain an idempotent migration that converts them to `bylaws_chair`.
+
+## 2. Platform Administrator tag
+
+Ensure **Platform Administrator** is available in the member permission-tag interface under a clearly separated **Platform Access** section.
+
+Rules:
+
+- Store it as the existing `platform_admin` system role.
+- Do not treat it as an organization officer position.
+- Assigning/removing it must update system-role assignments correctly.
+- Platform Administrator receives the same technical permission set as Technology Chair and can access the Technology workspace.
+- It must not receive automatic access to Secretary, Treasurer, Historian, Sergeant-at-Arms, Parliamentarian, or Bylaws data.
+- Only an already-authorized account administrator may assign or remove this tag.
+- The UI must clearly distinguish organization positions from platform access.
+
+## 3. Shared Executive Suite requirements
+
+Every workspace must:
+
+- Use `me.can(requiredPermission)` for frontend visibility and route protection.
+- Enforce the same permission on every backend endpoint.
+- Never rely only on hidden navigation for security.
+- Support multiple roles by using the union of the member’s permissions.
+- Record create, update, publish, archive, delete, and restore actions in the audit log.
+- Show useful empty states because production currently has no real records.
+- Include created date, updated date, creator, and last editor where appropriate.
+- Use soft deletion/archive behavior for official records unless permanent deletion is explicitly safe.
+- Validate titles, descriptions, dates, currency amounts, filenames, file types, and upload sizes.
+- Preserve user/member separation and current authentication behavior.
+- Follow the existing OpenAPI/code-generation conventions.
+- Avoid placeholder statistics, seeded progress, fake names, fake records, or sample financial data.
+
+## 4. Bylaws Officer workspace
+
+Build the governance document foundation before adding AI.
+
+Features:
+
+- Upload PDF and DOCX governance documents.
+- Supported document categories:
+  - Chapter Constitution
+  - Chapter Bylaws
+  - University/Institution Policy
+  - National Organization Guidance
+  - Standing Rules
+  - Amendment
+  - Other Governance Document
+- Store:
+  - title
+  - category
+  - version label
+  - effective date
+  - approval date, when applicable
+  - status: draft, under\_review, current, superseded, archived
+  - notes
+  - original filename
+  - MIME type
+  - size
+  - storage reference
+  - uploader
+  - created/updated timestamps
+- Allow only one `current` version per document category where that rule is appropriate.
+- Publishing a new current version must supersede the previous current version transactionally.
+- Preserve full version history.
+- Support download and preview when feasible.
+- Allow the Bylaws Officer to create, edit, publish, supersede, archive, and restore documents.
+- Give Parliamentarian read-only access to current published governance documents through a separate permission such as `view_governance_documents`.
+- Do not implement AI, embeddings, vector search, or document Q&A yet.
+- Design the schema so extracted text and indexing can be added later without redesigning document identity/version history.
+
+## 5. Secretary workspace
+
+Build official chapter-record tools:
+
+- Meeting agenda records.
+- Meeting minutes.
+- Correspondence log.
+- Meeting date, meeting type, title, status, notes, and attachments.
+- Draft, submitted for approval, approved, and archived states.
+- Record who prepared and approved each item.
+- Allow editing while draft.
+- Approved minutes must remain historically preserved; later corrections should create a revision instead of silently overwriting the approved record.
+- Search/filter by date, meeting type, status, and record type.
+- Export or download official records where the existing export system supports it.
+
+Permissions should remain domain-specific, including `manage_minutes`, with additional precise permissions only when genuinely needed.
+
+## 6. Treasurer workspace
+
+Build financial recordkeeping tools, not banking integration:
+
+- Budget categories.
+- Income and expense ledger entries.
+- Dues/payment tracking tied to a member when applicable.
+- Receipt/document attachments.
+- Transaction date, description, category, amount, direction, payment method, reference number, notes, creator, and status.
+- Never store full card numbers, bank credentials, or sensitive payment authentication data.
+- Validate monetary amounts using decimal-safe storage; do not use floating-point values for persisted currency.
+- Dashboard totals:
+  - budgeted
+  - income
+  - expenses
+  - remaining
+  - outstanding dues
+- Filters by date, category, member, status, and transaction direction.
+- CSV/XLSX/PDF exports using the already-fixed authenticated desktop export flow.
+- Corrections should be traceable through audit history; do not silently mutate finalized financial records.
+
+Gate this workspace and its APIs with `manage_finances` and narrower read permissions if necessary.
+
+## 7. Historian workspace
+
+Build the official archive:
+
+- Archive entries for photos, programs, flyers, awards, announcements, milestones, and other chapter history.
+- Fields:
+  - title
+  - description
+  - event/date represented
+  - archive category
+  - people involved, as optional text or member references
+  - attachment/media reference
+  - visibility
+  - tags
+  - creator
+  - timestamps
+- Timeline/list views.
+- Search and filters by year, category, tag, and person.
+- Archive/restore support.
+- Do not expose private archive items to general members unless their visibility explicitly permits it.
+
+Gate with `manage_archives` and appropriate read permissions.
+
+## 8. Sergeant-at-Arms workspace
+
+Nudges are removed from the product, so do not build any nudge functionality.
+
+Build conduct and meeting-order records:
+
+- Incident/conduct reports.
+- Attendance irregularity notes linked to an event/member when applicable.
+- Meeting-order notes.
+- Fields:
+  - date
+  - type
+  - member involved, optional
+  - event involved, optional
+  - summary
+  - private details
+  - status
+  - resolution
+  - reporter
+  - timestamps
+- Statuses: open, under\_review, resolved, archived.
+- Treat these records as confidential.
+- General members, committee chairs, Platform Administrators, Technology Chairs, and unrelated officers must not access them.
+- President access must come from an explicit conduct permission.
+- Include clear audit history.
+
+Use domain-specific permissions such as `manage_conduct_records` and `view_conduct_reports`.
+
+## 9. Parliamentarian workspace
+
+Build procedural recordkeeping:
+
+- Motion log.
+- Ruling/interpretation log.
+- Quorum calculator and quorum records.
+- Meeting procedure notes.
+- Fields for motion maker, seconder, motion text, meeting/event, result, vote totals, ruling, authority/source reference, and timestamps where applicable.
+- Motion statuses/results must be validated.
+- Quorum calculations must show the inputs and calculation used.
+- Parliamentarian can read current published governance documents but cannot publish or modify official Bylaws versions unless also assigned the Bylaws Officer role.
+- Allow linking a ruling or motion to a governance document/version and an optional article/section reference.
+- Preserve historical records and revisions.
+
+Gate procedural writes with `manage_procedure_records` and governance reads with `view_governance_documents`.
+
+## 10. Navigation and page behavior
+
+- Executive Suite navigation should show only workspaces for which `me.can(workspace.requiredPermission)` is true.
+- Direct URL access must show a proper unauthorized state and must not fetch protected data.
+- A member holding multiple officer tags must see the combined set of workspaces.
+- Restoring Bylaws Officer must make the Bylaws workspace appear immediately after role data refresh.
+- Platform Administrator must see the Technology workspace but none of these six workspaces unless separately assigned an appropriate officer role.
+- Keep layouts responsive for desktop and web.
+- Avoid showing empty metric cards with invented zero-based “progress” concepts. Use practical record counts and informative empty states.
+
+## 11. Database and migration safety
+
+- Create proper migrations; do not rely only on runtime schema pushes.
+- Never delete existing production member accounts or role assignments.
+- Never seed fake members, events, committee progress, financial entries, documents, or conduct records.
+- Make role migrations idempotent.
+- Preserve the existing cleanup state.
+- Confirm Jaylin’s account and current administrative access are not removed or reset.
+- Do not run destructive cleanup scripts.
+
+## 12. Required tests
+
+Add positive and negative tests for every workspace.
+
+At minimum verify:
+
+- Bylaws Officer can manage governance documents.
+- Parliamentarian can read current governance documents but cannot publish them.
+- Secretary cannot access finances, conduct records, or governance publishing.
+- Treasurer cannot access minutes, conduct records, archives, or governance publishing.
+- Historian cannot access finances, minutes, conduct records, or governance publishing.
+- Sergeant-at-Arms cannot access finances, minutes, archives, or governance publishing.
+- Parliamentarian cannot manage finances, minutes, archives, or conduct records.
+- Platform Administrator can access Technology only.
+- Technology Chair can access Technology only.
+- President receives access only through explicitly assigned permission groups.
+- General members and committee roles cannot access any Executive Suite APIs.
+- Multiple officer roles combine permissions correctly.
+- Frontend visibility and backend authorization use the same required permissions.
+- Publishing a governance version supersedes the previous current version correctly.
+- Approved Secretary records cannot be silently overwritten.
+- Financial amounts use decimal-safe behavior.
+- Confidential conduct records cannot leak through list/detail endpoints.
+- Archived records follow the correct visibility rules.
+
+Run schema validation, migrations in the safe development environment, code generation, frontend typecheck, backend typecheck, and the complete test suite.
+
+Before committing, report:
+
+1. Files and migrations added or changed.
+2. Final permission-to-workspace matrix.
+3. New database tables and relationships.
+4. Every new API route.
+5. Upload storage strategy and security checks.
+6. Test totals and failures.
+7. Any unfinished items or risks.
+8. Confirmation that no production members or role assignments were deleted.
+
+Commit this as one clearly named Executive Suite feature-foundation commit only after all checks pass.

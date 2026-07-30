@@ -277,19 +277,40 @@ router.patch(
       );
     }
     if (body.data.systemRoleSlugs !== undefined) {
-      // Assigning or removing system roles (e.g. platform_admin) requires the
-      // caller to hold manage_roles. Tech Chair and general leadership roles
-      // must not be able to escalate privileges via this field.
-      const callerCtx = await resolveRbacContext(req.member.id);
-      if (!hasPermissionGroup(callerCtx, "manage_roles")) {
-        res.status(403).json({ error: "Assigning system roles requires manage_roles permission" });
-        return;
-      }
-      await setMemberSystemRoleTags(
-        params.data.id,
-        body.data.systemRoleSlugs,
-        req.member.id,
+      // Only enforce manage_roles when the system-role set actually changes.
+      // If the caller submits the same system roles the member already holds
+      // (common when saving org roles while the system-role checkboxes are
+      // pre-filled and unchanged), skip the gate and the write entirely.
+      const targetCtx = await resolveRbacContext(params.data.id);
+      const currentSysSlugs = new Set(
+        targetCtx.systemRoles.filter((s) =>
+          (ASSIGNABLE_SYSTEM_ROLE_SLUGS as readonly string[]).includes(s),
+        ),
       );
+      const requestedSysSlugs = new Set(
+        body.data.systemRoleSlugs.filter((s) =>
+          (ASSIGNABLE_SYSTEM_ROLE_SLUGS as readonly string[]).includes(s),
+        ),
+      );
+      const setsEqual =
+        currentSysSlugs.size === requestedSysSlugs.size &&
+        [...requestedSysSlugs].every((s) => currentSysSlugs.has(s));
+
+      if (!setsEqual) {
+        // System roles are genuinely changing — require manage_roles.
+        const callerCtx = await resolveRbacContext(req.member.id);
+        if (!hasPermissionGroup(callerCtx, "manage_roles")) {
+          res.status(403).json({
+            error: "Assigning system roles requires manage_roles permission",
+          });
+          return;
+        }
+        await setMemberSystemRoleTags(
+          params.data.id,
+          body.data.systemRoleSlugs,
+          req.member.id,
+        );
+      }
     }
 
     // Auto-sync the legacy `role` column from the final assignable tag set.

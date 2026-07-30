@@ -602,7 +602,7 @@ export const UpdateMemberBody = zod.object({
   "duesPaid": zod.boolean().optional(),
   "accountActive": zod.boolean().optional(),
   "fullName": zod.string().min(updateMemberBodyFullNameMin).max(updateMemberBodyFullNameMax).optional(),
-  "orgRoleSlugs": zod.array(zod.enum(['president', 'vice_president', 'secretary', 'treasurer', 'parliamentarian', 'historian', 'committee_chair', 'bylaws_chair'])).optional().describe('Replaces the member\'s additional officer-position permission tags. Omit this field to leave them unchanged.'),
+  "orgRoleSlugs": zod.array(zod.enum(['president', 'vice_president', 'chief_of_staff', 'sergeant_at_arms', 'secretary', 'treasurer', 'parliamentarian', 'historian', 'committee_chair', 'bylaws_chair'])).optional().describe('Replaces the member\'s additional officer-position permission tags. Omit this field to leave them unchanged.'),
   "systemRoleSlugs": zod.array(zod.enum(['platform_admin'])).optional().describe('Replaces the member\'s additional platform-level permission tags. Omit this field to leave them unchanged.')
 })
 

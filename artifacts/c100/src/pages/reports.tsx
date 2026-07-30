@@ -117,9 +117,49 @@ function Reports() {
   );
 }
 
+function ReportError({ error }: { error: unknown }) {
+  const apiErr = error as { status?: number } | null;
+  const status = apiErr?.status;
+  if (status === 401)
+    return (
+      <ErrorBlock
+        title="Session expired"
+        message="Your session has expired. Sign out and sign back in to reload reports."
+      />
+    );
+  if (status === 403)
+    return (
+      <ErrorBlock
+        title="Access denied"
+        message="Your account does not have the required permission to view this report. Contact your Platform Administrator if this is unexpected."
+      />
+    );
+  if (status === 404)
+    return (
+      <ErrorBlock
+        title="Report not found"
+        message="This report endpoint is unavailable. The backend may need to be updated."
+      />
+    );
+  if (status != null && status >= 500)
+    return (
+      <ErrorBlock
+        title="Server error"
+        message={`The server returned an error (HTTP ${status}). Try refreshing — if the problem persists, contact your administrator.`}
+      />
+    );
+  return (
+    <ErrorBlock
+      title="Could not load report"
+      message="The report could not be fetched. Check your connection and try refreshing the page."
+    />
+  );
+}
+
 function Overview() {
   const data = useGetAdminOverview();
   if (data.isLoading) return <CardSkeleton rows={4} />;
+  if (data.error) return <ReportError error={data.error} />;
   if (!data.data) return <ErrorBlock />;
   const o = data.data;
   return (
@@ -269,6 +309,7 @@ function EligibilityTab({ kind }: { kind: "scholarship" | "conference" }) {
       : "/api/reports/conference-eligibility";
 
   if (data.isLoading) return <CardSkeleton rows={5} />;
+  if (data.error) return <ReportError error={data.error} />;
   if (!data.data) return <ErrorBlock />;
 
   return (
@@ -350,6 +391,7 @@ function CommitteesTab() {
   const [selected, setSelected] = useState<number | null>(null);
 
   if (committees.isLoading) return <CardSkeleton rows={3} />;
+  if (committees.error) return <ReportError error={committees.error} />;
   if (!committees.data) return <ErrorBlock />;
 
   return (
@@ -387,6 +429,7 @@ function CommitteeReportView({ committeeId }: { committeeId: number }) {
   const report = useGetCommitteeReport(committeeId);
 
   if (report.isLoading) return <CardSkeleton rows={4} />;
+  if (report.error) return <ReportError error={report.error} />;
   if (!report.data) return <ErrorBlock />;
   const r = report.data;
 

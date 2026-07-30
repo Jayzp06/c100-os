@@ -1,0 +1,328 @@
+Repair the remaining production database, RBAC, member-role update, committee cleanup, and Reports failures after the latest Replit republish.
+
+Do not change the desktop updater, signing configuration, or application version yet. The production backend is now reachable. Determine whether any desktop frontend change is genuinely required before creating v0.9.3.
+
+## Current confirmed state
+
+- Production now contains the updated backend diagnostics route.
+- The v0.9.2 desktop application reaches production.
+- Production still displays old test events/progress.
+- Production still lists Bylaws as a committee.
+- Production still lists Economic Development and Economic Empowerment separately.
+- Development/Replit Preview already had these records cleaned or consolidated.
+- Jaylin currently has President and Platform Administrator.
+- Adding Chief of Staff to Jaylin fails.
+- Reports still displays “Something went wrong.”
+- Production and development data/RBAC remain inconsistent.
+
+## 1. Capture exact errors before changing anything
+
+Reproduce and record the exact production response for:
+
+1. Adding `chief_of_staff` while preserving:
+   - `president`
+   - `platform_admin`
+2. Chapter overview report
+3. Scholarship eligibility report
+4. Conference eligibility report
+5. Committee reports
+
+For each request report:
+
+- HTTP method
+- endpoint
+- sanitized request body
+- HTTP status
+- structured response body
+- server log error
+- database error code, if any
+- authorization permission checked
+
+Do not rely on the frontend’s generic “Something went wrong.”
+
+Do not repeatedly mutate Jaylin’s account during diagnosis.
+
+## 2. Fix organization-role and system-role updates independently
+
+Audit the member update endpoint and member-detail mutation payload.
+
+Organization roles and system roles must be handled as separate sets:
+
+- `orgRoleSlugs`
+- `systemRoleSlugs`
+
+Rules:
+
+- Changing organization roles must not fail merely because the request also contains unchanged system roles.
+- Compare the requested system-role set with the stored system-role set.
+- Require `manage_roles` only when the system-role set actually changes.
+- Do not treat the presence of `systemRoleSlugs` in the payload as proof of a system-role mutation.
+- If system roles are unchanged, preserve them without requiring an additional system-role escalation check.
+- If the caller is not allowed to change system roles, the safest frontend behavior is to omit `systemRoleSlugs` entirely.
+- Updating organization roles must never silently delete an existing system role.
+- Updating system roles must never silently delete organization roles.
+- The entire authorized update must be transactional.
+
+Authorization:
+
+- Determine which explicit permission authorizes organization-position assignment.
+- Determine which explicit permission authorizes system-role assignment.
+- Platform Administrator is the account/platform administration role and should hold `manage_roles` if that matches the intended final model.
+- Technology Chair must not receive `manage_roles`.
+- President must not receive `manage_roles` solely because they are President.
+- Do not add `isAdmin`, President, Technology Chair, or legacy-role bypasses.
+- Assigning/removing `platform_admin` must require `manage_roles`.
+- Assigning normal officer positions must use the intended organization-role management permission.
+
+Verify the live production RBAC seed gives Platform Administrator the intended account-administration permission. If `manage_roles` is missing accidentally, add it explicitly and idempotently to `platform_admin` only.
+
+After repair, Jaylin must be able to retain:
+
+- President
+- Chief of Staff
+- Platform Administrator
+
+Adding Chief of Staff must not remove President or Platform Administrator.
+
+## 3. Verify the production migration and RBAC state
+
+Read-only audit first.
+
+Report production state for:
+
+- Migration records `0000` through `0005`
+- Recorded migration hashes
+- Expected tables/columns/indexes
+- Role catalog
+- Assignable organization-role slugs
+- System-role catalog
+- Permission groups
+- Platform Administrator permissions
+- President permissions
+- Chief of Staff permissions
+- Jaylin organization roles
+- Jaylin system roles
+- Jaylin resolved `/api/me` permission groups
+
+Verify production includes:
+
+- `chief_of_staff`
+- `sergeant_at_arms`
+- `bylaws_chair`
+- `manage_executive_operations`
+- `manage_conduct_records`
+- `manage_governance_documents`
+- every declared President officer-workspace permission
+- Chief of Staff tables from migration `0005`
+
+If schema and migration history disagree, do not blindly mark migrations applied. Compare the complete expected schema before repairing bookkeeping.
+
+Run the idempotent RBAC seed only after schema compatibility is confirmed.
+
+## 4. Production committee reconciliation
+
+Perform a dry run before mutation.
+
+Report all active and inactive production committees with:
+
+- ID
+- name
+- active state
+- chair
+- member-assignment count
+- event relationship count
+- point/progress relationship count
+
+Required final structure:
+
+- Bylaws is not a participating committee.
+- Bylaws Officer remains an officer-position tag backed by `bylaws_chair`.
+- There must be no Bylaws card in Committee views, committee dashboards, or leaderboards.
+- Economic Development and Economic Empowerment must become one canonical committee:
+  `Economic Empowerment & Development`
+- Do not leave duplicate active committee records.
+- Preserve legitimate relationships by migrating them to the canonical committee before deactivating the duplicate.
+- Do not create a fake chair or fake members.
+- Committee APIs, dashboards, reports, and leaderboards must query active participating committees only.
+
+Use explicit IDs resolved by the dry run. Do not use broad name-based destructive deletion without reviewing the resolved records.
+
+Prefer:
+
+- deactivating/reserving Bylaws rather than erasing historical references
+- merging duplicate economic committee relationships transactionally
+- preserving auditability
+
+Add Bylaws and legacy economic names to reserved committee-name validation so they cannot be recreated accidentally.
+
+## 5. Production test-data reconciliation
+
+The production dashboard still contains fake events and progress that were removed from development.
+
+Produce a dry-run inventory of:
+
+- events
+- attendance
+- check-in sessions/codes
+- point ledger entries
+- progress calculations
+- committee progress
+- nudge remnants, if any
+- fake members, if any
+
+Identify exact legacy test records using IDs, titles, creation dates, and relationships.
+
+Preserve:
+
+- Jaylin
+- every legitimate member account
+- all current role assignments
+- new Executive Suite data
+- legitimate uploads
+- legitimate financial and official records
+- audit history where practical
+
+After presenting the resolved dry-run list, remove only confirmed fake/test records in a transaction and dependency-safe order.
+
+Expected production state after cleanup:
+
+- No fake events
+- No fake attendance
+- No fake progress
+- No fake committee rankings
+- Zero eligible events until real events are added
+- No Bylaws participating committee
+- One canonical Economic Empowerment & Development committee
+
+Report row counts changed per table.
+
+## 6. Diagnose and repair Reports
+
+Test each report endpoint independently against production.
+
+Determine whether each failure is:
+
+- `401` authentication
+- `403` permission
+- `404` missing route
+- `500` schema/query failure
+- response-schema incompatibility
+- frontend parsing failure
+
+Verify President explicitly holds:
+
+- `view_chapter_overview`
+- `view_eligibility_reports`
+- `view_committee_reports`
+- any other required report permission declared by the current route matrix
+
+Do not restore the deleted broad `view_reports` permission.
+
+Confirm report queries:
+
+- reference existing production columns
+- exclude inactive/nonparticipating committees
+- do not include Bylaws
+- do not double-count the merged economic committee
+- return valid empty results when there are no events or attendance records
+- do not crash on zero-row datasets
+- match the generated frontend response schemas
+
+Replace the generic frontend error with a safe message containing:
+
+- HTTP status category
+- retry option
+- correlation/request ID when available
+
+Do not expose database errors or stack traces to users.
+
+## 7. Cache and refresh correctness
+
+After a successful role update:
+
+- Invalidate member detail.
+- Invalidate member list.
+- Invalidate `/me`.
+- Invalidate resolved permissions.
+- Invalidate Executive Suite workspace access.
+- Invalidate report queries where permissions affect access.
+- Refetch automatically.
+
+A role update should take effect without reinstalling the desktop app. If authentication claims are cached in the session, refresh them safely or require only a logout/login—not a reinstall.
+
+After production cleanup:
+
+- Events dashboard must refetch.
+- Committee list must refetch.
+- Leaderboard must refetch.
+- Reports must refetch.
+- Do not persist stale production data indefinitely in desktop storage.
+
+## 8. Required verification
+
+Test against:
+
+1. Replit Preview/development
+2. Production web app
+3. Installed v0.9.2 desktop app
+
+Production web and desktop must agree.
+
+Verify:
+
+- Jaylin has President.
+- Jaylin has Platform Administrator.
+- Chief of Staff can be added successfully.
+- Adding Chief of Staff preserves the other two roles.
+- Jaylin resolves all officer workspace permissions plus Technology.
+- All intended workspaces are enabled.
+- Reports load successfully with empty-state data.
+- Bylaws is absent from Committees and Leaderboard.
+- Only Economic Empowerment & Development appears.
+- Old fake events are absent.
+- Eligible event count is zero until real events exist.
+- Fake progress is zero.
+- Direct unauthorized requests remain forbidden.
+- Treasurer exports still work.
+- Private conduct and governance files remain protected.
+- `/api/health` returns 200.
+- `/api/system/info` returns the correct production version/environment.
+
+Run:
+
+- Migration validation
+- RBAC seed validation
+- OpenAPI generation
+- Backend typecheck
+- Frontend typecheck
+- Complete tests
+- Production API smoke tests
+- Visual desktop smoke test
+
+## 9. Release decision
+
+If all failures are production database, migration, seed, and backend-state problems:
+
+- Repair production and republish.
+- Do not create v0.9.3.
+- Confirm installed v0.9.2 works after refresh/relogin.
+
+Create v0.9.3 only if actual desktop-bundled frontend code must change, such as:
+
+- role mutation payload behavior
+- query invalidation
+- diagnostic classification
+- report error display
+- stale persistent-cache behavior
+
+Before committing or releasing, report:
+
+1. Exact Chief of Staff assignment error and root cause.
+2. Exact Reports error and root cause.
+3. Platform Administrator’s final permissions.
+4. Production migration/RBAC differences repaired.
+5. Committee dry-run and reconciliation results.
+6. Exact test data removed.
+7. Confirmation that legitimate members and records were preserved.
+8. Test totals.
+9. Whether v0.9.3 is required.

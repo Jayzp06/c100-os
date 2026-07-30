@@ -19,7 +19,12 @@ import {
  * or renamed committees.  Add a name here whenever a committee is deactivated
  * and its name should not be recycled.  Matching is case-insensitive.
  */
-export const RESERVED_COMMITTEE_NAMES = ["Bylaws"] as const;
+export const RESERVED_COMMITTEE_NAMES = [
+  "Bylaws",
+  // Legacy economic committee names — consolidated into "Economic Empowerment & Development"
+  "Economic Development",
+  "Economic Empowerment",
+] as const;
 
 /**
  * Validates a proposed committee name against length rules and the reserved

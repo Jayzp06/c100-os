@@ -2368,7 +2368,7 @@ components:
           type: array
           items:
             type: string
-            enum: [president, vice_president, secretary, treasurer, parliamentarian, historian, committee_chair, bylaws_chair]
+            enum: [president, vice_president, chief_of_staff, sergeant_at_arms, secretary, treasurer, parliamentarian, historian, committee_chair, bylaws_chair]
           description: Replaces the member's additional officer-position permission tags. Omit this field to leave them unchanged.
         systemRoleSlugs:
           type: array

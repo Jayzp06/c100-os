@@ -12,6 +12,8 @@ export type UpdateMemberInputOrgRoleSlugsItem = typeof UpdateMemberInputOrgRoleS
 export const UpdateMemberInputOrgRoleSlugsItem = {
   president: 'president',
   vice_president: 'vice_president',
+  chief_of_staff: 'chief_of_staff',
+  sergeant_at_arms: 'sergeant_at_arms',
   secretary: 'secretary',
   treasurer: 'treasurer',
   parliamentarian: 'parliamentarian',

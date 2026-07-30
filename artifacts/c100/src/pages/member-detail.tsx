@@ -8,6 +8,7 @@ import {
   useRestoreMember,
   useListCommittees,
   getGetMemberQueryKey,
+  getGetMyProfileQueryKey,
   getListMembersQueryKey,
 } from "@workspace/api-client-react";
 
@@ -114,10 +115,20 @@ function MemberDetail({ id }: { id: number }) {
         toast({ title: "Member updated." });
         qc.invalidateQueries({ queryKey: getGetMemberQueryKey(id) });
         qc.invalidateQueries({ queryKey: getListMembersQueryKey() });
+        // Re-fetch /me so permission changes (e.g. new org roles) take effect
+        // immediately without requiring a logout/login or desktop reinstall.
+        qc.invalidateQueries({ queryKey: getGetMyProfileQueryKey() });
         invalidateAggregates(qc);
       },
-      onError: () => {
-        toast({ title: "Update failed.", variant: "destructive" });
+      onError: (err: unknown) => {
+        const apiErr = err as { status?: number; data?: { error?: string } } | null;
+        const status = apiErr?.status;
+        const serverMsg = apiErr?.data?.error;
+        let title = "Update failed.";
+        if (status === 403) title = "Permission denied — you may not assign that role.";
+        else if (status === 400) title = serverMsg ? `Invalid request: ${serverMsg}` : "Invalid request.";
+        else if (status === 401) title = "Session expired. Please sign in again.";
+        toast({ title, variant: "destructive" });
       },
     },
   });
@@ -205,6 +216,11 @@ function MemberDetail({ id }: { id: number }) {
   const isDeleted = !!m.deletedAt;
 
   function save() {
+    // Only include systemRoleSlugs when the caller has manage_roles.
+    // If they lack it and the set is unchanged, the backend skips the gate;
+    // but omitting the field entirely is the safest path for callers who
+    // cannot manage system roles.
+    const canManageRoles = me.can("manage_roles");
     update.mutate({
       id,
       data: {
@@ -219,6 +235,8 @@ function MemberDetail({ id }: { id: number }) {
         orgRoleSlugs: orgRoleSlugs as (
           | "president"
           | "vice_president"
+          | "chief_of_staff"
+          | "sergeant_at_arms"
           | "secretary"
           | "treasurer"
           | "parliamentarian"
@@ -226,7 +244,9 @@ function MemberDetail({ id }: { id: number }) {
           | "bylaws_chair"
           | "committee_chair"
         )[],
-        systemRoleSlugs: systemRoleSlugs as "platform_admin"[],
+        ...(canManageRoles
+          ? { systemRoleSlugs: systemRoleSlugs as "platform_admin"[] }
+          : {}),
       },
     });
   }

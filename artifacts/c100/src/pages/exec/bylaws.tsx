@@ -27,6 +27,7 @@ import { BookOpen, Plus, FileText, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { workspaceApiError } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "bylaws")!;
 
@@ -78,13 +79,15 @@ function useGovernanceDocs() {
 
 function useDocAction(action: string) {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(`/api/governance/documents/${id}/${action}`, { method: "POST" });
-      if (!res.ok) throw new Error(`Failed to ${action}`);
+      if (!res.ok) throw new Error(await workspaceApiError(res));
       return res.json();
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["governance", "documents"] }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 }
 
@@ -125,7 +128,7 @@ export default function BylawsWorkspacePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Failed to create document");
+      if (!res.ok) throw new Error(await workspaceApiError(res));
       return res.json();
     },
     onSuccess: () => {
@@ -133,7 +136,7 @@ export default function BylawsWorkspacePage() {
       setCreateOpen(false);
       toast({ title: "Document created." });
     },
-    onError: () => toast({ title: "Failed to create document.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   async function handleCreate() {

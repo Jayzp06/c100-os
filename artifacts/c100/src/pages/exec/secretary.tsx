@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Mail, Plus, CheckCircle2, FileText, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { workspaceApiError } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "secretary")!;
 
@@ -77,11 +78,11 @@ export default function SecretaryWorkspacePage() {
   const createMeeting = useMutation({
     mutationFn: async (data: typeof meetingForm) => {
       const r = await fetch("/api/secretary/meetings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["secretary", "meetings"] }); setMeetingOpen(false); toast({ title: "Meeting record created." }); },
-    onError: () => toast({ title: "Failed to create meeting record.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const approveMeeting = useMutation({
@@ -97,11 +98,11 @@ export default function SecretaryWorkspacePage() {
   const createCorr = useMutation({
     mutationFn: async (data: typeof corrForm) => {
       const r = await fetch("/api/secretary/correspondence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["secretary", "correspondence"] }); setCorrOpen(false); toast({ title: "Correspondence logged." }); },
-    onError: () => toast({ title: "Failed to log correspondence.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const meetingList = meetings ?? [];

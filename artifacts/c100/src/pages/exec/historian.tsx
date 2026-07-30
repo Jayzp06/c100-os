@@ -18,6 +18,7 @@ import { Archive, Image, Plus, CalendarCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { workspaceApiError } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "historian")!;
 
@@ -48,21 +49,21 @@ export default function HistorianWorkspacePage() {
   const createEntry = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
       const r = await fetch("/api/historian/archive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["historian", "archive"] }); setOpen(false); toast({ title: "Archive entry created." }); },
-    onError: () => toast({ title: "Failed to create entry.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const archiveEntry = useMutation({
     mutationFn: async (id: number) => {
       const r = await fetch(`/api/historian/archive/${id}/archive`, { method: "POST" });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["historian", "archive"] }); toast({ title: "Entry archived." }); },
-    onError: () => toast({ title: "Failed to archive.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   async function handleCreate() {

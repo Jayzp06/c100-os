@@ -19,6 +19,7 @@ import { DollarSign, TrendingUp, TrendingDown, Plus, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ReportExportMenu } from "@/components/report-export";
+import { workspaceApiError } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "treasurer")!;
 
@@ -61,21 +62,21 @@ export default function TreasurerWorkspacePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, memberId: Number(data.memberId), amountCents: Number(data.amountCents) }),
       });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["treasurer"] }); setDuesOpen(false); toast({ title: "Dues entry recorded." }); },
-    onError: () => toast({ title: "Failed to record dues entry.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const updateDuesStatus = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       const r = await fetch(`/api/treasurer/dues/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["treasurer"] }); toast({ title: "Dues status updated." }); },
-    onError: () => toast({ title: "Failed to update dues.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const duesList = dues ?? [];

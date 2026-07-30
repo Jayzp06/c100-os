@@ -17,6 +17,7 @@ import {
 import { ShieldAlert, Plus, CheckCircle2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { workspaceApiError } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "sergeant-at-arms")!;
 
@@ -49,21 +50,21 @@ export default function SergeantAtArmsWorkspacePage() {
     mutationFn: async (data: typeof form) => {
       const body = { ...data, memberId: data.memberId ? Number(data.memberId) : undefined };
       const r = await fetch("/api/conduct/records", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["conduct", "records"] }); setOpen(false); toast({ title: "Conduct record created." }); },
-    onError: () => toast({ title: "Failed to create record.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const resolveRecord = useMutation({
     mutationFn: async ({ id, resolution }: { id: number; resolution: string }) => {
       const r = await fetch(`/api/conduct/records/${id}/resolve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resolution }) });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["conduct", "records"] }); setResolveOpen(null); setResolution(""); toast({ title: "Record resolved." }); },
-    onError: () => toast({ title: "Failed to resolve.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const archiveRecord = useMutation({

@@ -14,10 +14,10 @@ import {
   db,
   executiveTasksTable,
   executiveTaskCollaboratorsTable,
+  membersTable,
 } from "@workspace/db";
-import { and, eq, desc, lt, lte, gte, or, inArray, isNull, ne } from "drizzle-orm";
+import { and, eq, desc, lt, lte, gte, or, inArray, isNull, ne, sql } from "drizzle-orm";
 import { requirePermGroup, writeAuditLog } from "../lib/c100";
-import { sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -369,6 +369,41 @@ router.delete(
     });
 
     res.status(204).end();
+  }),
+);
+
+// ── Assignment candidates ───────────────────────────────────────────────────
+
+/**
+ * GET /chief-of-staff/assignment-candidates
+ *
+ * Returns a minimal list of active chapter members suitable for populating
+ * a task-owner selector.  Deliberately exposes ONLY non-confidential fields
+ * (id, name, email, status) — this endpoint must NOT grant the Chief of Staff
+ * access to GPA, dues history, conduct records, or any other restricted data.
+ *
+ * Permission: manage_executive_operations (same gate as all CoS routes).
+ */
+router.get(
+  "/chief-of-staff/assignment-candidates",
+  requirePermGroup("manage_executive_operations")(async (_req, res) => {
+    const candidates = await db
+      .select({
+        id: membersTable.id,
+        fullName: membersTable.fullName,
+        email: membersTable.email,
+        membershipStatus: membersTable.membershipStatus,
+      })
+      .from(membersTable)
+      .where(
+        and(
+          isNull(membersTable.deletedAt),
+          inArray(membersTable.membershipStatus, ["Active", "Probationary"]),
+        ),
+      )
+      .orderBy(membersTable.fullName);
+
+    res.json(candidates);
   }),
 );
 

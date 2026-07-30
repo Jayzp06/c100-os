@@ -24,6 +24,8 @@ const UPLOAD_TTL_SEC = 900;
  * cannot read a Conduct file because their `/objects/finances/…` permission
  * does not cover paths under `/objects/conduct/…`.
  */
+// WORKSPACE_PERMISSION_GATE controls READ access (downloads via GET /storage/objects/…).
+// view_governance_documents lets parliamentarians and other readers download files.
 const WORKSPACE_PERMISSION_GATE: Record<string, string[]> = {
   governance: ['manage_governance_documents', 'view_governance_documents'],
   secretary: ['manage_minutes'],
@@ -76,13 +78,36 @@ function extractWorkspace(objectPath: string): string | null {
   return match ? match[1] : null;
 }
 
-/** Returns true if the member has any of the required permissions for the workspace. */
+// WORKSPACE_UPLOAD_PERMISSION_GATE controls WRITE access (upload URL requests).
+// Upload requires the manage_ permission — view-only roles (e.g. parliamentarian
+// with view_governance_documents) must not be able to introduce new files.
+const WORKSPACE_UPLOAD_PERMISSION_GATE: Record<string, string[]> = {
+  governance: ['manage_governance_documents'],
+  secretary: ['manage_minutes'],
+  finances: ['manage_finances'],
+  historian: ['manage_archives'],
+  conduct: ['manage_conduct_records'],
+  procedure: ['manage_procedure_records'],
+};
+
+/** Returns true if the member may download from the given workspace. */
 async function canAccessWorkspaceObject(
   memberId: number,
   workspace: string,
 ): Promise<boolean> {
   const requiredPerms = WORKSPACE_PERMISSION_GATE[workspace];
   if (!requiredPerms) return false; // unknown workspace → deny
+  const ctx = await resolveRbacContext(memberId);
+  return requiredPerms.some((slug) => hasPermissionGroup(ctx, slug));
+}
+
+/** Returns true if the member may upload to the given workspace. */
+async function canUploadToWorkspace(
+  memberId: number,
+  workspace: string,
+): Promise<boolean> {
+  const requiredPerms = WORKSPACE_UPLOAD_PERMISSION_GATE[workspace];
+  if (!requiredPerms) return false;
   const ctx = await resolveRbacContext(memberId);
   return requiredPerms.some((slug) => hasPermissionGroup(ctx, slug));
 }
@@ -125,7 +150,7 @@ router.post(
 
     const { name, size, contentType, workspace } = parsed.data;
 
-    if (!(await canAccessWorkspaceObject(req.member.id, workspace))) {
+    if (!(await canUploadToWorkspace(req.member.id, workspace))) {
       res.status(403).json({ error: `Insufficient permissions for workspace: ${workspace}` });
       return;
     }

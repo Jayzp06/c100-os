@@ -17,6 +17,10 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         // Process control — used to relaunch the app after an update installs
         .plugin(tauri_plugin_process::init())
+        // Save-file dialog — used by the export menu to present a native file picker
+        .plugin(tauri_plugin_dialog::init())
+        // File-system write — used to write the exported bytes to the chosen path
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // Open DevTools automatically in debug builds only
             #[cfg(debug_assertions)]

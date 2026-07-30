@@ -13,7 +13,7 @@ import {
 import { eq, desc, sql } from "drizzle-orm";
 import { requirePermGroup, writeAuditLog } from "../lib/c100";
 import { ObjectStorageService } from "../lib/objectStorage";
-import { isExportFormat, sendCsv, sendXlsx, sendPdf, type ReportColumn } from "../lib/export";
+import { buildFilenameBase, isExportFormat, sendCsv, sendXlsx, sendPdf, type ReportColumn } from "../lib/export";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -253,7 +253,7 @@ router.get(
       .orderBy(desc(duesLedgerTable.createdAt));
 
     type Row = (typeof rows)[number];
-    const meta = { title: "Dues Ledger", filenameBase: "dues-ledger" };
+    const meta = { title: "Dues Ledger", filenameBase: buildFilenameBase("Dues Ledger") };
     const columns: ReportColumn<Row>[] = [
       { header: "Member ID",      key: "memberId",       value: (r) => r.memberId,                             width: 12 },
       { header: "Semester",       key: "semesterLabel",  value: (r) => r.semesterLabel,                        width: 18 },
@@ -284,7 +284,7 @@ router.get(
       .orderBy(desc(financialTransactionsTable.transactionDate));
 
     type Row = (typeof rows)[number];
-    const meta = { title: "Financial Transactions", filenameBase: "transactions" };
+    const meta = { title: "Financial Transactions", filenameBase: buildFilenameBase("Financial Transactions") };
     const columns: ReportColumn<Row>[] = [
       { header: "Date",           key: "transactionDate", value: (r) => String(r.transactionDate),            width: 14 },
       { header: "Type",           key: "transactionType", value: (r) => r.transactionType,                   width: 10 },

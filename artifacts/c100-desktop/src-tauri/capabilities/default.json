@@ -17,6 +17,9 @@
     "deep-link:default",
     "deep-link:allow-get-current",
     "os:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "dialog:allow-save",
+    "fs:allow-write-file",
+    "fs:allow-exists"
   ]
 }

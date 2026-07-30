@@ -31,7 +31,7 @@ import {
   canAccessMemberReport,
   committeeNameById,
 } from "../lib/reporting";
-import { isExportFormat, sendCsv, sendPdf, sendXlsx, type ReportColumn } from "../lib/export";
+import { buildFilenameBase, isExportFormat, sendCsv, sendPdf, sendXlsx, type ReportColumn } from "../lib/export";
 
 const router: IRouter = Router();
 
@@ -159,7 +159,7 @@ router.get(
       req,
       res,
       "Scholarship Eligibility Report",
-      "scholarship-eligibility",
+      buildFilenameBase("Scholarship Eligibility"),
       records.map((r) => ({ ...r, rank: null })),
     );
   }),
@@ -172,7 +172,7 @@ router.get(
     const ranked = [...records]
       .sort((a, b) => b.systemScore - a.systemScore)
       .map((r, idx) => ({ ...r, rank: idx + 1 }));
-    respondEligibility(req, res, "Conference Eligibility Report", "conference-eligibility", ranked);
+    respondEligibility(req, res, "Conference Eligibility Report", buildFilenameBase("Conference Eligibility"), ranked);
   }),
 );
 
@@ -255,7 +255,7 @@ const adminOverviewHandler = requirePermGroup("view_chapter_overview")(
     if (isExportFormat(format)) {
       const meta = {
         title: "Chapter Overview Report",
-        filenameBase: "chapter-overview",
+        filenameBase: buildFilenameBase("Chapter Overview"),
         period: overview.activeSem,
         summary: [
           { label: "Total Members", value: overview.totalMembers },
@@ -360,7 +360,7 @@ router.get(
     if (isExportFormat(format)) {
       const meta = {
         title: `${committee.name} Committee Report`,
-        filenameBase: `committee-${committee.id}-${sem}`.replace(/\s+/g, "-").toLowerCase(),
+        filenameBase: buildFilenameBase("Committee Report", committee.name),
         period: sem,
         summary: [
           { label: "Members", value: agg.memberCount },
@@ -437,7 +437,7 @@ router.get(
     if (isExportFormat(format)) {
       const meta = {
         title: `${event.title} — Event Report`,
-        filenameBase: `event-${event.id}`,
+        filenameBase: buildFilenameBase("Event Report", event.title),
         period: event.semester,
         summary: [
           { label: "Attendees", value: attendanceRows.length },
@@ -524,7 +524,7 @@ router.get(
     if (isExportFormat(format)) {
       const meta = {
         title: `${target.fullName} — Member Report`,
-        filenameBase: `member-${target.id}`,
+        filenameBase: buildFilenameBase("Member Report", target.fullName),
         summary: [
           { label: "Participation", value: `${participationPct}%` },
           { label: "Total Points", value: totalPoints },

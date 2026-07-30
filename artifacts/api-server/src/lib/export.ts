@@ -50,6 +50,33 @@ export interface ReportMeta {
 const CHAPTER_LINE =
   "Fort Valley State University \u00b7 Collegiate 100 \u00b7 Trailblazing Chapter";
 
+const CHAPTER_SHORT = "Trailblazing";
+
+/**
+ * Build a standardised, sanitised filename base (without extension) following
+ * the format:  C100_Trailblazing_<ReportType>_<YYYY-MM-DD>[_<suffix>]
+ *
+ * `reportType` should be a human-readable label such as "Chapter Overview" —
+ * spaces become underscores, non-alphanumeric characters are removed.
+ *
+ * `suffix` is appended (sanitised) after the date, useful for per-member or
+ * per-committee variants:  buildFilenameBase("Member Report", "Jaylin Phillips")
+ * → "C100_Trailblazing_Member_Report_2026-07-30_Jaylin_Phillips"
+ *
+ * The result is safe for all common filesystems.
+ */
+export function buildFilenameBase(reportType: string, suffix?: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const sanitize = (s: string) =>
+    s.replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "").replace(/_+/g, "_").replace(/^_|_$/g, "");
+  const parts = ["C100", CHAPTER_SHORT, sanitize(reportType), today];
+  if (suffix) {
+    const s = sanitize(suffix);
+    if (s) parts.push(s);
+  }
+  return parts.join("_");
+}
+
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
   const s = String(value);

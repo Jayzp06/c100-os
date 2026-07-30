@@ -1,0 +1,474 @@
+Prepare a focused C100 Operations v0.9.3 bug-fix work order.
+
+Do not add new Executive Suite features. Diagnose and repair the currently broken CRUD flows, desktop exports, report filenames, and stale committee display.
+
+Preserve:
+
+- Existing v0.9.2 updater configuration and signing identity
+- President’s explicit access to all officer workspaces
+- Platform Administrator technical access
+- Current RBAC isolation
+- Production member accounts and role assignments
+- Existing production migrations and legitimate records
+- Treasurer authenticated exports
+- Private workspace file authorization
+
+## Confirmed working behavior
+
+- President can see all intended Executive Suite officer workspaces without receiving every officer role.
+- Reports now load.
+- Reports can be exported.
+- Production backend is reachable.
+- v0.9.2 updater works.
+
+## Current failures
+
+- Chief of Staff task creation does not allow assigning the task to a member.
+- Bylaws Officer workspace errors.
+- Sergeant-at-Arms workspace errors.
+- Secretary workspace errors.
+- Historian workspace errors.
+- Report export filenames are too generic.
+- Desktop exports do not allow choosing the save destination.
+- Desktop Dashboard and Leaderboard still display incorrect committee structure:
+  - Bylaws appears as a committee.
+  - Economic Development and Economic Empowerment may appear separately instead of the canonical Economic Empowerment & Development committee.
+
+## 1. Diagnose every failure before modifying code
+
+For each broken workspace, reproduce the failure against the production backend from:
+
+1. Production web app
+2. Installed v0.9.2 desktop app
+
+Capture:
+
+- UI action
+- endpoint
+- request method
+- sanitized request payload
+- HTTP status
+- structured response body
+- production server log
+- database error code, when applicable
+- expected response schema
+- actual response schema
+- permission checked
+- whether the failure occurs before or after the request is sent
+
+Do not replace errors with generic messages during diagnosis.
+
+Create a defect table for:
+
+- Chief of Staff summary/list/create/update
+- Bylaws list/upload/create/publish/archive/restore/download
+- Sergeant-at-Arms list/create/update/archive/restore
+- Secretary list/create/update/approve/revise/archive/restore
+- Historian list/create/update/upload/archive/restore
+- Parliamentarian list/create/update/quorum/motions, as a regression check
+- Treasurer list/create/export, as a regression check
+
+Identify whether each defect is:
+
+- frontend payload mismatch
+- generated-client mismatch
+- backend validation
+- production migration/schema mismatch
+- missing RBAC permission
+- object-storage failure
+- empty-data crash
+- query join failure
+- response-schema mismatch
+- stale cache
+- Tauri-only behavior
+
+## 2. Chief of Staff member assignment
+
+Chief of Staff tasks must support assigning a valid chapter member as owner.
+
+Audit:
+
+- member-list endpoint used by the owner selector
+- permissions required to retrieve assignment candidates
+- frontend query execution
+- owner field name
+- generated request schema
+- backend validator
+- database foreign key
+- task response owner structure
+
+Required behavior:
+
+- Show an Owner selector in create and edit flows.
+- Load active chapter members only.
+- Display member name and useful secondary identification such as email or officer position.
+- Store the member’s canonical member ID, not free text.
+- Defaulting to the current user is acceptable, but the owner must remain selectable.
+- Support unassigned tasks only if the schema intentionally allows it.
+- Prevent assignment to inactive or deleted members.
+- Existing tasks must render their owner correctly.
+- Reassignment must be audited.
+- Collaborator selection must use the same valid member source.
+- Empty member lists must show an informative state instead of breaking the form.
+
+Authorization must not grant Chief of Staff access to full confidential member administration. If the existing member-management endpoint is too privileged, create a minimal permission-protected assignment-candidate endpoint returning only:
+
+- member ID
+- display name
+- safe secondary label
+- active state
+
+Do not expose GPA, dues, conduct history, private notes, or unrelated profile fields.
+
+President and Chief of Staff must be able to retrieve safe assignment candidates through `manage_executive_operations`.
+
+## 3. Bylaws workspace repair
+
+Test and repair:
+
+- Empty document list
+- Document metadata creation
+- PDF upload
+- DOCX upload
+- Draft save
+- Publishing
+- Transactional superseding
+- Archive/restore
+- Parliamentarian read-only view/download
+
+Verify:
+
+- production migration/table exists
+- storage bucket/environment configuration exists
+- upload URL endpoint uses the `governance` scope
+- server validates MIME type and size
+- stored response field names match the generated frontend client
+- an empty database returns an empty list
+- no UI assumes a current document already exists
+- publishing without a valid document produces a validation message, not a generic crash
+
+Show specific safe error messages for:
+
+- unsupported file type
+- oversized file
+- storage configuration unavailable
+- permission denied
+- invalid metadata
+- upload failure
+- publish conflict
+
+## 4. Sergeant-at-Arms workspace repair
+
+Test and repair:
+
+- Empty conduct list
+- Incident creation
+- Meeting-order note creation
+- Optional member link
+- Optional event link
+- Update
+- Resolution
+- Archive/restore
+
+Verify:
+
+- `manage_conduct_records` is the consistent workspace/API permission
+- safe member/event selectors work
+- optional foreign keys accept null correctly
+- empty events or member lists do not crash forms
+- confidential fields never appear in unrelated APIs
+- President access works through explicit permission
+- Platform Administrator and Technology Chair remain denied unless separately assigned
+
+## 5. Secretary workspace repair
+
+Test and repair:
+
+- Empty records list
+- Agenda creation
+- Minutes creation
+- Correspondence creation
+- Attachment upload
+- Draft update
+- Submit
+- Approve
+- Revise approved record
+- Archive/restore
+
+Verify:
+
+- required dates and record types match backend enums
+- optional approval fields accept null
+- attachment upload uses the correct workspace storage scope
+- approved records cannot be silently overwritten
+- revision creates/preserves history correctly
+- empty lists return valid responses
+- the frontend uses the generated request/response schema exactly
+
+## 6. Historian workspace repair
+
+Test and repair:
+
+- Empty archive
+- Text-only archive entry
+- Image upload
+- PDF upload
+- Video upload within allowed limits
+- Timeline/list views
+- Search/filter
+- Archive/restore
+
+Verify:
+
+- upload MIME/size rules match between frontend and server
+- storage response fields match
+- nullable event/person references work
+- visibility values match backend enums
+- missing attachments do not crash rendering
+- private archive entries remain protected
+- production object-storage configuration is available
+
+## 7. Improve all workspace error handling
+
+For every Executive Suite mutation and query:
+
+- Parse structured API errors.
+- Display safe specific error messages.
+- Include an optional request/correlation ID.
+- Provide Retry for failed queries.
+- Keep entered form values after a failed submission.
+- Do not close a dialog until the mutation succeeds.
+- Disable duplicate submissions while pending.
+- Invalidate and refetch the correct queries after success.
+- Never expose stack traces, SQL, tokens, credentials, or internal storage paths.
+
+## 8. Committee production/API/cache consistency
+
+First compare the raw production API response with the desktop display.
+
+Inspect:
+
+- committee list endpoint
+- dashboard endpoint
+- leaderboard endpoint
+- reports committee endpoint
+- active committee filters
+- React Query keys
+- persistent desktop cache, if any
+
+Required canonical display:
+
+- Bylaws must not appear as a participating committee.
+- Economic Development must not appear separately.
+- Economic Empowerment must not appear separately.
+- Only `Economic Empowerment & Development` may appear.
+- Inactive committees must not appear in Dashboard, Committee views, Leaderboard, or current Reports.
+- Historical records may retain inactive committee IDs internally without displaying them as active participants.
+
+If the raw production API still returns incorrect committees:
+
+- verify the production repair SQL actually ran
+- verify committee IDs 3, 5, and 8
+- safely complete the production reconciliation
+- do not modify legitimate member accounts or role assignments
+
+If the raw production API is correct but desktop is stale:
+
+- remove or migrate the stale persisted query cache
+- add a cache-buster/version key tied to application/API schema version
+- invalidate Dashboard, Committees, Leaderboard, and Reports on app startup, login, logout, and manual refresh
+- do not permanently cache organization structure
+- show cached data only with a visible stale/offline indication
+- replace cached results when the production API responds
+
+Add a safe “Refresh data” action that invalidates all organization-data queries without clearing authentication.
+
+## 9. Specific export filenames
+
+Generate descriptive sanitized filenames. and when exporting spefic member files incldue the mmeber name
+
+Filename format:
+
+`C100_<Chapter>_<Report-Type>_<YYYY-MM-DD>.<extension>`
+
+Examples:
+
+- `C100_Trailblazing_Chapter_Overview_2026-07-30.pdf`
+- `C100_Trailblazing_Scholarship_Eligibility_2026-07-30.xlsx`
+- `C100_Trailblazing_Conference_Eligibility_2026-07-30.csv`
+- `C100_Trailblazing_Committee_Report_2026-07-30.pdf`
+- `C100_Trailblazing_Treasurer_Transactions_2026-07-30.xlsx`
+- `C100_Trailblazing_Dues_Report_2026-07-30.csv`
+
+Rules:
+
+- Derive the chapter label safely.
+- Remove unsupported filename characters.
+- Keep filenames within reasonable length limits.
+- Use the correct extension.
+- Preserve the server-provided filename when it is already more specific and valid.
+- Set a correct `Content-Disposition` filename on backend exports.
+- Make web and desktop filenames consistent.
+
+## 10. Desktop save-location picker
+
+For Tauri desktop exports, allow the user to choose the filename and destination before saving.
+
+Use supported Tauri v2 plugins/APIs:
+
+- save-file dialog
+- filesystem write support
+
+Required flow:
+
+1. User selects CSV, XLSX, or PDF.
+2. App requests the authenticated export as bytes/blob.
+3. App reads the backend’s suggested filename or builds the standardized filename.
+4. Native Save dialog opens with:
+   - suggested filename
+   - correct extension
+   - correct file-type filter
+5. User chooses destination.
+6. App writes the exact bytes to that path.
+7. Show success with the selected filename.
+8. If the user cancels, exit without an error.
+9. If writing fails, show a safe actionable error.
+10. Never write without an explicit user action.
+
+Security and correctness:
+
+- Reuse the existing authenticated Tauri export request.
+- Do not expose bearer tokens.
+- Do not convert binary XLSX/PDF data through text.
+- Validate/normalize the selected extension.
+- Do not overwrite an existing file without the native dialog’s normal confirmation behavior.
+- Add only the minimal Tauri filesystem/dialog permissions required.
+- Do not grant broad arbitrary filesystem access if a scoped permission is available.
+
+Web behavior remains a normal browser download with the descriptive filename.
+
+## 11. Production schema and environment verification
+
+For every broken workspace verify production contains:
+
+- required tables
+- required columns
+- enum/check values
+- indexes
+- foreign keys
+- migration records
+- object-storage configuration
+- RBAC permission groups and assignments
+
+Do not modify previously applied migrations. Add a forward migration only when an actual missing schema change is required.
+
+Do not seed fake data to make empty states work.
+
+## 12. Tests
+
+Add tests for:
+
+### Chief of Staff
+
+- active member assignment candidates
+- owner selection
+- reassignment
+- inactive-member rejection
+- collaborator assignment
+- safe candidate response fields
+- empty candidate list
+
+### Executive Suite CRUD
+
+- empty-state list responses
+- valid create flows
+- invalid payload messages
+- optional foreign keys
+- archive/restore
+- correct permission enforcement
+- upload success/failure paths
+- response-schema compatibility
+
+### Committees
+
+- inactive Bylaws excluded everywhere
+- inactive Economic Development excluded everywhere
+- canonical Economic Empowerment & Development included once
+- raw API and dashboard/leaderboard/report selectors agree
+- cache invalidation replaces stale committee data
+
+### Exports
+
+- descriptive filenames
+- filename sanitization
+- correct extensions
+- web Content-Disposition
+- Tauri save cancellation
+- Tauri binary write success
+- Tauri write failure
+- authenticated export request
+- no automatic write without user action
+
+### Regression
+
+- President retains all officer workspaces.
+- Reports continue loading.
+- Existing CSV/XLSX/PDF contents remain correct.
+- Updater checking remains unchanged.
+- Authentication remains unchanged.
+- Private object authorization remains unchanged.
+- Existing complete test suite remains green.
+
+## 13. Visual verification
+
+Test production web and installed desktop behavior.
+
+Verify:
+
+- Chief of Staff owner selector
+- Bylaws create/upload flow
+- Sergeant-at-Arms creation flow
+- Secretary creation/revision flow
+- Historian creation/upload flow
+- Parliamentarian regression
+- Treasurer regression
+- corrected Dashboard committees
+- corrected Leaderboard committees
+- report filename suggestions
+- desktop native Save dialog
+- cancellation behavior
+- successful saved CSV/XLSX/PDF files open correctly
+
+## 14. Release decision
+
+These frontend changes require a desktop release.
+
+After all checks pass:
+
+- prepare version `0.9.3`
+- keep installer versions numeric
+- preserve the updater signing key
+- preserve `createUpdaterArtifacts: true`
+- push the verified commit and `v0.9.3` tag
+- let GitHub Actions create a draft release
+- inspect Mac, Windows, signature, and `latest.json` artifacts
+- keep the release as a draft until production backend/schema changes are deployed and verified
+- publish Replit backend first
+- manually publish GitHub v0.9.3 second
+- test the in-app update from v0.9.2 to v0.9.3
+
+Before committing, report:
+
+1. Root cause and exact fix for every broken workspace.
+2. Whether each failure was frontend, backend, schema, RBAC, storage, or cache.
+3. Chief of Staff assignment-candidate endpoint and safe response fields.
+4. Committee API response before and after.
+5. Whether production cleanup was complete.
+6. Cache invalidation strategy.
+7. Final export filename rules.
+8. Tauri save-dialog implementation and permissions.
+9. Migration changes.
+10. Test totals and failures.
+11. Production deployment requirements.
+12. Confirmation that no legitimate members, roles, or records were deleted.
+13. Draft release and Actions links after successful build.

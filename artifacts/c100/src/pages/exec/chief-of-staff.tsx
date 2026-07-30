@@ -93,7 +93,12 @@ interface Summary {
   recentDone: { id: number; title: string; completionDate: string | null }[];
 }
 
-interface Member { id: number; fullName: string; }
+interface AssignmentCandidate {
+  id: number;
+  fullName: string;
+  email: string;
+  membershipStatus: string;
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -197,9 +202,12 @@ export default function ChiefOfStaffPage() {
     queryFn: () => fetch("/api/chief-of-staff/tasks").then((r) => r.json()),
   });
 
-  const { data: members = [] } = useQuery<Member[]>({
-    queryKey: ["members"],
-    queryFn: () => fetch("/api/members").then((r) => r.json()),
+  const { data: members = [] } = useQuery<AssignmentCandidate[]>({
+    queryKey: ["cos", "assignment-candidates"],
+    queryFn: () => fetch("/api/chief-of-staff/assignment-candidates").then((r) => {
+      if (!r.ok) throw new Error(`Failed to load members: ${r.status}`);
+      return r.json();
+    }),
   });
 
   // ── Derived list ──────────────────────────────────────────────────────────────
@@ -648,7 +656,7 @@ function TaskForm({
 }: {
   form: typeof EMPTY_FORM;
   setForm: React.Dispatch<React.SetStateAction<typeof EMPTY_FORM>>;
-  members: Member[];
+  members: AssignmentCandidate[];
   onSubmit: () => void;
   loading: boolean;
   submitLabel: string;

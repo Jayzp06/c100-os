@@ -8,7 +8,7 @@ import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
 import { governanceDocumentsTable } from "@workspace/db";
-import { eq, desc, isNull } from "drizzle-orm";
+import { and, eq, desc, isNull } from "drizzle-orm";
 import { requirePermGroup, writeAuditLog } from "../lib/c100";
 
 const router: IRouter = Router();
@@ -140,12 +140,17 @@ router.post(
     // Wrap both UPDATEs in a single transaction so the supersede and the
     // promote are atomic — partial failure leaves the database unchanged.
     const updated = await db.transaction(async (tx) => {
-      // Step 1: mark all existing current docs in this category as superseded.
+      // Step 1: mark the CURRENT document in this category as superseded.
+      // Filtering by status = 'current' ensures archived and draft documents
+      // in the same category are not inadvertently downgraded.
       await tx
         .update(governanceDocumentsTable)
         .set({ status: "superseded", updatedById: actorId })
         .where(
-          eq(governanceDocumentsTable.category, doc.category),
+          and(
+            eq(governanceDocumentsTable.category, doc.category),
+            eq(governanceDocumentsTable.status, "current"),
+          ),
         );
 
       // Step 2: promote this document to current.

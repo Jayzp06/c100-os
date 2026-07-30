@@ -11,9 +11,11 @@ import { IS_TAURI, DESKTOP_API_URL } from "@/lib/desktop-auth";
 const DESKTOP_TOKEN_KEY = "c100-desktop-token";
 
 /**
- * Downloads a report file in the Tauri desktop app by fetching it with the
- * stored Bearer token and triggering a blob download — plain `<a href>` links
- * don't carry auth headers or resolve against the production API in Tauri.
+ * Downloads a report file in the Tauri desktop app.
+ *
+ * Fetches the file with the stored Bearer token (plain anchor tags don't carry
+ * auth headers in Tauri), then opens the native OS save-file dialog so the
+ * user can choose where to save the exported file — no temp-folder hunting.
  */
 async function downloadInTauri(url: string, format: string) {
   const token = localStorage.getItem(DESKTOP_TOKEN_KEY);
@@ -26,19 +28,28 @@ async function downloadInTauri(url: string, format: string) {
       console.error(`[C100 Export] Download failed: ${resp.status} ${resp.statusText}`);
       return;
     }
-    const blob = await resp.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = objectUrl;
+    const arrayBuffer = await resp.arrayBuffer();
+
+    // Extract suggested filename from the server's Content-Disposition header.
     const disp = resp.headers.get("Content-Disposition") ?? "";
     const match = disp.match(/filename[^;=\n]*=(["']?)([^"'\n;]+)\1/);
-    a.download = match?.[2] ?? `report.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    const suggestedName = match?.[2] ?? `C100_Trailblazing_Report.${format}`;
+
+    // Show the native OS save-file dialog.
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const { writeFile } = await import("@tauri-apps/plugin-fs");
+
+    const extLabel: Record<string, string> = { csv: "CSV", xlsx: "Excel", pdf: "PDF" };
+    const savePath = await save({
+      defaultPath: suggestedName,
+      filters: [{ name: extLabel[format] ?? format.toUpperCase(), extensions: [format] }],
+    });
+
+    if (!savePath) return; // user dismissed the dialog — not an error
+
+    await writeFile(savePath, new Uint8Array(arrayBuffer));
   } catch (err) {
-    console.error("[C100 Export] Download error:", err);
+    console.error("[C100 Export] Save error:", err);
   }
 }
 

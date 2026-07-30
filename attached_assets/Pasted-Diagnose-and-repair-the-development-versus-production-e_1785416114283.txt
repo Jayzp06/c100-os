@@ -1,0 +1,306 @@
+Diagnose and repair the development-versus-production environment mismatch affecting C100 Operations v0.9.2.
+
+Do not add features, change the updater, rotate signing keys, create v0.9.3, or rebuild the desktop application until the backend/database mismatch is proven and repaired.
+
+## Observed evidence
+
+The installed v0.9.2 desktop application shows the new permission-tag frontend, proving that the updater replaced the desktop bundle successfully.
+
+However, the desktop application also shows:
+
+- Old fake events that were previously removed from the Replit development environment
+- 14 eligible events and old participation data
+- President + Platform Administrator tags, but most Executive Suite workspaces are inaccessible
+- Treasurer is the only accessible officer workspace
+- Saving multiple organization-role tags fails
+- Reports displays “Something went wrong”
+- Replit Preview/web development environment does not show these same failures
+
+This strongly suggests that:
+
+1. Replit Preview is using a development database.
+2. The desktop app is using the deployed production API/database.
+3. Production data, migrations, and RBAC seeds do not match development.
+4. Alternatively, the desktop build may contain an incorrect or stale `VITE_API_URL`.
+
+Treat this as an environment/data compatibility investigation—not a partial frontend update.
+
+## 1. Prove which backend each client uses
+
+Identify and report the exact API base URL used by:
+
+- Replit Preview frontend
+- Production web frontend
+- v0.9.2 macOS desktop build
+- v0.9.2 Windows desktop build
+- GitHub Actions desktop build environment
+
+Inspect:
+
+- `VITE_API_URL`
+- API client initialization
+- Tauri environment detection
+- Production fallback logic
+- GitHub Actions secrets/variables
+- Replit development variables
+- Replit production deployment variables
+
+Do not print secret values. Reporting nonsecret API URLs is allowed.
+
+Confirm whether the desktop is using:
+
+`https://c-100-reward-system.replit.app`
+
+If it uses another deployment, stale URL, `replit.dev`, localhost, or an old domain, stop and report the exact mismatch before changing anything.
+
+Add a safe diagnostic field to `/api/system/info` if needed:
+
+- environment name
+- deployment identifier
+- application version
+- release channel
+- database schema version
+- RBAC seed version
+
+Do not expose database credentials or sensitive infrastructure information.
+
+## 2. Compare development and production safely
+
+Perform read-only comparisons first.
+
+For both development and production, report:
+
+- Current database migration records
+- Whether migrations `0004` and `0005` are recorded
+- Whether their recorded hashes match the committed migration files
+- Count of active events
+- Event titles and IDs, if safe for this private application
+- Attendance-record count
+- Point-ledger/progress count
+- Current org-role slugs
+- Current permission-group slugs
+- President permission assignments
+- Platform Administrator permission assignments
+- Jaylin’s organization roles
+- Jaylin’s system roles
+- Resolved `/me` permission groups for Jaylin
+- Whether `chief_of_staff`, `sergeant_at_arms`, and `bylaws_chair` are assignable
+- Whether `manage_executive_operations`, `manage_conduct_records`, and other workspace permissions exist
+- Whether the production schema supports multiple `member_org_roles`
+- Whether Reports queries reference tables/columns present in production
+
+Do not mutate production during this comparison.
+
+## 3. Capture the exact failures
+
+Reproduce these failures against the production backend and record:
+
+### Multiple role assignment
+
+Attempt the same authorized role update request used by the UI for:
+
+- president
+- treasurer
+- bylaws_chair
+- committee_chair
+
+Capture:
+
+- Request method and endpoint
+- Sanitized request body
+- HTTP status
+- Structured response body
+- Server error
+- Relevant production log entry
+
+Do not repeatedly change Jaylin’s assignments during diagnosis. If the failed request partially mutates data, restore the original safe assignment state immediately and report it.
+
+The role update must be atomic:
+
+- Either all valid organization-role tags are saved
+- Or none are changed
+- System roles must remain unchanged unless explicitly included in an authorized system-role mutation
+
+### Reports
+
+Call each production report endpoint separately:
+
+- Chapter overview
+- Scholarship eligibility
+- Conference eligibility
+- Committee reports
+
+Capture the exact HTTP status and server-side error. Replace the frontend’s generic “Something went wrong” with a safe actionable message, but fix the backend cause first.
+
+### Executive Suite
+
+For each workspace, compare:
+
+- declared `requiredPermission`
+- President’s seeded permission
+- production database permission assignment
+- `/me` resolved permission
+- `me.can(requiredPermission)`
+- backend endpoint authorization result
+
+Do not add a President bypass. Repair missing production permissions through the idempotent RBAC seed.
+
+## 4. Repair production migrations correctly
+
+If production is missing migrations:
+
+- Use the committed forward migration system.
+- Never modify an already-applied migration file.
+- Never use an unreviewed runtime schema push against production.
+- Never mark a migration as applied unless its complete schema changes are already present and verified.
+- If schema objects exist but migration history is missing, compare every expected table, column, index, constraint, and enum before repairing migration bookkeeping.
+- Record exactly what was verified and what migration-history repair was performed.
+- Back up or record the production migration state before changing it.
+
+Ensure production contains all schema required by:
+
+- Executive Suite officer workspaces
+- Chief of Staff
+- Multiple organization roles
+- Permission groups
+- Reports
+- Treasurer
+- Governance
+- Secretary
+- Historian
+- Conduct
+- Parliamentary procedure
+- Private-object metadata
+
+## 5. Apply the RBAC seed safely
+
+Run the existing idempotent RBAC seed against production only after the schema is compatible.
+
+Verify afterward:
+
+- President holds every nontechnical officer-workspace permission.
+- Platform Administrator holds Technology permissions.
+- Jaylin’s President + Platform Administrator combination resolves to all officer workspaces plus Technology.
+- No legacy role-name bypass is restored.
+- No existing member is deleted.
+- No existing valid role assignment is deleted.
+- No fake members or records are created.
+
+## 6. Reconcile old production test data
+
+The production database appears to contain old fake events and progress records that were removed only from development.
+
+Before deleting anything, produce a dry-run report containing:
+
+- Exact production event IDs and titles proposed for deletion
+- Attendance records connected to those events
+- Point/progress records connected to those events
+- Check-in sessions connected to those events
+- Reports or audit records affected
+- Whether any record was created after the application began real production use
+- Current production member count
+- Exact member accounts that will be preserved
+
+The intended clean production state is:
+
+- No fake/test events
+- No fake attendance
+- No fake point/progress data
+- No fake committee progress
+- No fake nudges
+- No fake members
+- Preserve Jaylin Phillips
+- Preserve all legitimate member accounts, if any now exist
+- Preserve Jaylin’s President and Platform Administrator assignments
+- Preserve audit history when practical
+
+Do not use broad deletion criteria such as “delete all events” without showing the resolved IDs first.
+
+After the dry-run identifies the exact legacy test records, delete only those confirmed records transactionally and in dependency-safe order.
+
+Do not delete:
+
+- members
+- users
+- current role assignments
+- new Executive Suite records
+- legitimate uploads
+- legitimate financial records
+- legitimate official records
+
+Report deleted row counts by table.
+
+## 7. Fix cache behavior only if necessary
+
+After the production backend/database is corrected:
+
+- Clear or invalidate React Query caches after role mutations.
+- Ensure `/me`, member details, reports, events, and workspace-access queries refetch.
+- Ensure role changes do not require a desktop reinstall.
+- Ensure stale API responses are not persisted indefinitely.
+- Add a visible “Refresh permissions” behavior only if normal invalidation is insufficient.
+
+Do not blame local cache for records that the production API still returns.
+
+## 8. Verification
+
+Verify using all three clients:
+
+1. Replit Preview
+2. Production web app at `https://c-100-reward-system.replit.app`
+3. Installed v0.9.2 desktop app
+
+All three should show consistent production-relevant behavior, accounting for development data isolation where intentional.
+
+On production web and desktop verify:
+
+- Old fake events are gone.
+- Eligible event count is zero unless real events exist.
+- Fake participation/progress is zero.
+- Jaylin retains President.
+- Jaylin retains Platform Administrator.
+- Multiple organization-role tags save successfully.
+- System-role assignment remains protected by `manage_roles`.
+- All President officer workspaces are enabled.
+- Technology is enabled through Platform Administrator.
+- Reports load without errors.
+- Treasurer exports still work.
+- Chief of Staff loads.
+- Sergeant-at-Arms loads.
+- Direct unauthorized requests remain forbidden.
+- `/api/system/info` identifies the expected production deployment and schema/RBAC version.
+
+Run:
+
+- Migration validation
+- RBAC seed validation
+- OpenAPI generation
+- Backend typecheck
+- Frontend typecheck
+- Complete automated tests
+- Production API smoke tests
+- Desktop smoke test against production
+
+## 9. Release decision
+
+If the problem is entirely production deployment/data/migration/RBAC state and v0.9.2 code is correct:
+
+- Repair and republish the backend.
+- Do not create another desktop release.
+- Confirm the existing v0.9.2 desktop application begins working after refresh/relogin.
+
+Create v0.9.3 only if a desktop frontend or bundled API-URL code change is genuinely required.
+
+Before committing or releasing anything, report:
+
+1. Exact API URL used by each client.
+2. Development versus production database differences.
+3. Root cause of the old events.
+4. Root cause of multiple-role assignment failure.
+5. Root cause of Reports failure.
+6. Root cause of Executive Suite permission failure.
+7. Production migrations before and after.
+8. RBAC state before and after.
+9. Exact data deleted, if cleanup was authorized by the resolved dry run.
+10. Confirmation that Jaylin and all legitimate members remain intact.
+11. Whether a new desktop release is actually necessary.

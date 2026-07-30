@@ -1,6 +1,6 @@
 {
   "name": "@workspace/c100-desktop",
-  "version": "0.9.3",
+  "version": "0.9.5",
   "private": true,
   "scripts": {
     "dev": "tauri dev",

@@ -1,0 +1,124 @@
+Before running the production repair or creating v0.9.3, resolve these final discrepancies.
+
+## 1. Confirm the Reports route mismatch was fixed
+
+The audit found:
+
+- Frontend requests `/api/reports/chapter-overview`
+- Backend route is `/api/reports/admin-overview`
+
+The final report did not confirm the repair.
+
+Choose one canonical route and align:
+
+- OpenAPI specification
+- generated client
+- frontend hook
+- backend route
+- tests
+
+Prefer retaining a backward-compatible authenticated alias temporarily if v0.9.2 desktop clients already request the old path.
+
+Test all four report endpoints against production after Publish and report their exact statuses.
+
+An empty production dataset must return a valid empty report, not `404` or `500`.
+
+## 2. Revise the production repair SQL safely
+
+Do not execute the current script yet.
+
+The existing script preserves:
+
+- Event 27: `Test 2`
+- Event 28: `Calander test1`
+
+These appear to be test records and conflict with the required clean production state.
+
+Produce a new dry run showing events 27 and 28 and all related:
+
+- attendance
+- check-ins
+- point/progress records
+- committee relationships
+- audit relationships
+
+Unless evidence shows either is legitimate, include both in the confirmed test-data cleanup.
+
+The final production state should contain:
+
+- zero fake/test events
+- zero fake attendance
+- zero fake progress
+- zero fake eligible events
+- no Bylaws participating committee
+- only one `Economic Empowerment & Development` committee
+
+Make the repair script:
+
+- transactional
+- explicit-ID based
+- dependency-safe
+- repeatable or safely aborting when already applied
+- equipped with pre-change and post-change verification queries
+
+Take or confirm a recoverable production database backup before executing it.
+
+Do not delete members through this script.
+
+Preserve members 52, 53, and 54 until Jaylin separately confirms whether they are legitimate.
+
+## 3. Publish backend before deciding on v0.9.3
+
+Publish the corrected backend and verify that production startup logs show:
+
+- 45 permission groups
+- 99 expected organization-role assignments
+- successful RBAC seed completion
+- no migration or seed errors
+
+Then test the already-installed v0.9.2 desktop client:
+
+- Add Chief of Staff while preserving President and Platform Administrator.
+- Refresh or sign out/in.
+- Open all President workspaces.
+- Load every Reports tab.
+
+Do not assume v0.9.3 is required merely because TypeScript types or a local cast changed.
+
+A v0.9.3 desktop release is required only if the installed v0.9.2 runtime:
+
+- does not offer the Chief of Staff tag
+- sends an invalid runtime payload
+- requests a report route that cannot be supported through a backend-compatible alias
+- requires the improved diagnostics/error UI
+- retains stale permissions without a refresh/relogin workaround
+
+Report the actual v0.9.2 results before bumping the version.
+
+## 4. Startup seed safety
+
+`seedRbac()` now runs during every server startup.
+
+Verify:
+
+- it is genuinely idempotent
+- concurrent autoscale starts cannot corrupt or race role assignments
+- failures are logged clearly
+- a seed failure does not leave partially deleted permissions
+- it never deletes legitimate custom assignments
+- it does not silently modify production members
+
+If startup seeding is unsafe under multiple instances, move it to the controlled deployment/migration phase instead.
+
+## 5. Final report
+
+Before any new desktop release, provide:
+
+1. Production report-route statuses.
+2. Whether the route mismatch was repaired.
+3. Production RBAC startup result.
+4. Revised cleanup dry run including events 27 and 28.
+5. Backup confirmation.
+6. Exact cleanup row counts.
+7. v0.9.2 Chief of Staff assignment result.
+8. Whether v0.9.3 is actually required and why.

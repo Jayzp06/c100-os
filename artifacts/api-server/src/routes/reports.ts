@@ -244,9 +244,12 @@ const OVERVIEW_ACTIVITY_COLUMNS: ReportColumn<AdminOverviewActivity>[] = [
   { header: "Method", key: "method", value: (r: any) => r.method },
 ];
 
-router.get(
-  "/reports/admin-overview",
-  requirePermGroup("view_chapter_overview")(async (req, res) => {
+// Both paths serve the same handler.
+// /reports/chapter-overview is kept as a backward-compatible alias for
+// the v0.9.2 desktop client, which shipped with that path baked in.
+// /reports/admin-overview is the canonical path used by the web frontend.
+const adminOverviewHandler = requirePermGroup("view_chapter_overview")(
+  async (req, res) => {
     const overview = await buildAdminOverview();
     const format = req.query.format;
     if (isExportFormat(format)) {
@@ -273,8 +276,12 @@ router.get(
     const { activeSem: _activeSem, ...json } = overview;
     res.json(json);
     void sql;
-  }),
+  },
 );
+
+router.get("/reports/admin-overview", adminOverviewHandler);
+// Backward-compatible alias — do not remove while v0.9.2 desktop clients are in the field.
+router.get("/reports/chapter-overview", adminOverviewHandler);
 
 const MEMBER_ROSTER_COLUMNS: ReportColumn<any>[] = [
   { header: "Name", key: "fullName", value: (r) => r.fullName },

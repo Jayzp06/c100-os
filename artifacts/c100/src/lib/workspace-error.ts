@@ -1,4 +1,43 @@
 /**
+ * queryErrorMessage — turn a workspace query error into a safe, user-facing message.
+ *
+ * Workspace queryFns should throw `new Error(String(r.status))` on failure and
+ * also call `console.warn('[C100 Workspace]', path, 'HTTP', r.status)` for
+ * diagnostics.  This function decodes the numeric status into a phrase suitable
+ * for display in an ErrorBlock.
+ *
+ * Never surfaces stack traces, SQL, tokens, or internal paths.
+ */
+export function queryErrorMessage(error: unknown, context?: string): string {
+  if (error instanceof Error) {
+    const status = Number(error.message);
+    if (Number.isFinite(status) && status >= 100) {
+      switch (status) {
+        case 401:
+          return "Your session has expired. Please sign in again.";
+        case 403:
+          return context
+            ? `You don't have permission to access this ${context}.`
+            : "You don't have permission to perform this action.";
+        case 404:
+          return "This data is unavailable — the server may need to be updated.";
+        case 409:
+          return "A conflict occurred — this record may have already changed.";
+        case 422:
+          return "The server could not process this data. Please contact an administrator.";
+        default:
+          if (status >= 500) {
+            return "A server error occurred. Please try again in a moment.";
+          }
+      }
+    }
+  }
+  return context ? `Could not load ${context}.` : "Could not load data.";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
  * workspaceApiError — turn a failed API Response into a safe, user-facing message.
  *
  * Priority:

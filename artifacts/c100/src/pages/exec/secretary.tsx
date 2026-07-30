@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Mail, Plus, CheckCircle2, FileText, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { workspaceApiError } from "@/lib/workspace-error";
+import { workspaceApiError, queryErrorMessage } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "secretary")!;
 
@@ -38,12 +38,26 @@ export default function SecretaryWorkspacePage() {
 
   const { data: meetings, isLoading: meetingsLoading, error: meetingsError } = useQuery<MeetingRecord[]>({
     queryKey: ["secretary", "meetings"],
-    queryFn: async () => { const r = await fetch("/api/secretary/meetings"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => {
+      const r = await fetch("/api/secretary/meetings");
+      if (!r.ok) {
+        console.warn("[C100 Workspace] /api/secretary/meetings HTTP", r.status);
+        throw new Error(String(r.status));
+      }
+      return r.json();
+    },
   });
 
-  const { data: correspondence, isLoading: corrLoading } = useQuery<Correspondence[]>({
+  const { data: correspondence, isLoading: corrLoading, error: corrError } = useQuery<Correspondence[]>({
     queryKey: ["secretary", "correspondence"],
-    queryFn: async () => { const r = await fetch("/api/secretary/correspondence"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => {
+      const r = await fetch("/api/secretary/correspondence");
+      if (!r.ok) {
+        console.warn("[C100 Workspace] /api/secretary/correspondence HTTP", r.status);
+        throw new Error(String(r.status));
+      }
+      return r.json();
+    },
   });
 
   const [meetingOpen, setMeetingOpen] = useState(false);
@@ -169,7 +183,7 @@ export default function SecretaryWorkspacePage() {
               </Dialog>
             </div>
 
-            {meetingsLoading ? <LoadingBlock /> : meetingsError ? <ErrorBlock message="Could not load meeting records." /> : (
+            {meetingsLoading ? <LoadingBlock /> : meetingsError ? <ErrorBlock message={queryErrorMessage(meetingsError, "meeting records")} /> : (
               <Card>
                 <CardContent className="pt-4">
                   {meetingList.length === 0 ? (
@@ -253,7 +267,7 @@ export default function SecretaryWorkspacePage() {
               </Dialog>
             </div>
 
-            {corrLoading ? <LoadingBlock /> : (
+            {corrLoading ? <LoadingBlock /> : corrError ? <ErrorBlock message={queryErrorMessage(corrError, "correspondence")} /> : (
               <Card>
                 <CardContent className="pt-4">
                   {corrList.length === 0 ? (

@@ -3,7 +3,7 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/lib/me";
-import { IS_TAURI, DESKTOP_API_URL } from "@/lib/desktop-auth";
+import { IS_TAURI, DESKTOP_API_URL, getStoredToken } from "@/lib/desktop-auth";
 import { getDesktopMetadata, type AppMetadata } from "@/lib/desktop-info";
 import { LoadingBlock } from "@/components/page-states";
 import { Pill } from "@/components/badges";
@@ -52,6 +52,16 @@ const REQUIRED_FIELDS: Record<string, string[]> = {
   "/api/me":                   ["id"],
 };
 
+/**
+ * Endpoints that require authentication.
+ * /api/health is intentionally excluded — it is always unauthenticated.
+ */
+const AUTHENTICATED_PATHS = new Set([
+  "/api/me",
+  "/api/system/info",
+  "/api/system/diagnostics",
+]);
+
 function classifyStatus(status: number): EndpointCategory {
   if (status === 401) return "unauthenticated";
   if (status === 403) return "forbidden";
@@ -71,10 +81,21 @@ async function probeEndpoint(path: string): Promise<ProbeResult> {
   let category: EndpointCategory = "network_unreachable";
   let detail: string | undefined;
 
+  // Build request headers — authenticated endpoints attach the desktop bearer
+  // token when running in Tauri. Web sessions rely on cookies (credentials:include).
+  const headers: Record<string, string> = {};
+  if (AUTHENTICATED_PATHS.has(path) && IS_TAURI) {
+    const token = getStoredToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+
   try {
     const res = await fetch(fullUrl, {
       method: "GET",
       credentials: "include",
+      headers,
       signal: AbortSignal.timeout(10_000),
     });
     const durationMs = Math.round(performance.now() - t0);
@@ -187,7 +208,7 @@ const ENDPOINT_DESCRIPTION: Record<string, string> = {
   "/api/health":             "Unauthenticated health check — verifies server is reachable",
   "/api/system/info":        "Application metadata — requires authentication",
   "/api/system/diagnostics": "API + database status — requires tech-chair or admin role",
-  "/api/me":                 "Session profile — verifies authentication cookie",
+  "/api/me":                 "Session profile — verifies authentication (bearer token on desktop, cookie on web)",
 };
 
 function Row({ label, value }: { label: string; value: string }) {

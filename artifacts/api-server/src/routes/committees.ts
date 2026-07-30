@@ -254,7 +254,7 @@ router.get("/committees/:id", async (req, res) => {
   }
   const [agg, all, sem] = await Promise.all([
     buildCommitteeAggregate(committee),
-    db.select().from(committeesTable),
+    db.select().from(committeesTable).where(eq(committeesTable.active, true)),
     getActiveSemester(),
   ]);
   const aggregates = await Promise.all(all.map((c) => buildCommitteeAggregate(c)));

@@ -18,7 +18,7 @@ import { Archive, Image, Plus, CalendarCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { workspaceApiError } from "@/lib/workspace-error";
+import { workspaceApiError, queryErrorMessage } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "historian")!;
 
@@ -32,7 +32,14 @@ export default function HistorianWorkspacePage() {
 
   const { data: entries, isLoading, error } = useQuery<ArchiveEntry[]>({
     queryKey: ["historian", "archive"],
-    queryFn: async () => { const r = await fetch("/api/historian/archive"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => {
+      const r = await fetch("/api/historian/archive");
+      if (!r.ok) {
+        console.warn("[C100 Workspace] /api/historian/archive HTTP", r.status);
+        throw new Error(String(r.status));
+      }
+      return r.json();
+    },
   });
 
   const [open, setOpen] = useState(false);
@@ -149,7 +156,7 @@ export default function HistorianWorkspacePage() {
           </Dialog>
         </div>
 
-        {isLoading ? <LoadingBlock /> : error ? <ErrorBlock message="Could not load archive." /> : (
+        {isLoading ? <LoadingBlock /> : error ? <ErrorBlock message={queryErrorMessage(error, "archive")} /> : (
           <Card>
             <CardContent className="pt-4">
               {list.length === 0 ? (

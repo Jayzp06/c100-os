@@ -27,7 +27,7 @@ import { BookOpen, Plus, FileText, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { workspaceApiError } from "@/lib/workspace-error";
+import { workspaceApiError, queryErrorMessage } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "bylaws")!;
 
@@ -71,7 +71,10 @@ function useGovernanceDocs() {
     queryKey: ["governance", "documents"],
     queryFn: async () => {
       const res = await fetch("/api/governance/documents");
-      if (!res.ok) throw new Error("Failed to load documents");
+      if (!res.ok) {
+        console.warn("[C100 Workspace] /api/governance/documents HTTP", res.status);
+        throw new Error(String(res.status));
+      }
       return res.json();
     },
   });
@@ -167,7 +170,7 @@ export default function BylawsWorkspacePage() {
         {isLoading ? (
           <LoadingBlock />
         ) : error ? (
-          <ErrorBlock message="Could not load governance documents." />
+          <ErrorBlock message={queryErrorMessage(error, "governance documents")} />
         ) : (
           <>
             <div className="flex items-center justify-between">

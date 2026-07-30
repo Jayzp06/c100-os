@@ -19,7 +19,7 @@ import { DollarSign, TrendingUp, TrendingDown, Plus, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ReportExportMenu } from "@/components/report-export";
-import { workspaceApiError } from "@/lib/workspace-error";
+import { workspaceApiError, queryErrorMessage } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "treasurer")!;
 
@@ -35,14 +35,28 @@ export default function TreasurerWorkspacePage() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const { data: dues, isLoading: duesLoading } = useQuery<DuesEntry[]>({
+  const { data: dues, isLoading: duesLoading, error: duesError } = useQuery<DuesEntry[]>({
     queryKey: ["treasurer", "dues"],
-    queryFn: async () => { const r = await fetch("/api/treasurer/dues"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => {
+      const r = await fetch("/api/treasurer/dues");
+      if (!r.ok) {
+        console.warn("[C100 Workspace] /api/treasurer/dues HTTP", r.status);
+        throw new Error(String(r.status));
+      }
+      return r.json();
+    },
   });
 
   const { data: summary } = useQuery<{ transactions: TxnSummary; dues: DuesSummary }>({
     queryKey: ["treasurer", "summary"],
-    queryFn: async () => { const r = await fetch("/api/treasurer/summary"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => {
+      const r = await fetch("/api/treasurer/summary");
+      if (!r.ok) {
+        console.warn("[C100 Workspace] /api/treasurer/summary HTTP", r.status);
+        throw new Error(String(r.status));
+      }
+      return r.json();
+    },
   });
 
   const [duesOpen, setDuesOpen] = useState(false);
@@ -173,7 +187,7 @@ export default function TreasurerWorkspacePage() {
               </Dialog>
             </div>
 
-            {duesLoading ? <LoadingBlock /> : (
+            {duesLoading ? <LoadingBlock /> : duesError ? <ErrorBlock message={queryErrorMessage(duesError, "dues ledger")} /> : (
               <Card>
                 <CardContent className="pt-4">
                   {duesList.length === 0 ? (

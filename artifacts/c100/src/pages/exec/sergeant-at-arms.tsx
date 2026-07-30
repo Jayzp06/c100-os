@@ -17,7 +17,7 @@ import {
 import { ShieldAlert, Plus, CheckCircle2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { workspaceApiError } from "@/lib/workspace-error";
+import { workspaceApiError, queryErrorMessage } from "@/lib/workspace-error";
 
 const workspace = EXEC_WORKSPACES.find((w) => w.slug === "sergeant-at-arms")!;
 
@@ -38,7 +38,14 @@ export default function SergeantAtArmsWorkspacePage() {
 
   const { data: records, isLoading, error } = useQuery<ConductRecord[]>({
     queryKey: ["conduct", "records"],
-    queryFn: async () => { const r = await fetch("/api/conduct/records"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => {
+      const r = await fetch("/api/conduct/records");
+      if (!r.ok) {
+        console.warn("[C100 Workspace] /api/conduct/records HTTP", r.status);
+        throw new Error(String(r.status));
+      }
+      return r.json();
+    },
   });
 
   const [open, setOpen] = useState(false);
@@ -70,11 +77,11 @@ export default function SergeantAtArmsWorkspacePage() {
   const archiveRecord = useMutation({
     mutationFn: async (id: number) => {
       const r = await fetch(`/api/conduct/records/${id}/archive`, { method: "POST" });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["conduct", "records"] }); toast({ title: "Record archived." }); },
-    onError: () => toast({ title: "Failed to archive.", variant: "destructive" }),
+    onError: (err: Error) => toast({ title: err.message, variant: "destructive" }),
   });
 
   const list = records ?? [];
@@ -130,7 +137,7 @@ export default function SergeantAtArmsWorkspacePage() {
           </Dialog>
         </div>
 
-        {isLoading ? <LoadingBlock /> : error ? <ErrorBlock message="Could not load conduct records." /> : (
+        {isLoading ? <LoadingBlock /> : error ? <ErrorBlock message={queryErrorMessage(error, "conduct records")} /> : (
           <Card>
             <CardContent className="pt-4">
               {list.length === 0 ? (

@@ -1,0 +1,123 @@
+C100 Operations v0.9.5 Production Repair — diagnose and fix the remaining production-only issues. Do not change the app version or create another GitHub release yet.
+
+Current verified state:
+
+- Desktop client version: 0.9.5
+- API base URL: https://c-100-reward-system.replit.app
+- `/api/health` returns HTTP 200
+- `/api/me`, `/api/system/info`, and `/api/system/diagnostics` return HTTP 401 inside the Diagnostics page
+- The user is visibly signed into the desktop app as President and Platform Administrator
+- Therefore, server connectivity works, but the Diagnostics probes are not using the desktop app’s authenticated request mechanism
+- Leaderboard and Dashboard still display Bylaws and separate Economic Development/Economic Empowerment committees
+- Some Executive Suite workspaces still fail in production
+
+Complete this work in order:
+
+1. Fix authenticated diagnostics
+
+The Diagnostics page currently uses raw `fetch()` probes. Protected probes must use the same desktop authentication mechanism as the working API client.
+
+- Attach the current bearer token or use the project’s authenticated fetch wrapper for:
+  - `/api/me`
+  - `/api/system/info`
+  - `/api/system/diagnostics`
+- Keep `/api/health` unauthenticated.
+- Do not rely only on browser cookies because Tauri desktop authentication may use bearer tokens.
+- A signed-in Platform Administrator must receive:
+  - `/api/me`: 200
+  - `/api/system/info`: 200
+  - `/api/system/diagnostics`: 200
+- A genuinely signed-out user should still receive 401.
+- Never display or log the token.
+
+2. Audit production committee data and filtering
+
+Inspect the production database, not only the development database.
+
+Required final active committee structure:
+
+- Bylaws must not exist as an active participating committee.
+- Economic Development must not remain as a separate active committee.
+- Economic Empowerment must be named `Economic Empowerment & Development`.
+- Bylaws must be excluded from:
+  - Dashboard
+  - Leaderboard
+  - Committee pages
+  - Committee reports
+  - All committee totals and progress calculations
+- Inactive committees must be excluded at the API/query layer, not merely hidden in the frontend.
+- Confirm whether the production repair SQL was actually executed. If not, run the approved repair transaction after taking a database backup.
+- Do not delete or deactivate real member accounts.
+
+3. Audit every Executive Suite workspace against production
+
+Test each workspace while authenticated as President:
+
+- Chief of Staff
+- Bylaws Officer
+- Secretary
+- Treasurer
+- Historian
+- Sergeant-at-Arms
+- Parliamentarian
+- Vice President
+- President
+- Technology
+
+For every failing workspace, capture:
+
+- Requested endpoint
+- HTTP method
+- Exact HTTP status
+- Safe response error
+- Required permission
+- Whether the production RBAC tables contain that permission
+- Whether the required database migration/table exists
+
+President must receive access to every officer workspace through explicit permission assignments. Platform Administrator should additionally access Technology through its technical permissions.
+
+Run the RBAC seed idempotently against production and verify the Chief of Staff and officer-workspace migrations are applied. Do not add blanket authorization bypasses.
+
+4. Improve workspace failure reporting
+
+Replace generic “Something went wrong” displays with safe status-aware messages:
+
+- 401: session expired; sign in again
+- 403: missing required permission
+- 404: endpoint unavailable or production backend is outdated
+- 409: conflicting record
+- 422: invalid submitted data
+- 500+: server error with a retry option
+
+Log the route, status, and safe error description for diagnosis, but never log tokens, cookies, SQL, secrets, or stack traces.
+
+5. Prevent stale production data
+
+After successful mutations or role changes:
+
+- Invalidate `/api/me`, permission, workspace, committee, dashboard, leaderboard, and report queries as appropriate.
+- Ensure the desktop client does not retain old committee results indefinitely.
+- Verify that “Refresh data” reloads all organization data without signing the user out.
+
+6. Verification
+
+Test against the deployed production URL, not just Replit Preview.
+
+Provide a final table containing:
+
+- Endpoint
+- Expected status
+- Actual production status
+- Permission used
+- Result
+
+Also provide:
+
+- Production migration status
+- Production RBAC seed counts
+- Final active committee list
+- Executive Suite workspace pass/fail matrix
+- Frontend and backend typecheck results
+- Full automated test totals
+
+Do not bump beyond v0.9.5, create a new tag, run the desktop release workflow, or publish another GitHub release. First repair and verify the production backend and web frontend. We will create the next desktop version only after all production checks pass.

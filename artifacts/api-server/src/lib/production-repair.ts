@@ -22,6 +22,8 @@ import {
   committeesTable,
   eventsTable,
   attendanceTable,
+  committeeAssignmentsTable,
+  membersTable,
   conductRecordsTable,
   eventOperationalDetailsTable,
   executiveTasksTable,
@@ -69,14 +71,12 @@ export async function repairProductionData(): Promise<void> {
   const hasTestEvents = eventCheck.length > 0;
 
   if (!anyCommitteeActive && !hasTestEvents) {
-    logger.info("Production data repair: already applied — skipping");
-    return;
-  }
-
-  logger.info(
-    { anyCommitteeActive, hasTestEvents },
-    "Production data repair: applying",
-  );
+    logger.info("Production data repair: committee/event repairs already applied — skipping");
+  } else {
+    logger.info(
+      { anyCommitteeActive, hasTestEvents },
+      "Production data repair: applying committee/event repairs",
+    );
 
   // ── Step 1: Delete FK dependents for test events ──────────────────────────
   const [attDel, conductDel, opDetailsDel, tasksDel, genDocsDel] =
@@ -136,6 +136,42 @@ export async function repairProductionData(): Promise<void> {
   logger.info(
     "Production data repair: committee 8 renamed to 'Economic Empowerment & Development'",
   );
+
+  logger.info("Production data repair: committee/event repairs complete");
+  } // end else
+
+  // ── Step 5: Delete seed members and their data ────────────────────────────
+  // Seed members have IDs 1–15 and 27. Their attendance and committee
+  // assignments cascade on member delete (onDelete: "cascade"), but we
+  // delete them explicitly for clarity and safety.
+  const SEED_MEMBER_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 27];
+
+  const [seedMemberCheck] = await db
+    .select({ id: membersTable.id })
+    .from(membersTable)
+    .where(inArray(membersTable.id, SEED_MEMBER_IDS))
+    .limit(1);
+
+  if (seedMemberCheck) {
+    logger.info("Production data repair: removing seed members");
+    // Delete dependents first to avoid FK constraint errors on DBs that
+    // do not auto-cascade across all relationships.
+    await db
+      .delete(attendanceTable)
+      .where(inArray(attendanceTable.userId, SEED_MEMBER_IDS));
+    await db
+      .delete(committeeAssignmentsTable)
+      .where(inArray(committeeAssignmentsTable.memberId, SEED_MEMBER_IDS));
+    await db
+      .delete(membersTable)
+      .where(inArray(membersTable.id, SEED_MEMBER_IDS));
+    logger.info(
+      { count: SEED_MEMBER_IDS.length },
+      "Production data repair: seed members removed",
+    );
+  } else {
+    logger.info("Production data repair: seed members already removed — skipping");
+  }
 
   logger.info("Production data repair: complete");
 }

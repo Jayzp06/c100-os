@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { ErrorBlock, LoadingBlock } from "@/components/page-states";
 import { useMe } from "@/lib/me";
 import LoginPage from "@/pages/login";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { formatTime12h } from "@/lib/utils";
 import { Pill } from "@/components/badges";
 
 export default function EventQrPage() {
@@ -50,11 +52,23 @@ function QrDisplay({ id }: { id: number }) {
     },
   });
 
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, []);
+
+  function handleCopy() {
+    if (!qr.data) return;
+    navigator.clipboard.writeText(qr.data.token.toUpperCase()).then(() => {
+      setCopied(true);
+      toast({ title: "Code copied", description: "Paste it into the check-in field." });
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const expiresAt = qr.data ? new Date(qr.data.expiresAt).getTime() : 0;
   const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
@@ -96,21 +110,36 @@ function QrDisplay({ id }: { id: number }) {
                 {event.data.title}
               </h1>
               <p className="text-white/70">
-                {event.data.location} · {event.data.startTime} –{" "}
-                {event.data.endTime}
+                {event.data.location} · {formatTime12h(event.data.startTime)} –{" "}
+                {formatTime12h(event.data.endTime)}
               </p>
               {!event.data.qrActive ? (
                 <Pill tone="warning">Check-in is not active</Pill>
               ) : null}
-              <div className="space-y-1 pt-4">
+              <div className="space-y-2 pt-4">
                 <p className="text-sm text-white/60">Current code</p>
                 {qr.data ? (
-                  <p
-                    className="font-mono text-4xl tracking-[0.4em] text-[hsl(var(--secondary))]"
-                    data-testid="text-token"
-                  >
-                    {qr.data.token.toUpperCase()}
-                  </p>
+                  <>
+                    <p
+                      className="font-mono text-4xl tracking-[0.4em] text-[hsl(var(--secondary))]"
+                      data-testid="text-token"
+                    >
+                      {qr.data.token.toUpperCase()}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-1 gap-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+                      onClick={handleCopy}
+                    >
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      {copied ? "Copied!" : "Copy code"}
+                    </Button>
+                  </>
                 ) : (
                   <p className="text-white/50">—</p>
                 )}

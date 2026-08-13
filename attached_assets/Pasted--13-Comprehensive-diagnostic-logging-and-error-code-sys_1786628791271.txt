@@ -1,0 +1,356 @@
+## 13. Comprehensive diagnostic logging and error-code system
+
+Build a centralized, production-safe diagnostic logging system for the web app, desktop client, API server, database operations, storage operations, exports, authentication, updater, check-in, and Executive Suite.
+
+The objective is that every meaningful failure produces:
+
+1. A stable error category/code.
+2. A unique incident/request ID.
+3. A timestamp.
+4. A safe user-facing message.
+5. A detailed protected diagnostic record explaining where and why it failed.
+
+Do not scatter unrelated `console.log()` statements throughout the project. Implement shared logging and error-handling utilities.
+
+### A. Standard error response contract
+
+All API errors must return a consistent JSON structure:
+
+```json
+{
+  "error": {
+    "code": "CHECKIN_CODE_EXPIRED",
+    "message": "This check-in code is no longer active.",
+    "requestId": "req_01J...",
+    "timestamp": "2026-08-13T14:32:10.123Z",
+    "retryable": false
+  }
+}
+```
+
+Requirements:
+
+- `code` is stable and machine-readable.
+- `requestId` uniquely identifies the request/incident.
+- `timestamp` is UTC ISO 8601.
+- `message` is safe to show to the user.
+- `retryable` indicates whether retrying may succeed.
+- Preserve the correct HTTP status.
+- Never return stack traces, SQL, database credentials, tokens, cookies, private storage paths, or internal secrets.
+- Maintain compatibility with intentional existing codes such as:
+  - `already_checked_in`
+  - `invalid_or_expired_code`
+- If existing clients depend on the legacy top-level `{ error, message }` structure, provide a temporary backward-compatible representation while migrating clients.
+
+### B. Error-code registry
+
+Create one documented error-code registry shared by the backend and frontend where practical.
+
+Use clear domains, for example:
+
+- `AUTH_NOT_AUTHENTICATED`
+- `AUTH_TOKEN_EXPIRED`
+- `AUTH_FORBIDDEN`
+- `RBAC_PERMISSION_DENIED`
+- `VALIDATION_FAILED`
+- `RESOURCE_NOT_FOUND`
+- `RESOURCE_CONFLICT`
+- `DATABASE_QUERY_FAILED`
+- `DATABASE_MIGRATION_MISSING`
+- `STORAGE_NOT_CONFIGURED`
+- `STORAGE_UPLOAD_FAILED`
+- `STORAGE_DOWNLOAD_DENIED`
+- `EXPORT_GENERATION_FAILED`
+- `EXPORT_WRITE_FAILED`
+- `CHECKIN_INVALID_CODE`
+- `CHECKIN_CODE_EXPIRED`
+- `CHECKIN_ALREADY_COMPLETED`
+- `CHECKIN_CODE_ROTATION_FAILED`
+- `EXEC_WORKSPACE_LOAD_FAILED`
+- `COMMITTEE_DATA_INCONSISTENT`
+- `UPDATER_CHECK_FAILED`
+- `UPDATER_DOWNLOAD_FAILED`
+- `UPDATER_SIGNATURE_FAILED`
+- `UPDATER_INSTALL_FAILED`
+- `NETWORK_UNREACHABLE`
+- `RESPONSE_SCHEMA_MISMATCH`
+- `INTERNAL_SERVER_ERROR`
+
+Every registered code must document:
+
+- Meaning
+- HTTP status where applicable
+- User-facing message
+- Whether retry is appropriate
+- Severity
+- Owning subsystem
+
+Do not create a new arbitrary code for every occurrence of the same problem. The stable code identifies the failure type; the unique request/incident ID identifies the specific occurrence.
+
+### C. Structured server logs
+
+Add centralized API middleware that assigns a request ID to every request and includes it in:
+
+- Response header, such as `X-Request-ID`
+- Structured error response
+- Every server log produced during that request
+
+Write logs as structured JSON with fields such as:
+
+```json
+{
+  "timestamp": "2026-08-13T14:32:10.123Z",
+  "level": "error",
+  "code": "CHECKIN_CODE_ROTATION_FAILED",
+  "requestId": "req_01J...",
+  "service": "api-server",
+  "environment": "production",
+  "route": "/api/events/:id/check-in-code",
+  "method": "POST",
+  "httpStatus": 500,
+  "operation": "rotate_checkin_code",
+  "actorMemberId": 42,
+  "resourceType": "event",
+  "resourceId": 18,
+  "durationMs": 91,
+  "retryable": false,
+  "safeDetail": "The active-code transaction could not be completed."
+}
+```
+
+Record:
+
+- UTC timestamp
+- Severity: debug, info, warn, error, fatal
+- Stable error code
+- Request/incident ID
+- Service and environment
+- Sanitized route template, not sensitive query contents
+- HTTP method/status
+- Operation name
+- Authenticated actor’s internal ID when appropriate
+- Affected resource type/ID when appropriate
+- Duration
+- Retryability
+- Safe diagnostic explanation
+- Sanitized internal cause classification
+- Application version/release
+- Database migration/schema version where useful
+
+Do not record plaintext check-in codes, passwords, bearer tokens, authentication cookies, signing keys, financial credentials, private conduct details, document contents, full upload URLs, or unnecessarily sensitive personal information.
+
+Email addresses, names, financial records, conduct records, and uploaded-document metadata must be minimized or redacted.
+
+### D. Capture every important failure boundary
+
+Add logging at these boundaries:
+
+- Authentication and token validation
+- Authorization/RBAC denials
+- Request validation
+- Database connection/query/transaction failures
+- Migration/schema mismatches
+- Object-storage URL creation, upload, download, and authorization
+- Report generation and exports
+- Native desktop file-save operations
+- Event creation/update
+- Check-in code generation, rotation, validation, and duplicate check-in
+- QR generation/copy/prefill
+- Dashboard/committee/leaderboard query failures
+- Member and role mutations
+- Every Executive Suite query and mutation
+- React rendering failures
+- Generated-client/schema mismatches
+- Network timeouts and unavailable API
+- Tauri updater check, download, signature verification, installation, and relaunch
+
+Expected user behavior such as an ordinary 401 from a signed-out user should not be logged as a critical server failure. Use appropriate severity and avoid noisy duplicate logs.
+
+### E. Frontend and Tauri error capture
+
+Create a shared frontend error-reporting utility and top-level React error boundary.
+
+Capture:
+
+- Error code
+- Request ID returned by the server
+- UTC timestamp
+- Page/workspace
+- Sanitized route/operation
+- HTTP status
+- Desktop/web environment
+- App version
+- OS and architecture in Tauri
+- Safe failure message
+
+For network failures where the API cannot issue a request ID, generate a client incident ID such as `cli_...`.
+
+Display useful errors to users:
+
+`Check-in failed because this code is no longer active. Error code: CHECKIN_CODE_EXPIRED. Reference: req_01J...`
+
+Provide a Copy Details action that copies only safe support information:
+
+- Error code
+- Reference/request ID
+- Timestamp
+- Operation/page
+- HTTP status
+- App version
+
+Never copy tokens, cookies, stack traces, private record contents, or database information.
+
+Avoid reporting the same frontend failure repeatedly during automatic rerenders or query retries. Deduplicate repeated errors within a reasonable window.
+
+### F. Diagnostics log viewer
+
+Add a protected Diagnostic Logs section under System → Diagnostics.
+
+Access must require an explicit technical permission such as:
+
+`view_technical_diagnostic_logs`
+
+Grant it only to:
+
+- Technology Chair
+- Platform Administrator
+
+Do not automatically grant it to general officers. President access should require the explicit technical permission rather than a role-name bypass.
+
+Features:
+
+- List newest incidents first.
+- Search by exact request/incident ID.
+- Search/filter by:
+  - error code
+  - severity
+  - subsystem
+  - route/operation
+  - HTTP status
+  - environment
+  - application version
+  - date/time range
+- Show:
+  - timestamp
+  - code
+  - reference ID
+  - safe detailed explanation
+  - affected subsystem
+  - route/operation
+  - status
+  - duration
+  - app version
+  - whether it is retryable
+- Open a sanitized detail view.
+- Provide Copy Diagnostic Details.
+- Support manual refresh.
+- Make pagination server-side.
+- Do not load the entire log history into the browser.
+- Do not expose raw stack traces or confidential record contents in the normal UI.
+
+The existing connectivity probes should remain visible and should include their request ID/error code when a probe fails.
+
+### G. Protected internal detail
+
+Server logs may retain a sanitized technical cause useful for debugging, but the Diagnostics UI must not expose unrestricted raw exceptions.
+
+If raw stack traces are retained:
+
+- Restrict them to server-side logging infrastructure.
+- Remove secrets and sensitive values.
+- Never send them through ordinary API responses.
+- Never include them in member-visible UI.
+- Disable source-code exposure.
+- Use production-safe stack handling.
+
+The protected diagnostic explanation should still be actionable, for example:
+
+- `Required production table officer_documents was not found. Migration 0004 may be missing.`
+- `Caller lacks manage_conduct_records.`
+- `Event check-in code did not match the latest active code version.`
+- `Dashboard query returned inactive committee ID 5.`
+- `Tauri updater selected no artifact compatible with darwin-x86_64.`
+
+### H. Storage, retention, and performance
+
+Determine the project’s appropriate logging destination.
+
+Requirements:
+
+- Do not store unlimited logs in the primary database.
+- Define retention, initially 30 days unless infrastructure requires a shorter period.
+- Automatically expire old diagnostic logs.
+- Add indexes for timestamp, code, request ID, severity, and subsystem.
+- Keep diagnostic logs separate from permanent governance/business audit records.
+- Logging failure must never break the original application request.
+- Use asynchronous/nonblocking logging where practical.
+- Apply rate limiting and deduplication to repetitive failures.
+- Do not log successful high-volume requests excessively.
+- Support environment-controlled log levels.
+- Production must not enable unrestricted debug logging by default.
+
+Permanent audit history and operational diagnostics are different:
+
+- Audit history records who changed important business data and should follow its own retention rules.
+- Diagnostic logs explain technical failures and should expire under the diagnostic retention policy.
+
+### I. Health and correlation verification
+
+Enhance Diagnostics so each probe reports:
+
+- Endpoint
+- HTTP status
+- Duration
+- Response received
+- UTC timestamp
+- Request ID
+- Error code, if any
+- Safe explanation
+
+Confirm a request can be traced from:
+
+1. Desktop/web error message
+2. Request ID
+3. Diagnostics search
+4. Matching structured server record
+
+### J. Required tests
+
+Add tests verifying:
+
+- Every API error receives a request ID.
+- Error response schema is consistent.
+- Correct stable code is returned for validation, authentication, authorization, not-found, conflict, database, storage, export, check-in, and internal failures.
+- Request IDs propagate into server logs and response headers.
+- Sensitive headers/tokens/cookies are redacted.
+- Plaintext check-in codes are never logged.
+- Confidential conduct details are never logged.
+- Duplicate errors are controlled.
+- Diagnostics-log access is denied to general members and unrelated officers.
+- Technology Chair and Platform Administrator can search sanitized logs.
+- Exact request-ID lookup works.
+- Retention cleanup removes expired diagnostic records.
+- A logging failure does not fail the underlying request.
+- React error boundary presents a safe reference code.
+- Tauri network and updater failures produce client incident IDs.
+- Copy Details excludes sensitive information.
+- Existing API clients remain compatible during error-contract migration.
+
+### K. Verification report
+
+Before committing, provide:
+
+1. Error-response schema.
+2. Complete error-code registry.
+3. Request-ID generation and propagation flow.
+4. Logging destinations and retention policy.
+5. Redaction rules.
+6. Diagnostic Logs permission matrix.
+7. Every failure boundary instrumented.
+8. Example sanitized records for check-in, Executive Suite, database, storage, and updater failures.
+9. Test totals and failures.
+10. Performance/storage risks.
+11. Confirmation that no secrets, plaintext check-in codes, private document contents, or confidential conduct details are exposed.
+12. Confirmation that logging failures cannot take down the application.
+
+Keep this work compatible with the urgent repair. Prioritize request IDs, standardized error responses, check-in logging, Executive Suite logging, and the protected diagnostic viewer first. More advanced aggregation may follow after tonight’s meeting.

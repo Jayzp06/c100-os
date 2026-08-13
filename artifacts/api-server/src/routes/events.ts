@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { normalizeCheckInCode } from "@workspace/checkin-codes";
 import {
   CreateEventBody,
   ListEventsQueryParams,
@@ -410,6 +411,18 @@ router.post(
       return;
     }
     if (!isValidQrToken(event.id, body.data.token)) {
+      res
+        .status(400)
+        .json({ error: "QR token is invalid or has expired. Try again." });
+      return;
+    }
+    // Require the submitted token to match the server-stored current token so
+    // that rotating to a new code immediately invalidates the previous one,
+    // even if it is still within the HMAC grace window.
+    if (
+      !event.currentQrToken ||
+      normalizeCheckInCode(body.data.token) !== event.currentQrToken
+    ) {
       res
         .status(400)
         .json({ error: "QR token is invalid or has expired. Try again." });

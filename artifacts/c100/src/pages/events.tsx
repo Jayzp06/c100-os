@@ -28,6 +28,7 @@ import {
   eventTypeLabel,
 } from "@/components/badges";
 import { ArrowRight, MapPin, Plus } from "lucide-react";
+import { formatTime12h } from "@/lib/utils";
 
 export default function EventsPage() {
   const me = useMe();
@@ -139,7 +140,7 @@ function EventsList() {
                       {e.title}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span>{formatDate(e.date)} · {e.startTime}–{e.endTime}</span>
+                      <span>{formatDate(e.date)} · {formatTime12h(e.startTime)}–{formatTime12h(e.endTime)}</span>
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         {e.location}

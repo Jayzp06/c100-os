@@ -55,7 +55,7 @@ initDesktop();
 // and the copy used by the rest of the app.
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
-  key: "c100-query-cache-v2",
+  key: "c100-query-cache-v3",
   throttleTime: 1_000,
 });
 

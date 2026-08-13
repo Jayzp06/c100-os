@@ -1,0 +1,344 @@
+C100 Operations — urgent meeting-readiness repair
+
+The chapter meeting is today at 6:00 PM. Do not build new features, redesign screens, change authentication, alter updater signing keys, or begin another broad Executive Suite expansion.
+
+Diagnose and repair only the confirmed production defects below. Work against the production database and deployed API used by the desktop application—not merely the Replit development database or Preview environment.
+
+Do not create or publish a desktop release until the production backend, production data, and deployed web app have been verified.
+
+## 1. Establish the actual data source
+
+The installed desktop client uses:
+
+`https://c-100-reward-system.replit.app`
+
+Confirm that Dashboard, Members, Committees, Leaderboard, Events, Check-In, Reports, and Executive Suite all use this production API.
+
+The desktop application must not contain bundled fallback demo data, hardcoded seeded names, or a second local dataset.
+
+For every incorrect screen, determine whether its data comes from:
+
+- Production database
+- Production API response
+- Frontend hardcoded fallback data
+- React Query cache
+- Persisted desktop cache/local storage
+- Development-only seed data accidentally running in production
+
+Report the exact source before modifying anything.
+
+## 2. Safely remove all fake production data
+
+Fake/test data is still visible through the desktop application, including:
+
+- Fake members
+- Fake committee chairs
+- Fake committee assignments
+- Fake events
+- Fake attendance/check-in records
+- Fake committee progress
+- Fake member progress
+- Seed/demo names that were never registered chapter members
+- Any other demonstration records inserted by development seeds
+
+This is a production-data cleanup. Do not assume that cleaning the Replit development database affects the desktop application.
+
+Before deleting anything:
+
+1. Create or verify a current production database backup.
+2. Inventory every proposed record.
+3. Classify each record as:
+   - confirmed real,
+   - confirmed seed/test,
+   - uncertain.
+4. Delete only records proven to be seed/test data.
+5. Preserve all real accounts and records.
+6. Preserve Jaylin Phillips and his President and Platform Administrator access.
+7. Do not delete uncertain records automatically.
+8. Respect foreign keys and delete dependents transactionally where appropriate.
+9. Produce before-and-after counts for every affected table.
+
+Disable all automatic demo-data seeding in production. Development seed commands must require an explicit non-production environment and must fail closed when the environment is production.
+
+RBAC permission seeding may remain idempotent, but it must not create fake members, committees, events, attendance, progress, chairs, or business records.
+
+## 3. Correct the canonical committee structure everywhere
+
+The full Leaderboard is now correct, but the Dashboard and Committee views remain incorrect.
+
+Required active structure:
+
+- Bylaws is not a participating committee and must not appear.
+- Economic Development must not appear separately.
+- Economic Empowerment must not appear separately.
+- Only `Economic Empowerment & Development` may appear.
+- Committee chairs must come from real active member-role/committee assignments.
+- Never display a seeded chair name or free-text fallback name.
+
+Audit the exact endpoints used by:
+
+- Dashboard
+- Full Leaderboard
+- Committee list
+- Committee detail
+- Member Dashboard
+- Reports
+- Progress calculations
+
+Use the working Leaderboard behavior as the canonical comparison.
+
+Every current-data query must filter inactive and archived committees at the API/database layer. Do not merely hide incorrect rows in the frontend.
+
+Remove hardcoded committee arrays and demo fallback data.
+
+After repair, return the raw production committee names and chair assignments from each endpoint and prove that all screens agree.
+
+## 4. Remove stale desktop data
+
+If the production API becomes correct but the desktop still displays old records:
+
+- Audit React Query persistence, local storage, IndexedDB, and Tauri storage.
+- Add a safe cache/schema version bump.
+- Purge only obsolete organization-data cache, never authentication.
+- Invalidate Dashboard, Members, Committees, Leaderboard, Events, Reports, permissions, and Executive Suite queries:
+  - at authenticated application startup,
+  - after login,
+  - after relevant mutations,
+  - when Refresh Data is selected.
+- Never treat cached organization data as authoritative after a successful production response.
+- Do not show bundled demonstration data while offline.
+- If offline data is shown, clearly label it stale/offline.
+
+## 5. Fix Executive Suite data-resolution failures
+
+Some Executive Suite portals still error.
+
+Test every workspace against the deployed production API while authenticated as President:
+
+- President
+- Vice President
+- Chief of Staff
+- Bylaws Officer
+- Secretary
+- Treasurer
+- Historian
+- Sergeant-at-Arms
+- Parliamentarian
+- Technology
+
+For every initial query and failing action capture:
+
+- Workspace
+- UI action
+- HTTP method
+- Production endpoint
+- HTTP status
+- Safe response body
+- Required permission
+- Whether President has that explicit permission
+- Required database table/migration
+- Whether the production migration is applied
+- Whether failure is web-only, Tauri-only, or both
+
+Repair the actual cause:
+
+- 401: authentication token/cookie propagation
+- 403: missing or incorrect explicit RBAC assignment
+- 404: unregistered/stale production route
+- 409/422: payload/schema mismatch
+- 500: database migration, query, join, enum, null handling, or serialization defect
+- Network error: API URL, CORS, timeout, or connectivity
+
+Do not add President, Platform Administrator, or Technology Chair bypasses. Access must remain permission-based.
+
+Every protected Tauri request must use the shared authenticated request mechanism and attach the bearer token safely.
+
+Show specific safe errors with Retry instead of a generic “Something went wrong.”
+
+## 6. Display event times in 12-hour format
+
+All user-facing event times must use 12-hour local time with AM/PM.
+
+Examples:
+
+- `18:00` → `6:00 PM`
+- `08:30` → `8:30 AM`
+- `12:00` → `12:00 PM`
+- `00:00` → `12:00 AM`
+
+Requirements:
+
+- Preserve canonical database/API time values.
+- Change presentation formatting only.
+- Use the organization/user’s applicable timezone consistently.
+- Avoid browser-dependent parsing that shifts a time-only value.
+- Apply this to Dashboard, Events, event details, check-in screens, reports, and any Executive Suite event selector.
+- Add tests for midnight, noon, morning, afternoon, and timezone-safe rendering.
+
+## 7. Invalidate previous check-in codes immediately
+
+Confirmed critical defect: old event check-in codes remain valid after a new code is generated.
+
+Required behavior:
+
+- Each event has exactly one active check-in code at a time.
+- Generating or rotating a code must atomically invalidate every previous code for that event.
+- Validation must accept only the latest active, unexpired code.
+- Code comparison must happen server-side.
+- Never rely on the frontend to decide whether a code is current.
+- Do not expose old codes through list/detail responses.
+- Record code rotation in the audit log without logging the plaintext code unnecessarily.
+- Duplicate check-in with the current valid code must return `already_checked_in`.
+- A previous code must return a clear `invalid_or_expired_code` response.
+- Handle concurrent rotations safely so two active codes cannot exist.
+- If codes expire, enforce expiration server-side.
+
+Add tests proving:
+
+1. The original code works before rotation.
+2. A new code is generated.
+3. The original code immediately fails.
+4. The latest code succeeds.
+5. Duplicate use by the same checked-in member returns `already_checked_in`.
+6. Codes from another event fail.
+7. Concurrent rotation leaves only one valid code.
+
+Treat this as the highest-priority security/data-integrity defect.
+
+## 8. Change QR-code behavior
+
+The event QR code must represent the current check-in code, not silently complete check-in through a privileged or automatic endpoint.
+
+Required member experience:
+
+- Scanning/opening the QR destination loads the check-in screen with the current code prefilled when technically supported.
+- The member must still deliberately select Check In.
+- Provide a visible `Copy code` action.
+- After copying, show a confirmation such as:
+  `Check-in code copied. Paste it into the code field and select Check In.`
+- If direct prefilling is unreliable across devices, copying the code to the clipboard with clear instructions is acceptable.
+- Never put an authentication token, private member identifier, or privileged automatic-check-in URL inside the QR code.
+- QR data must never bypass server-side validation.
+- A QR generated before code rotation must fail because its old code is invalid.
+- The displayed QR and copied/prefilled value must always match the latest active code.
+- Do not automatically submit the form merely because the QR was scanned.
+
+Add accessible fallback text showing the code for users who cannot scan or use the clipboard.
+
+## 9. Older Mac updater failure
+
+Do not assume the older MacBook is unsupported without evidence.
+
+Collect:
+
+- Mac model/year
+- Processor: Intel or Apple Silicon
+- Installed macOS version
+- Installed C100 Operations version
+- Exact updater error
+- Whether download begins
+- Whether signature verification fails
+- Whether installation/relaunch fails
+- Updater logs
+- Architecture selected from `latest.json`
+
+Verify:
+
+- Minimum supported macOS version in Tauri/build configuration
+- Universal macOS updater artifact exists
+- Both `darwin-aarch64` and `darwin-x86_64` entries exist in `latest.json`
+- Both point to the correct v0.9.5 asset and valid signature
+- The old installation uses the same updater public key
+- The downloaded archive is compatible with the machine architecture
+
+Do not tell the member to delete and reinstall until the exact updater failure is identified. If the installed macOS version is below the actual minimum, show a clear message containing the minimum required macOS version and offer the last compatible release where possible.
+
+This updater investigation must not delay the production data and check-in fixes needed for tonight.
+
+## 10. Production verification before any desktop build
+
+After repairing and republishing the production backend/web app, verify:
+
+- No fake members remain.
+- No fake chairs remain.
+- No fake events or attendance remain.
+- Dashboard committee structure is correct.
+- Committee pages are correct.
+- Full Leaderboard remains correct.
+- Reports still load and export.
+- Executive Suite workspaces resolve correctly.
+- Event times display in 12-hour format in the deployed web app.
+- Rotated check-in codes invalidate old codes.
+- QR/copy behavior works without automatic check-in.
+- Jaylin remains President and Platform Administrator.
+- Real member accounts and legitimate records remain intact.
+
+Return evidence tables for:
+
+### Data cleanup
+
+- Table
+- Before count
+- Confirmed fake count
+- Deleted count
+- Preserved count
+- Uncertain count
+
+### Screen/API consistency
+
+- Screen
+- Endpoint
+- Production committee/member names returned
+- Result
+
+### Executive Suite
+
+- Workspace
+- Endpoint
+- Before status
+- Root cause
+- Repair
+- After status
+
+### Check-in
+
+- Test
+- Expected result
+- Actual result
+
+## 11. Required checks
+
+Run:
+
+- Migration validation
+- Backend typecheck
+- Frontend typecheck
+- OpenAPI validation/code generation
+- Full automated test suite
+- Production web build
+- `git diff --check`
+- Search for production demo-seed execution
+- Search for hardcoded fake names, committees, events, and progress
+- Focused production-web smoke tests
+
+Report every changed file, migration, production write, test total, failure, and remaining risk.
+
+## 12. Release boundary
+
+Do not change the currently published v0.9.5 tag or release.
+
+First:
+
+1. Repair production data and backend.
+2. Republish Replit.
+3. Verify the deployed web app.
+4. Test check-in using a real event.
+5. Confirm Executive Suite API behavior.
+
+Only after those checks pass, prepare the next numeric desktop version containing required frontend/cache/time/QR fixes. Preserve the existing updater signing identity and validate the update on:
+
+- Apple Silicon Mac
+- Intel Mac if available
+- Older supported macOS installation
+
+Do not publish that desktop release until its draft artifacts and `latest.json` are verified.

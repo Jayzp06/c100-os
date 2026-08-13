@@ -49,6 +49,7 @@ import {
   LoadingBlock,
 } from "@/components/page-states";
 import { useMe } from "@/lib/me";
+import { formatTime12h } from "@/lib/utils";
 import LoginPage from "@/pages/login";
 import {
   EventStatusBadge,
@@ -143,7 +144,7 @@ function EventDetail({ id }: { id: number }) {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Date" value={formatDate(e.date)} />
-        <Stat label="Time" value={`${e.startTime} – ${e.endTime}`} />
+        <Stat label="Time" value={`${formatTime12h(e.startTime)} – ${formatTime12h(e.endTime)}`} />
         <Stat
           label="Location"
           value={

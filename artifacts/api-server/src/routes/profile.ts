@@ -269,7 +269,7 @@ router.get(
         .where(eq(committeesTable.id, member.committeeId));
       if (committeeRow) {
         const agg = await buildCommitteeAggregate(committeeRow);
-        const allCommittees = await db.select().from(committeesTable);
+        const allCommittees = await db.select().from(committeesTable).where(eq(committeesTable.active, true));
         const aggregates = await Promise.all(
           allCommittees.map((c) => buildCommitteeAggregate(c)),
         );
@@ -295,7 +295,7 @@ router.get(
       }
     }
 
-    const allCommittees = await db.select().from(committeesTable);
+    const allCommittees = await db.select().from(committeesTable).where(eq(committeesTable.active, true));
     const aggregates = await Promise.all(
       allCommittees.map((c) => buildCommitteeAggregate(c)),
     );

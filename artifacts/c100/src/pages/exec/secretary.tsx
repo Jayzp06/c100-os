@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { StatGrid } from "@/components/exec/shared";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
+import { apiFetch } from "@/lib/desktop-auth";
 import { LoadingBlock, ErrorBlock } from "@/components/page-states";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export default function SecretaryWorkspacePage() {
   const { data: meetings, isLoading: meetingsLoading, error: meetingsError } = useQuery<MeetingRecord[]>({
     queryKey: ["secretary", "meetings"],
     queryFn: async () => {
-      const r = await fetch("/api/secretary/meetings");
+      const r = await apiFetch("/api/secretary/meetings");
       if (!r.ok) {
         console.warn("[C100 Workspace] /api/secretary/meetings HTTP", r.status);
         throw new Error(String(r.status));
@@ -51,7 +52,7 @@ export default function SecretaryWorkspacePage() {
   const { data: correspondence, isLoading: corrLoading, error: corrError } = useQuery<Correspondence[]>({
     queryKey: ["secretary", "correspondence"],
     queryFn: async () => {
-      const r = await fetch("/api/secretary/correspondence");
+      const r = await apiFetch("/api/secretary/correspondence");
       if (!r.ok) {
         console.warn("[C100 Workspace] /api/secretary/correspondence HTTP", r.status);
         throw new Error(String(r.status));
@@ -72,7 +73,7 @@ export default function SecretaryWorkspacePage() {
 
   const createRevision = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: typeof reviseForm }) => {
-      const r = await fetch(`/api/secretary/meetings/${id}/revise`, {
+      const r = await apiFetch(`/api/secretary/meetings/${id}/revise`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -91,7 +92,7 @@ export default function SecretaryWorkspacePage() {
 
   const createMeeting = useMutation({
     mutationFn: async (data: typeof meetingForm) => {
-      const r = await fetch("/api/secretary/meetings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const r = await apiFetch("/api/secretary/meetings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
@@ -101,7 +102,7 @@ export default function SecretaryWorkspacePage() {
 
   const approveMeeting = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`/api/secretary/meetings/${id}/approve`, { method: "POST" });
+      const r = await apiFetch(`/api/secretary/meetings/${id}/approve`, { method: "POST" });
       if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error ?? "Failed"); }
       return r.json();
     },
@@ -111,7 +112,7 @@ export default function SecretaryWorkspacePage() {
 
   const createCorr = useMutation({
     mutationFn: async (data: typeof corrForm) => {
-      const r = await fetch("/api/secretary/correspondence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const r = await apiFetch("/api/secretary/correspondence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },

@@ -315,7 +315,7 @@ function SidebarUserPanel() {
             {me.member.fullName}
           </span>
           <span className="text-[10px] text-[hsl(var(--sidebar-accent-foreground))] truncate">
-            {me.member.role}
+            {me.positionLabel}
           </span>
         </div>
       </div>

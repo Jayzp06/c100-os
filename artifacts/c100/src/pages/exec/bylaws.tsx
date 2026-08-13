@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { StatGrid } from "@/components/exec/shared";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
+import { apiFetch } from "@/lib/desktop-auth";
 import { LoadingBlock, ErrorBlock } from "@/components/page-states";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,7 @@ function useGovernanceDocs() {
   return useQuery<GovernanceDoc[]>({
     queryKey: ["governance", "documents"],
     queryFn: async () => {
-      const res = await fetch("/api/governance/documents");
+      const res = await apiFetch("/api/governance/documents");
       if (!res.ok) {
         console.warn("[C100 Workspace] /api/governance/documents HTTP", res.status);
         throw new Error(String(res.status));
@@ -85,7 +86,7 @@ function useDocAction(action: string) {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/governance/documents/${id}/${action}`, { method: "POST" });
+      const res = await apiFetch(`/api/governance/documents/${id}/${action}`, { method: "POST" });
       if (!res.ok) throw new Error(await workspaceApiError(res));
       return res.json();
     },
@@ -126,7 +127,7 @@ export default function BylawsWorkspacePage() {
 
   const createDoc = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
-      const res = await fetch("/api/governance/documents", {
+      const res = await apiFetch("/api/governance/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

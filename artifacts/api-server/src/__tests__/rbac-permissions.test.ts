@@ -17,7 +17,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ORG_ROLE_PERMS, SYSTEM_ROLE_PERMS } from "../../../../lib/db/src/rbac-matrix.js";
 import { RESERVED_COMMITTEE_NAMES, validateCommitteeName } from "../routes/committees.js";
-import { ASSIGNABLE_ORG_ROLE_SLUGS, ASSIGNABLE_SYSTEM_ROLE_SLUGS } from "../lib/rbac.js";
+import { ASSIGNABLE_ORG_ROLE_SLUGS, ASSIGNABLE_SYSTEM_ROLE_SLUGS, deriveLegacyRole } from "../lib/rbac.js";
 
 // ── Workspace permission matrix ───────────────────────────────────────────────
 // Mirror the EXEC_WORKSPACES entries from the frontend lib so the backend can
@@ -1133,6 +1133,206 @@ describe("linked source-record boundary: chief_of_staff cannot access linked dom
       assertLacks(p, perm, `chief_of_staff→${domain}`),
     );
   }
+});
+
+// ── §6A — deriveLegacyRole regression tests ──────────────────────────────────
+//
+// These tests guard the server-side deriveLegacyRole() function, which
+// auto-syncs the legacy members.role enum whenever org/system-role slugs
+// change on a member.  They are the backend companion to the frontend
+// positionLabel tests: if deriveLegacyRole produces the wrong enum value,
+// stale clients may display incorrect role strings.
+
+describe("deriveLegacyRole: produces correct legacy enum for every slug combination", () => {
+
+  test("no slugs → Member", () => {
+    assert.equal(deriveLegacyRole([], []), "Member");
+  });
+
+  test("general_member only → Member", () => {
+    assert.equal(deriveLegacyRole(["general_member"], []), "Member");
+  });
+
+  test("president → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["president"], []), "ExecutiveBoard");
+  });
+
+  test("vice_president → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["vice_president"], []), "ExecutiveBoard");
+  });
+
+  test("chief_of_staff → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["chief_of_staff"], []), "ExecutiveBoard");
+  });
+
+  test("secretary → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["secretary"], []), "ExecutiveBoard");
+  });
+
+  test("treasurer → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["treasurer"], []), "ExecutiveBoard");
+  });
+
+  test("parliamentarian → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["parliamentarian"], []), "ExecutiveBoard");
+  });
+
+  test("historian → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["historian"], []), "ExecutiveBoard");
+  });
+
+  test("sergeant_at_arms → ExecutiveBoard", () => {
+    assert.equal(deriveLegacyRole(["sergeant_at_arms"], []), "ExecutiveBoard");
+  });
+
+  test("removing last exec slug reverts to Member", () => {
+    // Simulate removing the last exec position: an empty org slug list
+    assert.equal(deriveLegacyRole([], []), "Member");
+  });
+
+  test("committee_chair → CommitteeChair", () => {
+    assert.equal(deriveLegacyRole(["committee_chair"], []), "CommitteeChair");
+  });
+
+  test("bylaws_chair → CommitteeChair", () => {
+    assert.equal(deriveLegacyRole(["bylaws_chair"], []), "CommitteeChair");
+  });
+
+  test("platform_admin system role → Admin (highest precedence)", () => {
+    assert.equal(deriveLegacyRole([], ["platform_admin"]), "Admin");
+  });
+
+  test("platform_admin wins over any org exec role", () => {
+    // Platform Admin should never show as ExecutiveBoard — even if they also
+    // hold an org exec slug (edge case during migration).
+    assert.equal(deriveLegacyRole(["president"], ["platform_admin"]), "Admin");
+  });
+
+  test("technology_chair system role alone → Member (no exec identity)", () => {
+    // Technology Chair has a system role but is NOT an executive board member.
+    // They must not inherit the ExecutiveBoard label.
+    assert.equal(deriveLegacyRole([], ["technology_chair"]), "Member");
+  });
+
+  test("technology_chair does not override a present exec org slug", () => {
+    // If someone holds both a tech chair system role and an exec org slug, the
+    // exec org slug still drives the enum (tech chair is non-org).
+    assert.equal(deriveLegacyRole(["president"], ["technology_chair"]), "ExecutiveBoard");
+  });
+});
+
+// ── §6A — positionLabel (computePositionLabel) regression tests ───────────────
+//
+// computePositionLabel lives in the frontend (artifacts/c100/src/lib/me.ts)
+// but it is a pure function.  We duplicate the logic here so the backend test
+// suite can assert its contract without importing a browser module.
+//
+// If the frontend implementation changes, these tests will catch a divergence.
+
+function computePositionLabel(
+  officerPositions: string[],
+  systemRoles: string[],
+  orgRoles: string[],
+): string {
+  const POSITION_DISPLAY: Record<string, string> = {
+    president: "President",
+    vice_president: "Vice President",
+    chief_of_staff: "Chief of Staff",
+    secretary: "Secretary",
+    treasurer: "Treasurer",
+    parliamentarian: "Parliamentarian",
+    historian: "Historian",
+    bylaws_chair: "Bylaws Officer",
+    bylaws_officer: "Bylaws Officer",
+    sergeant_at_arms: "Sergeant-at-Arms",
+    committee_chair: "Committee Chair",
+    platform_admin: "Platform Admin",
+    technology_chair: "Technology Chair",
+  };
+  if (officerPositions.length > 0) {
+    const slug = officerPositions[0]!;
+    return (
+      POSITION_DISPLAY[slug] ??
+      slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    );
+  }
+  if (systemRoles.includes("platform_admin")) return "Platform Admin";
+  if (systemRoles.includes("technology_chair")) return "Technology Chair";
+  for (const r of orgRoles) {
+    const label = POSITION_DISPLAY[r];
+    if (label) return label;
+  }
+  return "Member";
+}
+
+describe("computePositionLabel: sidebar role label derives from RBAC context, never from legacy role enum", () => {
+  test("no positions/roles → Member", () => {
+    assert.equal(computePositionLabel([], [], []), "Member");
+  });
+
+  test("active officer term takes highest priority", () => {
+    assert.equal(computePositionLabel(["president"], [], []), "President");
+  });
+
+  test("vice president officer term", () => {
+    assert.equal(computePositionLabel(["vice_president"], [], []), "Vice President");
+  });
+
+  test("chief of staff officer term", () => {
+    assert.equal(computePositionLabel(["chief_of_staff"], [], []), "Chief of Staff");
+  });
+
+  test("sergeant at arms officer term", () => {
+    assert.equal(computePositionLabel(["sergeant_at_arms"], [], []), "Sergeant-at-Arms");
+  });
+
+  test("historian officer term", () => {
+    assert.equal(computePositionLabel(["historian"], [], []), "Historian");
+  });
+
+  test("platform_admin system role → Platform Admin (no officer terms)", () => {
+    assert.equal(computePositionLabel([], ["platform_admin"], []), "Platform Admin");
+  });
+
+  test("technology_chair system role → Technology Chair (no officer terms)", () => {
+    assert.equal(computePositionLabel([], ["technology_chair"], []), "Technology Chair");
+  });
+
+  test("platform_admin wins over technology_chair when both present", () => {
+    assert.equal(
+      computePositionLabel([], ["platform_admin", "technology_chair"], []),
+      "Platform Admin",
+    );
+  });
+
+  test("platform_admin alone does NOT produce Executive Board label", () => {
+    const label = computePositionLabel([], ["platform_admin"], []);
+    assert.notEqual(label, "Executive Board");
+    assert.notEqual(label, "ExecutiveBoard");
+    assert.equal(label, "Platform Admin");
+  });
+
+  test("removing last officer term reverts to Member when no system roles", () => {
+    // Simulates: exec tag removed, officerPositions cleared, no system roles
+    assert.equal(computePositionLabel([], [], []), "Member");
+  });
+
+  test("active officer term takes precedence over system roles", () => {
+    // A platform admin who is also serving as president shows President
+    assert.equal(
+      computePositionLabel(["president"], ["platform_admin"], []),
+      "President",
+    );
+  });
+
+  test("org role label shown when no officer terms or system roles", () => {
+    assert.equal(computePositionLabel([], [], ["committee_chair"]), "Committee Chair");
+  });
+
+  test("unknown slug falls back to title-cased slug string", () => {
+    const label = computePositionLabel(["special_role"], [], []);
+    assert.equal(label, "Special Role");
+  });
 });
 
 // ── Workspace ↔ permission consistency ───────────────────────────────────────

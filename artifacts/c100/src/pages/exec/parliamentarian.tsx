@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { StatGrid } from "@/components/exec/shared";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
+import { apiFetch } from "@/lib/desktop-auth";
 import { LoadingBlock, ErrorBlock } from "@/components/page-states";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,22 +43,22 @@ export default function ParliamentarianWorkspacePage() {
 
   const { data: motions, isLoading: motionsLoading } = useQuery<Motion[]>({
     queryKey: ["procedure", "motions"],
-    queryFn: async () => { const r = await fetch("/api/procedure/motions"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => { const r = await apiFetch("/api/procedure/motions"); if (!r.ok) throw new Error("Failed"); return r.json(); },
   });
 
   const { data: rulings, isLoading: rulingsLoading } = useQuery<Ruling[]>({
     queryKey: ["procedure", "rulings"],
-    queryFn: async () => { const r = await fetch("/api/procedure/rulings"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => { const r = await apiFetch("/api/procedure/rulings"); if (!r.ok) throw new Error("Failed"); return r.json(); },
   });
 
   const { data: quorumRecords } = useQuery<QuorumRecord[]>({
     queryKey: ["procedure", "quorum"],
-    queryFn: async () => { const r = await fetch("/api/procedure/quorum"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => { const r = await apiFetch("/api/procedure/quorum"); if (!r.ok) throw new Error("Failed"); return r.json(); },
   });
 
   const { data: govDocs } = useQuery<GovDoc[]>({
     queryKey: ["procedure", "governance-docs"],
-    queryFn: async () => { const r = await fetch("/api/procedure/governance-docs"); if (!r.ok) throw new Error("Failed"); return r.json(); },
+    queryFn: async () => { const r = await apiFetch("/api/procedure/governance-docs"); if (!r.ok) throw new Error("Failed"); return r.json(); },
   });
 
   const [motionOpen, setMotionOpen] = useState(false);
@@ -71,7 +72,7 @@ export default function ParliamentarianWorkspacePage() {
 
   const createMotion = useMutation({
     mutationFn: async (data: typeof motionForm) => {
-      const r = await fetch("/api/procedure/motions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, voteYes: Number(data.voteYes), voteNo: Number(data.voteNo), voteAbstain: Number(data.voteAbstain) }) });
+      const r = await apiFetch("/api/procedure/motions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, voteYes: Number(data.voteYes), voteNo: Number(data.voteNo), voteAbstain: Number(data.voteAbstain) }) });
       if (!r.ok) throw new Error("Failed");
       return r.json();
     },
@@ -81,7 +82,7 @@ export default function ParliamentarianWorkspacePage() {
 
   const createRuling = useMutation({
     mutationFn: async (data: typeof rulingForm) => {
-      const r = await fetch("/api/procedure/rulings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const r = await apiFetch("/api/procedure/rulings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       if (!r.ok) throw new Error("Failed");
       return r.json();
     },
@@ -91,7 +92,7 @@ export default function ParliamentarianWorkspacePage() {
 
   const createQuorum = useMutation({
     mutationFn: async (data: typeof quorumForm) => {
-      const r = await fetch("/api/procedure/quorum", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ totalMembership: Number(data.totalMembership), quorumThreshold: Number(data.quorumThreshold), membersPresent: Number(data.membersPresent), notes: data.notes }) });
+      const r = await apiFetch("/api/procedure/quorum", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ totalMembership: Number(data.totalMembership), quorumThreshold: Number(data.quorumThreshold), membersPresent: Number(data.membersPresent), notes: data.notes }) });
       if (!r.ok) throw new Error("Failed");
       return r.json();
     },

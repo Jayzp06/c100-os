@@ -12,6 +12,63 @@ import { useAuth } from "@workspace/replit-auth-web";
 export type Role = Member["role"];
 export type ExperienceType = Member["experience"];
 
+// ---------------------------------------------------------------------------
+// Position display labels — canonical human-readable labels for every
+// officer / system-role slug returned by /api/me.  Used by the sidebar user
+// panel and any other surface that must show a role name to the user.
+// Never reads the legacy `members.role` enum directly — that enum is a DB
+// implementation detail and can be stale in a desktop cache.
+// ---------------------------------------------------------------------------
+
+const POSITION_DISPLAY: Record<string, string> = {
+  president: "President",
+  vice_president: "Vice President",
+  chief_of_staff: "Chief of Staff",
+  secretary: "Secretary",
+  treasurer: "Treasurer",
+  parliamentarian: "Parliamentarian",
+  historian: "Historian",
+  bylaws_chair: "Bylaws Officer",
+  bylaws_officer: "Bylaws Officer",
+  sergeant_at_arms: "Sergeant-at-Arms",
+  committee_chair: "Committee Chair",
+  platform_admin: "Platform Admin",
+  technology_chair: "Technology Chair",
+};
+
+/**
+ * Compute a single user-facing position label from the server-derived
+ * RBAC context.  Priority:
+ *  1. Active officer term (most specific — actual role they hold right now)
+ *  2. System roles (platform_admin > technology_chair)
+ *  3. Org roles from the RBAC context (formatted nicely)
+ *  4. Fallback: "Member"
+ *
+ * Deliberately does NOT read the legacy `members.role` enum so that a
+ * stale desktop cache showing "ExecutiveBoard" can never pollute the label
+ * after a role has been removed.
+ */
+export function computePositionLabel(
+  officerPositions: string[],
+  systemRoles: string[],
+  orgRoles: string[],
+): string {
+  if (officerPositions.length > 0) {
+    const slug = officerPositions[0]!;
+    return (
+      POSITION_DISPLAY[slug] ??
+      slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    );
+  }
+  if (systemRoles.includes("platform_admin")) return "Platform Admin";
+  if (systemRoles.includes("technology_chair")) return "Technology Chair";
+  for (const r of orgRoles) {
+    const label = POSITION_DISPLAY[r];
+    if (label) return label;
+  }
+  return "Member";
+}
+
 export const LEADERSHIP_ROLES: Role[] = [
   "CommitteeChair",
   "ExecutiveBoard",
@@ -66,6 +123,12 @@ type MeValue = {
    * means the multi-role "switch view" affordance should be shown.
    */
   availableExperiences: ExperienceType[];
+  /**
+   * Human-readable position label derived from current RBAC context — never
+   * from the legacy `members.role` enum.  Safe to show in the sidebar and any
+   * other UI surface.
+   */
+  positionLabel: string;
   /** Switch the active view to another experience this member legitimately holds. */
   switchExperience: (experience: ExperienceType) => void;
   isSwitchingExperience: boolean;
@@ -140,6 +203,8 @@ function useMeValue(): MeValue {
     },
   });
 
+  const positionLabel = computePositionLabel(officerPositions, systemRoles, orgRoles);
+
   return {
     auth,
     member,
@@ -165,6 +230,7 @@ function useMeValue(): MeValue {
     impersonating,
     profileError,
     availableExperiences,
+    positionLabel,
     switchExperience: (exp: ExperienceType) =>
       switchMutation.mutate({ data: { experience: exp as never } }),
     isSwitchingExperience: switchMutation.isPending,

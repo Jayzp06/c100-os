@@ -1,0 +1,97 @@
+## 6A. Remove stale legacy-role labels and cross-interface access
+
+Confirmed defect:
+
+On another test Mac, a member’s Executive Board assignment was removed and only the intended permission tags were retained, but the desktop interface still displays `Executive Board` at the top.
+
+Audit every source that can determine or display a member’s role/experience:
+
+- Legacy `members.role` enum
+- Organization-role tags
+- System-role tags
+- Resolved permission groups
+- `/api/me` response
+- Authentication/session claims
+- Active experience selection
+- Header/sidebar role label
+- Member profile
+- Executive Suite navigation
+- React Query cache
+- Persisted desktop cache/local storage
+- Any fallback role derived during registration
+
+Required behavior:
+
+- Workspace access must come only from resolved explicit permissions.
+- A removed officer tag must stop granting access immediately after the role mutation succeeds.
+- The header must not display `Executive Board` merely because the legacy database role remains `ExecutiveBoard`.
+- Do not display a broad Executive Board label when more specific active position tags are available.
+- A member who has no active executive-position tag must not be presented as an Executive Board member.
+- Platform Administrator must display as platform access, not as an organization officer.
+- Committee Chair must not be converted into Executive Board.
+- Members holding multiple active positions may display their specific positions without receiving unrelated workspaces.
+- Removing one role must preserve other valid organization and system roles.
+- Organization-role mutations must not overwrite system roles.
+- System-role mutations must not overwrite organization roles.
+
+Define one canonical identity-summary response derived from current database assignments, including:
+
+- Active organization roles
+- Active system roles
+- Resolved permissions
+- Available experiences
+- User-facing position labels
+- Primary display label, if needed
+
+Do not treat the legacy enum as authoritative for navigation, workspace authorization, or user-facing labels. Keep it only where temporary backward compatibility requires it.
+
+When role tags change:
+
+1. Update the organization/system role assignments transactionally.
+2. Recompute any backward-compatible legacy role field correctly.
+3. Invalidate `/api/me`, permissions, experiences, navigation and member-detail queries.
+4. Clear any persisted role/experience cache that no longer matches current assignments.
+5. Reset an invalid selected experience to an experience the member still possesses.
+6. Refresh the header and navigation immediately without requiring reinstall or manual cache clearing.
+
+On authenticated desktop startup:
+
+- Fetch current `/api/me` data from production.
+- Replace stale cached role and permission data.
+- Never merge removed roles back into the current response.
+- Version or migrate persisted identity cache.
+- Preserve authentication while removing obsolete role/permission cache.
+
+Security requirements:
+
+- The backend must authorize every request using current production assignments, not stale client state.
+- A stale desktop interface must never preserve backend access.
+- Removing a permission must cause the next protected request to return 403 if the user no longer qualifies.
+- Do not trust permission lists stored locally.
+- Do not add legacy ExecutiveBoard bypasses.
+
+Add regression tests for:
+
+- Removing the last executive-position tag removes the Executive Board label.
+- Removing a workspace permission removes its navigation item.
+- Removing one of several roles preserves the remaining roles.
+- Platform Administrator alone shows Technology access without an Executive Board identity.
+- Stale cached `ExecutiveBoard` data is replaced at startup.
+- An invalid saved experience is reset.
+- `/api/me` never reintroduces a removed assignment.
+- Backend access is denied immediately after permission removal.
+- Organization-role and system-role changes remain independent.
+- Multiple-role permission unions remain correct.
+
+Include this defect in the production verification table with:
+
+- Test member
+- Old assignments
+- New assignments
+- Legacy database role before/after
+- `/api/me` roles and permissions
+- Displayed header label
+- Visible workspaces
+- Direct API authorization result
+
+Do not package v0.9.6 until this is verified on both the production web app and the second test Mac.

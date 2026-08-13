@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { StatGrid } from "@/components/exec/shared";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
+import { apiFetch } from "@/lib/desktop-auth";
 import { LoadingBlock, ErrorBlock } from "@/components/page-states";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export default function TreasurerWorkspacePage() {
   const { data: dues, isLoading: duesLoading, error: duesError } = useQuery<DuesEntry[]>({
     queryKey: ["treasurer", "dues"],
     queryFn: async () => {
-      const r = await fetch("/api/treasurer/dues");
+      const r = await apiFetch("/api/treasurer/dues");
       if (!r.ok) {
         console.warn("[C100 Workspace] /api/treasurer/dues HTTP", r.status);
         throw new Error(String(r.status));
@@ -50,7 +51,7 @@ export default function TreasurerWorkspacePage() {
   const { data: summary } = useQuery<{ transactions: TxnSummary; dues: DuesSummary }>({
     queryKey: ["treasurer", "summary"],
     queryFn: async () => {
-      const r = await fetch("/api/treasurer/summary");
+      const r = await apiFetch("/api/treasurer/summary");
       if (!r.ok) {
         console.warn("[C100 Workspace] /api/treasurer/summary HTTP", r.status);
         throw new Error(String(r.status));
@@ -71,7 +72,7 @@ export default function TreasurerWorkspacePage() {
 
   const createDues = useMutation({
     mutationFn: async (data: typeof duesForm) => {
-      const r = await fetch("/api/treasurer/dues", {
+      const r = await apiFetch("/api/treasurer/dues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, memberId: Number(data.memberId), amountCents: Number(data.amountCents) }),
@@ -85,7 +86,7 @@ export default function TreasurerWorkspacePage() {
 
   const updateDuesStatus = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const r = await fetch(`/api/treasurer/dues/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+      const r = await apiFetch(`/api/treasurer/dues/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },

@@ -1,0 +1,127 @@
+C100 Operations — final Executive Suite production repair before desktop packaging
+
+The production cleanup succeeded. Fake members and incorrect production data are now removed. Do not rerun destructive cleanup, recreate seed data, change authentication, or expand feature scope.
+
+Work only on repairing the existing Executive Suite portals against the deployed production backend. After verification, prepare the already-planned v0.9.6 desktop update containing the completed frontend fixes.
+
+## 1. Preserve current production state
+
+Before making changes, confirm:
+
+- Jaylin Phillips remains active.
+- Jaylin retains President and Platform Administrator.
+- Real member accounts remain intact.
+- Fake production members are gone.
+- Bylaws and Economic Development remain inactive.
+- Economic Empowerment & Development remains the canonical committee.
+- No demo-data seed runs in production.
+- The completed cleanup must not run destructively again.
+
+Convert any startup cleanup into a recorded one-time repair or otherwise ensure it safely skips after successful completion.
+
+Do not delete members, events, attendance, committees, role assignments, or Executive Suite records during this work.
+
+## 2. Diagnose each Executive Suite workspace against production
+
+Authenticate as Jaylin’s President account and test:
+
+- President
+- Vice President
+- Chief of Staff
+- Bylaws Officer
+- Secretary
+- Treasurer
+- Historian
+- Sergeant-at-Arms
+- Parliamentarian
+- Technology
+
+For every workspace, inspect every initial query and currently available action.
+
+Capture:
+
+- Workspace
+- UI action
+- HTTP method
+- Exact production endpoint
+- Request payload with sensitive values removed
+- HTTP status
+- Safe response body
+- Server log/error
+- Required permission
+- Whether President has that permission in production
+- Required database table and migration
+- Whether the production table exists
+- Whether the failure occurs in web, Tauri, or both
+
+Do not merely replace errors with generic messages. Identify the exact root cause first.
+
+## 3. Repair likely failure classes
+
+Repair each failure based on evidence:
+
+- 401: protected request is not using the shared authenticated API mechanism.
+- 403: route and workspace use inconsistent permissions, or production RBAC lacks an assignment.
+- 404: route is missing from the deployed server or frontend uses an obsolete path.
+- 409/422: frontend payload does not match backend validation/OpenAPI.
+- 500: missing migration/table, invalid enum, broken join, incorrect null handling, schema mismatch, or serialization failure.
+- Empty data: API must return a valid empty collection/summary rather than crashing.
+
+Every protected request in Tauri must attach the bearer token through the shared authenticated request utility. Web requests must retain their existing authentication behavior.
+
+Do not add role-name bypasses. Frontend visibility and backend authorization must use the same explicit permission.
+
+## 4. Required access matrix
+
+Verify:
+
+- President accesses every nontechnical officer workspace through explicit permission assignments.
+- President does not require every officer tag.
+- Platform Administrator accesses Technology.
+- Technology Chair accesses Technology.
+- Platform Administrator and Technology Chair do not automatically access confidential officer workspaces.
+- General members and committee roles cannot access Executive Suite APIs.
+- Multiple officer tags combine permissions correctly.
+- Direct unauthorized URLs show a forbidden state and do not fetch protected data.
+
+Return the final permission-to-workspace matrix.
+
+## 5. Workspace-specific verification
+
+### Chief of Staff
+
+Verify:
+
+- Summary loads.
+- Tasks list loads when empty.
+- Create and edit work.
+- Owner selector loads active real members only.
+- Assignment stores canonical member ID.
+- Inactive/deleted members cannot be assigned.
+- Collaborators use safe member candidates.
+- Decisions and task status updates persist.
+
+### Bylaws Officer
+
+Verify:
+
+- Empty document list loads.
+- Metadata creation works.
+- PDF/DOCX upload works.
+- Publishing transactionally supersedes the prior current version.
+- Archive/restore works.
+- Download authorization works.
+- Parliamentarian has read-only access to current published documents.
+- Missing storage configuration produces a specific safe error.
+
+### Secretary
+
+Verify:
+
+- Agendas, minutes and correspondence load when empty.
+- Create/update works.
+- Submit and approval work.
+- Approved records require a revision instead of silent overwrite.
+- Optional fields accept null.
+- Attachments use the correct storage scope.
+- Archive

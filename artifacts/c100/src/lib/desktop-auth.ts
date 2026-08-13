@@ -108,6 +108,30 @@ export async function listenForDesktopAuthCallback(): Promise<() => void> {
 }
 
 // ---------------------------------------------------------------------------
+// Authenticated fetch — use in every Executive Suite raw-fetch call
+//
+// In the Tauri desktop build the webview does not share a cookie session with
+// the production server. Every protected request must therefore carry the
+// Bearer session token and resolve against DESKTOP_API_URL. In the web build,
+// the existing cookie-session / relative-URL path is left completely unchanged.
+// ---------------------------------------------------------------------------
+
+export async function apiFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const url = IS_TAURI && DESKTOP_API_URL ? `${DESKTOP_API_URL}${path}` : path;
+
+  if (!IS_TAURI) return fetch(url, init);
+
+  const token = getStoredToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  return fetch(url, { ...init, headers });
+}
+
+// ---------------------------------------------------------------------------
 // Logout — clear token, notify server, reload
 // ---------------------------------------------------------------------------
 

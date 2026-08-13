@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { StatGrid } from "@/components/exec/shared";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
+import { apiFetch } from "@/lib/desktop-auth";
 import { LoadingBlock, ErrorBlock } from "@/components/page-states";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export default function SergeantAtArmsWorkspacePage() {
   const { data: records, isLoading, error } = useQuery<ConductRecord[]>({
     queryKey: ["conduct", "records"],
     queryFn: async () => {
-      const r = await fetch("/api/conduct/records");
+      const r = await apiFetch("/api/conduct/records");
       if (!r.ok) {
         console.warn("[C100 Workspace] /api/conduct/records HTTP", r.status);
         throw new Error(String(r.status));
@@ -56,7 +57,7 @@ export default function SergeantAtArmsWorkspacePage() {
   const createRecord = useMutation({
     mutationFn: async (data: typeof form) => {
       const body = { ...data, memberId: data.memberId ? Number(data.memberId) : undefined };
-      const r = await fetch("/api/conduct/records", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await apiFetch("/api/conduct/records", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
@@ -66,7 +67,7 @@ export default function SergeantAtArmsWorkspacePage() {
 
   const resolveRecord = useMutation({
     mutationFn: async ({ id, resolution }: { id: number; resolution: string }) => {
-      const r = await fetch(`/api/conduct/records/${id}/resolve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resolution }) });
+      const r = await apiFetch(`/api/conduct/records/${id}/resolve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resolution }) });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
@@ -76,7 +77,7 @@ export default function SergeantAtArmsWorkspacePage() {
 
   const archiveRecord = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`/api/conduct/records/${id}/archive`, { method: "POST" });
+      const r = await apiFetch(`/api/conduct/records/${id}/archive`, { method: "POST" });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },

@@ -8,6 +8,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/desktop-auth";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
 
@@ -194,17 +195,17 @@ export default function ChiefOfStaffPage() {
 
   const { data: summary } = useQuery<Summary>({
     queryKey: ["cos", "summary"],
-    queryFn: () => fetch("/api/chief-of-staff/summary").then((r) => r.json()),
+    queryFn: () => apiFetch("/api/chief-of-staff/summary").then((r) => r.json()),
   });
 
   const { data: tasks = [], isLoading } = useQuery<ExecTask[]>({
     queryKey: ["cos", "tasks"],
-    queryFn: () => fetch("/api/chief-of-staff/tasks").then((r) => r.json()),
+    queryFn: () => apiFetch("/api/chief-of-staff/tasks").then((r) => r.json()),
   });
 
   const { data: members = [] } = useQuery<AssignmentCandidate[]>({
     queryKey: ["cos", "assignment-candidates"],
-    queryFn: () => fetch("/api/chief-of-staff/assignment-candidates").then((r) => {
+    queryFn: () => apiFetch("/api/chief-of-staff/assignment-candidates").then((r) => {
       if (!r.ok) throw new Error(`Failed to load members: ${r.status}`);
       return r.json();
     }),
@@ -234,7 +235,7 @@ export default function ChiefOfStaffPage() {
 
   const createTask = useMutation({
     mutationFn: (data: typeof EMPTY_FORM) =>
-      fetch("/api/chief-of-staff/tasks", {
+      apiFetch("/api/chief-of-staff/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -261,7 +262,7 @@ export default function ChiefOfStaffPage() {
 
   const updateTask = useMutation({
     mutationFn: ({ id, patch }: { id: number; patch: Record<string, unknown> }) =>
-      fetch(`/api/chief-of-staff/tasks/${id}`, {
+      apiFetch(`/api/chief-of-staff/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -279,7 +280,7 @@ export default function ChiefOfStaffPage() {
 
   const archiveTask = useMutation({
     mutationFn: (id: number) =>
-      fetch(`/api/chief-of-staff/tasks/${id}`, { method: "DELETE" }).then((r) => {
+      apiFetch(`/api/chief-of-staff/tasks/${id}`, { method: "DELETE" }).then((r) => {
         if (!r.ok) throw new Error("Archive failed");
         return r.json();
       }),
@@ -289,7 +290,7 @@ export default function ChiefOfStaffPage() {
 
   const restoreTask = useMutation({
     mutationFn: (id: number) =>
-      fetch(`/api/chief-of-staff/tasks/${id}/restore`, { method: "POST" }).then((r) => {
+      apiFetch(`/api/chief-of-staff/tasks/${id}/restore`, { method: "POST" }).then((r) => {
         if (!r.ok) throw new Error("Restore failed");
         return r.json();
       }),

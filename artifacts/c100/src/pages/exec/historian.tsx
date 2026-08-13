@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExecWorkspaceShell } from "@/components/exec/workspace-gate";
 import { StatGrid } from "@/components/exec/shared";
 import { EXEC_WORKSPACES } from "@/lib/exec-workspaces";
+import { apiFetch } from "@/lib/desktop-auth";
 import { LoadingBlock, ErrorBlock } from "@/components/page-states";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ export default function HistorianWorkspacePage() {
   const { data: entries, isLoading, error } = useQuery<ArchiveEntry[]>({
     queryKey: ["historian", "archive"],
     queryFn: async () => {
-      const r = await fetch("/api/historian/archive");
+      const r = await apiFetch("/api/historian/archive");
       if (!r.ok) {
         console.warn("[C100 Workspace] /api/historian/archive HTTP", r.status);
         throw new Error(String(r.status));
@@ -55,7 +56,7 @@ export default function HistorianWorkspacePage() {
 
   const createEntry = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
-      const r = await fetch("/api/historian/archive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await apiFetch("/api/historian/archive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },
@@ -65,7 +66,7 @@ export default function HistorianWorkspacePage() {
 
   const archiveEntry = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(`/api/historian/archive/${id}/archive`, { method: "POST" });
+      const r = await apiFetch(`/api/historian/archive/${id}/archive`, { method: "POST" });
       if (!r.ok) throw new Error(await workspaceApiError(r));
       return r.json();
     },

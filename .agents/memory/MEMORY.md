@@ -18,3 +18,5 @@
 - [seed-rbac PERM_GROUPS sync](seed-rbac-perm-groups.md) — seed-rbac.ts creates permission groups from PERM_GROUPS array only (not from rbac-matrix.ts); adding a slug to the matrix without adding it to PERM_GROUPS silently skips the group and all its role assignments.
 - [Drizzle missing migration records](drizzle-missing-migration-records.md) — if tables exist in DB but no record in drizzle.__drizzle_migrations, backfill with SHA-256 of SQL file + journal `when` timestamp; migrate.ts only auto-handles baseline (idx=0) case.
 - [Production repair hook](production-repair-hook.md) — executeSql production is read-only; DML repairs must go through idempotent server startup function, not the tool.
+- [Exec Suite Tauri fetch](exec-tauri-fetch.md) — 7 exec pages used raw fetch(); added apiFetch() to desktop-auth.ts; president/VP use generated hooks (already auth-aware).
+- [positionLabel never use role enum](position-label-arch.md) — SidebarUserPanel must render me.positionLabel (from officerPositions→systemRoles→orgRoles); never me.member.role which is a stale DB enum.
